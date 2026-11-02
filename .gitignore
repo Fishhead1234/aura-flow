@@ -2,6 +2,8 @@ node_modules
 dist
 .DS_Store
 *.local
+*.db
+*.db-journal
 android/app/build
 android/.gradle
 

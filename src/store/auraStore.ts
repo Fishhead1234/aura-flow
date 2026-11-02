@@ -14,6 +14,7 @@ import {
   WaitlistMode,
   AppRoute,
   DatabaseUser,
+  PersonaType,
 } from '../types/aura';
 
 function parseInitialRoute(): AppRoute {
@@ -32,126 +33,57 @@ function parseInitialRoute(): AppRoute {
   return { path: 'public_studio', slug: 'sol-sanctuary' };
 }
 
-interface AuraState {
-  // Navigation & Route
-  currentRoute: AppRoute;
-  navigateTo: (route: AppRoute) => void;
-
-  // Locale & Settings
-  locale: SupportedLocale;
-  currency: SupportedCurrency;
-  selectedDate: string; // ISO date string YYYY-MM-DD
-  activeCategory: string; // 'All' or specific category
-  activeAdminTab: 'schedule' | 'packs' | 'rosters' | 'policies';
-  isMobileDrawerOpen: boolean;
-
-  // Active Current User & Studio Context (Decoupled by studio_id)
-  currentUser: DatabaseUser;
-  studios: Studio[];
-  activeStudioId: string;
-  studio: Studio;
-
-  // Decoupled Studio Entities
-  sessions: ClassSession[];
-  classPacks: ClassPack[];
-  userPass: ClientPass;
-  bookings: Booking[];
-  waitlist: WaitlistEntry[];
-  creditLedger: CreditLedgerEntry[];
-  stripeOverview: StripeConnectOverview;
-
-  // Selected for Checkout/Action
-  selectedSessionForBooking: ClassSession | null;
-  isBookingDrawerOpen: boolean;
-  selectedWaitlistSession: ClassSession | null;
-  isWaitlistModalOpen: boolean;
-
-  // Waterfall Demo Timer State
-  activeWaterfallSessionId: string | null;
-  activeWaterfallSecondsRemaining: number;
-
-  // Actions
-  setLocale: (locale: SupportedLocale) => void;
-  setCurrency: (currency: SupportedCurrency) => void;
-  setSelectedDate: (date: string) => void;
-  setActiveCategory: (cat: string) => void;
-  setActiveAdminTab: (tab: 'schedule' | 'packs' | 'rosters' | 'policies') => void;
-  setMobileDrawerOpen: (open: boolean) => void;
-
-  openBookingDrawer: (session: ClassSession) => void;
-  closeBookingDrawer: () => void;
-  openWaitlistModal: (session: ClassSession) => void;
-  closeWaitlistModal: () => void;
-
-  // Booking Execution
-  confirmBooking: (
-    sessionId: string,
-    method: PaymentMethodType,
-    clientName: string,
-    clientEmail: string
-  ) => { success: boolean; message: string };
-
-  cancelBooking: (bookingId: string) => void;
-  checkInClient: (bookingId: string) => void;
-
-  // Waitlist Execution
-  joinWaitlist: (
-    sessionId: string,
-    clientName: string,
-    clientEmail: string,
-    clientPhone: string,
-    mode: WaitlistMode
-  ) => void;
-
-  claimWaitlistOffer: (entryId: string) => void;
-  declineWaitlistOffer: (entryId: string) => void;
-  triggerWaterfallCascade: (sessionId: string) => void;
-  tickWaterfallTimer: () => void;
-
-  // Studio Admin Actions
-  updateStudioPolicies: (cancelWindowHrs: number, waitlistMins: number) => void;
-  addSession: (session: Omit<ClassSession, 'id' | 'studioId' | 'bookedCount'>) => void;
-  updateSessionCapacity: (sessionId: string, newCapacity: number) => void;
-  deleteSession: (sessionId: string) => void;
-  purchaseClassPack: (packId: string) => void;
-
-  // Onboarding Wizard Action
-  createStudioWithOnboarding: (data: {
-    name: string;
-    slug: string;
-    currency: SupportedCurrency;
-    cancelWindowHrs: number;
-    waitlistMins: number;
-    firstClass: {
-      title: string;
-      category: any;
-      instructor: string;
-      capacity: number;
-      price: number;
-      roomName: string;
-    };
-  }) => void;
-}
-
-const INITIAL_USER: DatabaseUser = {
-  id: 'usr-abner-01',
-  email: 'abnerchiu@hotmail.com',
-  role: 'instructor',
-  fullName: 'Abner Chiu',
-  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+// 1. Instructor Owner ("Elena Rostova", elena@example.com)
+const PERSONA_ELENA: DatabaseUser = {
+  id: 'usr-elena-owner',
+  email: 'elena@example.com',
+  role: 'OWNER',
+  name: 'Elena Rostova',
+  avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
   studioId: 'studio-sol-01',
   createdAt: '2026-11-01T00:00:00.000Z',
 };
 
+// 2. Existing Student ("Maya Lin", maya@example.com with 2 credits remaining)
+const PERSONA_MAYA: DatabaseUser = {
+  id: 'usr-maya-student',
+  email: 'maya@example.com',
+  role: 'STUDENT',
+  name: 'Maya Lin',
+  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+  createdAt: '2026-11-01T00:00:00.000Z',
+};
+
+// 3. New Student (0 Passes)
+const PERSONA_NEW_STUDENT: DatabaseUser = {
+  id: 'usr-new-student',
+  email: 'alex.guest@example.com',
+  role: 'STUDENT',
+  name: 'Alex Rivera (New Student)',
+  avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+  createdAt: '2026-11-02T00:00:00.000Z',
+};
+
+// 4. New Studio Owner (Starting onboarding)
+const PERSONA_NEW_OWNER: DatabaseUser = {
+  id: 'usr-new-owner',
+  email: 'founder@example.com',
+  role: 'OWNER',
+  name: 'Chloe Laurent (New Owner)',
+  avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+  createdAt: '2026-11-02T00:00:00.000Z',
+};
+
+// 1 Studio ("Sol Sanctuary", slug: "sol-sanctuary")
 const INITIAL_STUDIOS: Studio[] = [
   {
     id: 'studio-sol-01',
-    ownerId: 'usr-abner-01',
+    ownerId: 'usr-elena-owner',
     slug: 'sol-sanctuary',
     name: 'Sol Sanctuary',
     tagline: 'Mindful Reformer & Dynamic Movement Sanctuary',
     currency: 'USD',
-    stripeAccountId: 'acct_sol_fit_9912',
+    stripeAccountId: 'acct_sol_sanctuary_8829',
     stripeAccountName: 'Sol Sanctuary Loon',
     cancelWindowHrs: 12,
     waitlistMins: 30,
@@ -163,13 +95,14 @@ const INITIAL_STUDIOS: Studio[] = [
   },
 ];
 
+// 5 Initial classes on the schedule with realistic spot capacities
 const INITIAL_SESSIONS: ClassSession[] = [
   {
     id: 'sess-01',
     studioId: 'studio-sol-01',
     title: 'Dynamic Pilates',
     category: 'Reformer',
-    instructor: 'Lena S.',
+    instructor: 'Elena Rostova',
     instructorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
     startTime: '2026-11-02T08:00:00.000Z',
     endTime: '2026-11-02T08:50:00.000Z',
@@ -207,7 +140,7 @@ const INITIAL_SESSIONS: ClassSession[] = [
     endTime: '2026-11-02T11:30:00.000Z',
     durationMins: 60,
     capacity: 8,
-    bookedCount: 8, // Class Full • Join Waitlist
+    bookedCount: 8, // Class Full • Waitlist Open
     price: 28.0,
     roomName: 'Warm Cedar Room',
     level: 'Beginner',
@@ -217,7 +150,7 @@ const INITIAL_SESSIONS: ClassSession[] = [
     studioId: 'studio-sol-01',
     title: 'Morning Reformer Sculpt',
     category: 'Reformer',
-    instructor: 'Lena S.',
+    instructor: 'Elena Rostova',
     instructorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
     startTime: '2026-11-03T08:30:00.000Z',
     endTime: '2026-11-03T09:20:00.000Z',
@@ -281,14 +214,15 @@ const INITIAL_PACKS: ClassPack[] = [
   },
 ];
 
-const INITIAL_USER_PASS: ClientPass = {
-  id: 'pass-user-991',
-  userId: 'user-alyssa',
+// Maya Lin's active 5-pack pass with 2 credits remaining
+const INITIAL_MAYA_PASS: ClientPass = {
+  id: 'pass-maya-01',
+  userId: 'usr-maya-student',
   studioId: 'studio-sol-01',
   packId: 'pack-5',
   packName: '5-Class Pack',
   creditsTotal: 5,
-  creditsLeft: 2,
+  creditsLeft: 2, // Exactly 2 credits left
   expiresAt: '2026-12-31T23:59:59.000Z',
   createdAt: '2026-10-15T10:00:00.000Z',
 };
@@ -300,8 +234,8 @@ const INITIAL_BOOKINGS: Booking[] = [
     sessionId: 'sess-03',
     sessionTitle: 'Gentle Yin Yoga',
     sessionTime: '10:30 - 11:30 AM',
-    clientEmail: 'emma.watson@example.com',
-    clientName: 'Emma Watson',
+    clientEmail: 'maya@example.com',
+    clientName: 'Maya Lin',
     clientPhone: '+1 (555) 234-5678',
     paymentMethod: 'PASS_CREDIT',
     amountPaid: 0.0,
@@ -330,8 +264,8 @@ const INITIAL_BOOKINGS: Booking[] = [
     sessionId: 'sess-01',
     sessionTitle: 'Dynamic Pilates',
     sessionTime: '08:00 - 08:50 AM',
-    clientEmail: 'alyssa.ramsey@example.com',
-    clientName: 'Alyssa Ramsey',
+    clientEmail: 'maya@example.com',
+    clientName: 'Maya Lin',
     clientPhone: '+1 (555) 887-2341',
     paymentMethod: 'PASS_CREDIT',
     amountPaid: 0.0,
@@ -347,7 +281,7 @@ const INITIAL_WAITLIST: WaitlistEntry[] = [
     studioId: 'studio-sol-01',
     sessionId: 'sess-03',
     sessionTitle: 'Gentle Yin Yoga',
-    clientEmail: 'selina.chen@example.com',
+    clientEmail: 'selina@example.com',
     clientPhone: '+1 (555) 443-8991',
     clientName: 'Selina Chen',
     priorityOrder: 1,
@@ -373,9 +307,9 @@ const INITIAL_WAITLIST: WaitlistEntry[] = [
 const INITIAL_LEDGER: CreditLedgerEntry[] = [
   {
     id: 'led-01',
-    userId: 'user-alyssa',
+    userId: 'usr-maya-student',
     studioId: 'studio-sol-01',
-    passId: 'pass-user-991',
+    passId: 'pass-maya-01',
     type: 'PURCHASE',
     delta: 5,
     balanceAfter: 5,
@@ -385,9 +319,9 @@ const INITIAL_LEDGER: CreditLedgerEntry[] = [
   },
   {
     id: 'led-02',
-    userId: 'user-alyssa',
+    userId: 'usr-maya-student',
     studioId: 'studio-sol-01',
-    passId: 'pass-user-991',
+    passId: 'pass-maya-01',
     type: 'BOOKING_DEBIT',
     delta: -1,
     balanceAfter: 4,
@@ -397,9 +331,9 @@ const INITIAL_LEDGER: CreditLedgerEntry[] = [
   },
   {
     id: 'led-03',
-    userId: 'user-alyssa',
+    userId: 'usr-maya-student',
     studioId: 'studio-sol-01',
-    passId: 'pass-user-991',
+    passId: 'pass-maya-01',
     type: 'BOOKING_DEBIT',
     delta: -1,
     balanceAfter: 3,
@@ -409,9 +343,9 @@ const INITIAL_LEDGER: CreditLedgerEntry[] = [
   },
   {
     id: 'led-04',
-    userId: 'user-alyssa',
+    userId: 'usr-maya-student',
     studioId: 'studio-sol-01',
-    passId: 'pass-user-991',
+    passId: 'pass-maya-01',
     type: 'BOOKING_DEBIT',
     delta: -1,
     balanceAfter: 2,
@@ -423,7 +357,7 @@ const INITIAL_LEDGER: CreditLedgerEntry[] = [
 
 const INITIAL_STRIPE: StripeConnectOverview = {
   connectedAccountName: 'Sol Sanctuary Loon',
-  stripeAccountId: 'acct_sol_fit_9912',
+  stripeAccountId: 'acct_sol_sanctuary_8829',
   grossVolume: 3593.0,
   platformFeeDeduction: 0.0,
   stripeCardProcessingFee: 104.2,
@@ -437,8 +371,115 @@ const INITIAL_STRIPE: StripeConnectOverview = {
   ],
 };
 
+interface AuraState {
+  // Navigation & Route
+  currentRoute: AppRoute;
+  navigateTo: (route: AppRoute) => void;
+
+  // Sandbox Persona & Stripe Simulation
+  activePersona: PersonaType;
+  switchPersona: (persona: PersonaType) => void;
+  simulateStripePayment: boolean;
+  setSimulateStripePayment: (simulate: boolean) => void;
+  resetDatabaseToSeedState: () => void;
+
+  // Locale & Settings
+  locale: SupportedLocale;
+  currency: SupportedCurrency;
+  selectedDate: string;
+  activeCategory: string;
+  activeAdminTab: 'schedule' | 'packs' | 'rosters' | 'policies';
+  isMobileDrawerOpen: boolean;
+
+  // Active User & Studio Context
+  currentUser: DatabaseUser;
+  studios: Studio[];
+  activeStudioId: string;
+  studio: Studio;
+
+  // Entities
+  sessions: ClassSession[];
+  classPacks: ClassPack[];
+  userPass: ClientPass;
+  bookings: Booking[];
+  waitlist: WaitlistEntry[];
+  creditLedger: CreditLedgerEntry[];
+  stripeOverview: StripeConnectOverview;
+
+  // Modals
+  selectedSessionForBooking: ClassSession | null;
+  isBookingDrawerOpen: boolean;
+  selectedWaitlistSession: ClassSession | null;
+  isWaitlistModalOpen: boolean;
+
+  // Waterfall Timer
+  activeWaterfallSessionId: string | null;
+  activeWaterfallSecondsRemaining: number;
+
+  // Actions
+  setLocale: (locale: SupportedLocale) => void;
+  setCurrency: (currency: SupportedCurrency) => void;
+  setSelectedDate: (date: string) => void;
+  setActiveCategory: (cat: string) => void;
+  setActiveAdminTab: (tab: 'schedule' | 'packs' | 'rosters' | 'policies') => void;
+  setMobileDrawerOpen: (open: boolean) => void;
+
+  openBookingDrawer: (session: ClassSession) => void;
+  closeBookingDrawer: () => void;
+  openWaitlistModal: (session: ClassSession) => void;
+  closeWaitlistModal: () => void;
+
+  confirmBooking: (
+    sessionId: string,
+    method: PaymentMethodType,
+    clientName: string,
+    clientEmail: string
+  ) => { success: boolean; message: string };
+
+  cancelBooking: (bookingId: string) => void;
+  checkInClient: (bookingId: string) => void;
+
+  joinWaitlist: (
+    sessionId: string,
+    clientName: string,
+    clientEmail: string,
+    clientPhone: string,
+    mode: WaitlistMode
+  ) => void;
+
+  claimWaitlistOffer: (entryId: string) => void;
+  declineWaitlistOffer: (entryId: string) => void;
+  triggerWaterfallCascade: (sessionId: string) => void;
+  tickWaterfallTimer: () => void;
+
+  updateStudioPolicies: (cancelWindowHrs: number, waitlistMins: number) => void;
+  addSession: (session: Omit<ClassSession, 'id' | 'studioId' | 'bookedCount'>) => void;
+  updateSessionCapacity: (sessionId: string, newCapacity: number) => void;
+  deleteSession: (sessionId: string) => void;
+  purchaseClassPack: (packId: string) => void;
+
+  createStudioWithOnboarding: (data: {
+    name: string;
+    slug: string;
+    currency: SupportedCurrency;
+    cancelWindowHrs: number;
+    waitlistMins: number;
+    firstClass: {
+      title: string;
+      category: any;
+      instructor: string;
+      capacity: number;
+      price: number;
+      roomName: string;
+    };
+  }) => void;
+}
+
 export const useAuraStore = create<AuraState>((set, get) => ({
   currentRoute: parseInitialRoute(),
+  activePersona: 'maya_student',
+  simulateStripePayment: true, // Default to auto-approving test transactions
+
   locale: (typeof window !== 'undefined' && (localStorage.getItem('aura_locale') as SupportedLocale)) || 'en',
   currency: (typeof window !== 'undefined' && (localStorage.getItem('aura_currency') as SupportedCurrency)) || 'USD',
   selectedDate: '2026-11-02',
@@ -446,14 +487,14 @@ export const useAuraStore = create<AuraState>((set, get) => ({
   activeAdminTab: 'schedule',
   isMobileDrawerOpen: false,
 
-  currentUser: INITIAL_USER,
+  currentUser: PERSONA_MAYA,
   studios: INITIAL_STUDIOS,
   activeStudioId: 'studio-sol-01',
   studio: INITIAL_STUDIOS[0],
 
   sessions: INITIAL_SESSIONS,
   classPacks: INITIAL_PACKS,
-  userPass: INITIAL_USER_PASS,
+  userPass: INITIAL_MAYA_PASS,
   bookings: INITIAL_BOOKINGS,
   waitlist: INITIAL_WAITLIST,
   creditLedger: INITIAL_LEDGER,
@@ -479,6 +520,66 @@ export const useAuraStore = create<AuraState>((set, get) => ({
     set({ currentRoute: route, isMobileDrawerOpen: false });
   },
 
+  switchPersona: (persona) => {
+    if (persona === 'elena_owner') {
+      set({
+        activePersona: 'elena_owner',
+        currentUser: PERSONA_ELENA,
+        studio: INITIAL_STUDIOS[0],
+      });
+      get().navigateTo({ path: 'admin' });
+    } else if (persona === 'maya_student') {
+      set({
+        activePersona: 'maya_student',
+        currentUser: PERSONA_MAYA,
+        userPass: {
+          ...INITIAL_MAYA_PASS,
+          creditsLeft: 2, // 2 Credits remaining
+        },
+      });
+      get().navigateTo({ path: 'public_studio', slug: 'sol-sanctuary' });
+    } else if (persona === 'new_student') {
+      set({
+        activePersona: 'new_student',
+        currentUser: PERSONA_NEW_STUDENT,
+        userPass: {
+          ...INITIAL_MAYA_PASS,
+          id: 'pass-guest-0',
+          userId: PERSONA_NEW_STUDENT.id,
+          creditsLeft: 0, // 0 Credits to test Stripe/Apple Pay checkout!
+        },
+      });
+      get().navigateTo({ path: 'public_studio', slug: 'sol-sanctuary' });
+    } else if (persona === 'new_owner') {
+      set({
+        activePersona: 'new_owner',
+        currentUser: PERSONA_NEW_OWNER,
+      });
+      get().navigateTo({ path: 'onboarding' });
+    }
+  },
+
+  setSimulateStripePayment: (simulateStripePayment) => set({ simulateStripePayment }),
+
+  resetDatabaseToSeedState: () => {
+    set({
+      studios: INITIAL_STUDIOS,
+      studio: INITIAL_STUDIOS[0],
+      activeStudioId: 'studio-sol-01',
+      sessions: INITIAL_SESSIONS,
+      classPacks: INITIAL_PACKS,
+      userPass: INITIAL_MAYA_PASS,
+      bookings: INITIAL_BOOKINGS,
+      waitlist: INITIAL_WAITLIST,
+      creditLedger: INITIAL_LEDGER,
+      stripeOverview: INITIAL_STRIPE,
+      activeWaterfallSessionId: null,
+      activeWaterfallSecondsRemaining: 1800,
+      selectedSessionForBooking: null,
+      isBookingDrawerOpen: false,
+    });
+  },
+
   setLocale: (locale) => {
     if (typeof window !== 'undefined') localStorage.setItem('aura_locale', locale);
     set({ locale });
@@ -500,7 +601,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
   closeWaitlistModal: () => set({ isWaitlistModalOpen: false, selectedWaitlistSession: null }),
 
   confirmBooking: (sessionId, method, clientName, clientEmail) => {
-    const { sessions, userPass, creditLedger, bookings, stripeOverview, studio } = get();
+    const { sessions, userPass, creditLedger, bookings, stripeOverview, studio, currentUser } = get();
     const session = sessions.find((s) => s.id === sessionId);
 
     if (!session) return { success: false, message: 'Class session not found.' };
@@ -516,7 +617,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       const updatedCredits = userPass.creditsLeft - 1;
       const newLedgerEntry: CreditLedgerEntry = {
         id: `led-${Date.now()}`,
-        userId: userPass.userId,
+        userId: currentUser.id,
         studioId: studio.id,
         passId: userPass.id,
         type: 'BOOKING_DEBIT',
@@ -533,8 +634,8 @@ export const useAuraStore = create<AuraState>((set, get) => ({
         sessionId,
         sessionTitle: session.title,
         sessionTime: `${session.startTime.substring(11, 16)} - ${session.endTime.substring(11, 16)}`,
-        clientEmail: clientEmail || 'alyssa.ramsey@example.com',
-        clientName: clientName || 'Alyssa Ramsey',
+        clientEmail: clientEmail || currentUser.email,
+        clientName: clientName || currentUser.name,
         paymentMethod: 'PASS_CREDIT',
         amountPaid: 0.0,
         creditsDeducted: 1,
@@ -559,10 +660,10 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       sessionId,
       sessionTitle: session.title,
       sessionTime: `${session.startTime.substring(11, 16)} - ${session.endTime.substring(11, 16)}`,
-      clientEmail: clientEmail || 'alyssa.ramsey@example.com',
-      clientName: clientName || 'Alyssa Ramsey',
+      clientEmail: clientEmail || currentUser.email,
+      clientName: clientName || currentUser.name,
       paymentMethod: method,
-      stripePaymentId: `ch_${Date.now()}_direct`,
+      stripePaymentId: `ch_${Date.now()}_simulated`,
       amountPaid: session.price,
       creditsDeducted: 0,
       status: 'CONFIRMED',
@@ -892,6 +993,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       currency: data.currency,
       sessions: [firstClassSession, ...state.sessions],
       currentRoute: { path: 'admin' },
+      activePersona: 'elena_owner',
     }));
 
     if (typeof window !== 'undefined') {

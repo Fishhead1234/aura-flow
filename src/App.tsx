@@ -6,6 +6,7 @@ import { BookingDrawer } from './components/BookingDrawer';
 import { WaitlistModal } from './components/WaitlistModal';
 import { AdminPortal } from './components/AdminPortal';
 import { OnboardingWizard } from './components/OnboardingWizard';
+import { DevSandboxToolbar } from './components/DevSandboxToolbar';
 import { AppRoute } from './types/aura';
 
 export const App: React.FC = () => {
@@ -48,6 +49,9 @@ export const App: React.FC = () => {
 
       {/* Waitlist Modal (Standard Queue vs VIP Pre-Authorization) */}
       <WaitlistModal />
+
+      {/* Developer Sandbox Toolbar (Floating at Bottom) */}
+      <DevSandboxToolbar />
     </div>
   );
 };

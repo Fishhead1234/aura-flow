@@ -20,14 +20,20 @@ export const CURRENCY_CONFIGS: Record<SupportedCurrency, CurrencyConfig> = {
   GBP: { code: 'GBP', symbol: '£', rateToUSD: 0.79, localeDefault: 'en-GB', flag: '🇬🇧' },
 };
 
+export type PersonaType =
+  | 'elena_owner'
+  | 'maya_student'
+  | 'new_student'
+  | 'new_owner';
+
 // Supabase / Database User Model
 export interface DatabaseUser {
   id: string;
   email: string;
-  role: 'instructor' | 'student';
-  fullName: string;
+  role: 'OWNER' | 'STUDENT';
+  name: string;
   avatarUrl?: string;
-  studioId?: string; // Set if user owns or teaches at a studio
+  studioId?: string;
   createdAt: string;
 }
 

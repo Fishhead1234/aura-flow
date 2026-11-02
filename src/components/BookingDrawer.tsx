@@ -15,15 +15,24 @@ export const BookingDrawer: React.FC = () => {
     selectedSessionForBooking,
     userPass,
     confirmBooking,
+    currentUser,
+    simulateStripePayment,
   } = useAuraStore();
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>(
     userPass.creditsLeft > 0 ? 'PASS_CREDIT' : 'APPLE_PAY'
   );
-  const [clientName, setClientName] = useState('Alyssa Ramsey');
-  const [clientEmail, setClientEmail] = useState('alyssa.ramsey@example.com');
+  const [clientName, setClientName] = useState(currentUser.name || 'Maya Lin');
+  const [clientEmail, setClientEmail] = useState(currentUser.email || 'maya@example.com');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  // Sync state when active persona changes
+  useEffect(() => {
+    setSelectedMethod(userPass.creditsLeft > 0 ? 'PASS_CREDIT' : 'APPLE_PAY');
+    setClientName(currentUser.name);
+    setClientEmail(currentUser.email);
+  }, [userPass.creditsLeft, currentUser]);
 
   const tCommon = (key: string, params?: Record<string, string | number>) =>
     getTranslation(locale, 'common', key, params);
@@ -236,6 +245,13 @@ export const BookingDrawer: React.FC = () => {
                     : formatCurrency(selectedSessionForBooking.price, currency, locale)}
                 </span>
               </div>
+
+              {selectedMethod !== 'PASS_CREDIT' && simulateStripePayment && (
+                <div className="mt-2 text-[11px] text-amber-800 bg-amber-50 p-2 rounded-xl flex items-center space-x-1.5 border border-amber-200">
+                  <span className="font-semibold">⚡ Dev Sandbox:</span>
+                  <span>Stripe test charge will auto-approve ($0 real cost).</span>
+                </div>
+              )}
             </div>
 
             {/* Bottom Action Button matching Screenshot 2 */}
