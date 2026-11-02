@@ -1,0 +1,211 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum SupportedLocale {
+  en
+  zh_TW
+  zh_CN
+  ja
+}
+
+enum SupportedCurrency {
+  USD
+  TWD
+  HKD
+  JPY
+  SGD
+  EUR
+  GBP
+}
+
+enum ClassCategory {
+  Reformer
+  Flow
+  Sound_Bath
+  Yin_Yoga
+  Mat_Pilates
+  Barre
+  Workshop
+}
+
+enum PaymentMethodType {
+  PASS_CREDIT
+  STRIPE_CARD
+  APPLE_PAY
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  CHECKED_IN
+}
+
+enum WaitlistMode {
+  STANDARD
+  VIP_PREAUTH
+}
+
+enum WaitlistStatus {
+  WAITING
+  OFFERED
+  CLAIMED
+  EXPIRED
+  DECLINED
+}
+
+enum LedgerEntryType {
+  PURCHASE
+  BOOKING_DEBIT
+  CANCELLATION_REFUND
+  EXPIRED
+  ADMIN_ADJUSTMENT
+}
+
+model Studio {
+  id                       String            @id @default(uuid())
+  slug                     String            @unique
+  name                     String
+  tagline                  String?
+  currency                 SupportedCurrency @default(USD)
+  stripeAccountId          String            @unique
+  stripeAccountName        String
+  cancelWindowHrs          Int               @default(12) // Cutoff window in hours
+  waitlistMins             Int               @default(30) // Waterfall claim window
+  roomsCount               Int               @default(1)
+  monthlySubscriptionPrice Decimal           @default(29.00) @db.Decimal(10, 2)
+  platformTakeRate         Decimal           @default(0.00) @db.Decimal(5, 4) // 0%
+  logoMark                 String?
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+
+  sessions   ClassSession[]
+  classPacks ClassPack[]
+  passes     ClientPass[]
+
+  @@index([slug])
+}
+
+model ClassSession {
+  id               String        @id @default(uuid())
+  studioId         String
+  studio           Studio        @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  title            String
+  category         ClassCategory @default(Reformer)
+  instructor       String
+  instructorAvatar String?
+  instructorBio    String?
+  startTime        DateTime
+  endTime          DateTime
+  durationMins     Int
+  capacity         Int           // Hard cap (e.g. 8 reformers)
+  bookedCount      Int           @default(0)
+  price            Decimal       @db.Decimal(10, 2)
+  roomName         String        @default("Studio Room 1")
+  level            String        @default("All Levels")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  bookings        Booking[]
+  waitlistEntries WaitlistEntry[]
+
+  @@index([studioId, startTime])
+}
+
+model ClassPack {
+  id            String   @id @default(uuid())
+  studioId      String
+  studio        Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  name          String
+  credits       Int      // e.g. 5 or 10 passes
+  price         Decimal  @db.Decimal(10, 2)
+  originalPrice Decimal? @db.Decimal(10, 2)
+  expiryDays    Int      @default(90)
+  popularBadge  Boolean  @default(false)
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  passes ClientPass[]
+
+  @@index([studioId])
+}
+
+model ClientPass {
+  id           String    @id @default(uuid())
+  userId       String
+  studioId     String
+  studio       Studio    @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  packId       String
+  pack         ClassPack @relation(fields: [packId], references: [id])
+  packName     String
+  creditsTotal Int
+  creditsLeft  Int
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  ledgerEntries CreditLedgerEntry[]
+
+  @@index([userId, studioId])
+}
+
+model Booking {
+  id              String            @id @default(uuid())
+  sessionId       String
+  session         ClassSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  clientEmail     String
+  clientName      String
+  clientPhone     String?
+  paymentMethod   PaymentMethodType
+  stripePaymentId String?
+  amountPaid      Decimal           @default(0.00) @db.Decimal(10, 2)
+  creditsDeducted Int               @default(0)
+  status          BookingStatus     @default(CONFIRMED)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([sessionId, status])
+  @@index([clientEmail])
+}
+
+model WaitlistEntry {
+  id             String         @id @default(uuid())
+  sessionId      String
+  session        ClassSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  clientEmail    String
+  clientPhone    String
+  clientName     String
+  priorityOrder  Int
+  mode           WaitlistMode   @default(STANDARD) // Standard vs VIP Pre-Auth ($0 hold)
+  status         WaitlistStatus @default(WAITING)
+  offerExpiresAt DateTime?      // 30-minute waterfall expiry
+  claimToken     String?        @unique
+  preAuthCardId  String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([sessionId, priorityOrder])
+  @@index([sessionId, status])
+}
+
+model CreditLedgerEntry {
+  id           String          @id @default(uuid())
+  userId       String
+  passId       String
+  pass         ClientPass      @relation(fields: [passId], references: [id], onDelete: Cascade)
+  type         LedgerEntryType
+  delta        Int             // e.g. -1 for debit, +5 for purchase
+  balanceAfter Int
+  referenceId  String          // sessionId or packId
+  note         String?
+  createdAt    DateTime        @default(now())
+
+  @@index([userId, passId])
+}
+

@@ -1,0 +1,24 @@
+{
+  "brandName": "Aura Flow",
+  "tagline": "精品健身与工作坊预约系统",
+  "switchView": "切换学员预约 / 馆长后台",
+  "clientView": "学员预约界面",
+  "adminView": "馆长管理后台",
+  "currency": "币种",
+  "language": "语言",
+  "cancel": "取消",
+  "confirm": "确认",
+  "save": "保存",
+  "close": "关闭",
+  "loading": "加载中...",
+  "statusActive": "开放预约",
+  "spotsLeft": "剩余 {count} 个名额",
+  "classFull": "名额已满 • 开放候补",
+  "edit": "编辑",
+  "book": "立即预约",
+  "joinWaitlist": "加入候补",
+  "allCategories": "全部分类",
+  "freeFeeNotice": "平台 0% 抽成 • 每月 US$29.00 零负担订阅",
+  "devPreviewNotice": "实时模拟环境"
+}
+
