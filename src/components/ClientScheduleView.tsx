@@ -193,13 +193,6 @@ export const ClientScheduleView: React.FC = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => openBookingDrawer(session)}
-                      className="px-3.5 py-1.5 rounded-full text-xs font-medium text-stone-600 border border-stone-300 hover:bg-stone-50 transition-colors"
-                    >
-                      {tCommon('edit')}
-                    </button>
-
                     {isFull ? (
                       <button
                         onClick={() => openWaitlistModal(session)}

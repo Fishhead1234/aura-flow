@@ -20,9 +20,21 @@ export const CURRENCY_CONFIGS: Record<SupportedCurrency, CurrencyConfig> = {
   GBP: { code: 'GBP', symbol: '£', rateToUSD: 0.79, localeDefault: 'en-GB', flag: '🇬🇧' },
 };
 
+// Supabase / Database User Model
+export interface DatabaseUser {
+  id: string;
+  email: string;
+  role: 'instructor' | 'student';
+  fullName: string;
+  avatarUrl?: string;
+  studioId?: string; // Set if user owns or teaches at a studio
+  createdAt: string;
+}
+
 export interface Studio {
   id: string;
-  slug: string;
+  ownerId: string;
+  slug: string; // e.g. "sol-sanctuary" or "aura-flow"
   name: string;
   tagline: string;
   currency: SupportedCurrency;
@@ -34,6 +46,7 @@ export interface Studio {
   monthlySubscriptionPrice: number; // $29.00
   platformTakeRate: number; // 0%
   logoMark: string;
+  createdAt: string;
 }
 
 export type ClassCategory = 
@@ -47,7 +60,7 @@ export type ClassCategory =
 
 export interface ClassSession {
   id: string;
-  studioId: string;
+  studioId: string; // Decoupled by studio_id
   title: string;
   category: ClassCategory;
   instructor: string;
@@ -58,14 +71,14 @@ export interface ClassSession {
   durationMins: number;
   capacity: number; // Hard cap, e.g. 8 reformers
   bookedCount: number;
-  price: number; // Drop-in pricing in USD baseline
+  price: number; // Drop-in pricing in baseline currency
   roomName: string;
   level: 'All Levels' | 'Beginner' | 'Intermediate' | 'Advanced';
 }
 
 export interface ClassPack {
   id: string;
-  studioId: string;
+  studioId: string; // Decoupled by studio_id
   name: string;
   credits: number;
   price: number;
@@ -78,6 +91,7 @@ export interface ClassPack {
 export interface ClientPass {
   id: string;
   userId: string;
+  studioId: string; // Decoupled by studio_id
   packId: string;
   packName: string;
   creditsTotal: number;
@@ -90,6 +104,7 @@ export type PaymentMethodType = 'PASS_CREDIT' | 'STRIPE_CARD' | 'APPLE_PAY';
 
 export interface Booking {
   id: string;
+  studioId: string; // Decoupled by studio_id
   sessionId: string;
   sessionTitle: string;
   sessionTime: string;
@@ -109,6 +124,7 @@ export type WaitlistStatus = 'WAITING' | 'OFFERED' | 'CLAIMED' | 'EXPIRED' | 'DE
 
 export interface WaitlistEntry {
   id: string;
+  studioId: string; // Decoupled by studio_id
   sessionId: string;
   sessionTitle?: string;
   clientEmail: string;
@@ -126,6 +142,7 @@ export interface WaitlistEntry {
 export interface CreditLedgerEntry {
   id: string;
   userId: string;
+  studioId: string;
   passId: string;
   type: 'PURCHASE' | 'BOOKING_DEBIT' | 'CANCELLATION_REFUND' | 'EXPIRED' | 'ADMIN_ADJUSTMENT';
   delta: number;
@@ -156,3 +173,8 @@ export interface StripeConnectOverview {
   payoutHistory: StripePayoutHistoryItem[];
 }
 
+// App Routing Types
+export type AppRoute =
+  | { path: 'public_studio'; slug: string }
+  | { path: 'admin' }
+  | { path: 'onboarding' };

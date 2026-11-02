@@ -43,6 +43,7 @@ export const AdminPortal: React.FC = () => {
     updateStudioPolicies,
     addSession,
     deleteSession,
+    navigateTo,
   } = useAuraStore();
 
   const [cancelCutoff, setCancelCutoff] = useState(studio.cancelWindowHrs);
@@ -160,9 +161,13 @@ export const AdminPortal: React.FC = () => {
 
           {/* Right Status */}
           <div className="flex items-center space-x-3 text-xs text-[#A89F91]">
-            <span className="hidden sm:inline-block px-2.5 py-1 rounded-full bg-[#2A2520] border border-[#3D352E] text-[11px] text-[#C5A059]">
-              Development ▾
-            </span>
+            <button
+              onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
+              className="hidden sm:inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-[#2A2520] border border-[#3D352E] text-[11px] text-[#C5A059] hover:bg-[#383028] transition-colors"
+            >
+              <span>Public Page</span>
+              <ExternalLink className="w-3 h-3" />
+            </button>
             <div className="w-7 h-7 rounded-full bg-[#2A2520] border border-[#3D352E] flex items-center justify-center text-[#C5A059]">
               <Settings className="w-3.5 h-3.5" />
             </div>

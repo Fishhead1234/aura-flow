@@ -12,19 +12,46 @@ import {
   SupportedCurrency,
   PaymentMethodType,
   WaitlistMode,
+  AppRoute,
+  DatabaseUser,
 } from '../types/aura';
 
+function parseInitialRoute(): AppRoute {
+  if (typeof window === 'undefined') return { path: 'public_studio', slug: 'sol-sanctuary' };
+  const pathname = window.location.pathname;
+  if (pathname === '/admin' || pathname.startsWith('/admin')) {
+    return { path: 'admin' };
+  }
+  if (pathname === '/onboarding' || pathname.startsWith('/onboarding')) {
+    return { path: 'onboarding' };
+  }
+  if (pathname.startsWith('/s/')) {
+    const slug = pathname.replace('/s/', '').split('/')[0] || 'sol-sanctuary';
+    return { path: 'public_studio', slug };
+  }
+  return { path: 'public_studio', slug: 'sol-sanctuary' };
+}
+
 interface AuraState {
+  // Navigation & Route
+  currentRoute: AppRoute;
+  navigateTo: (route: AppRoute) => void;
+
   // Locale & Settings
   locale: SupportedLocale;
   currency: SupportedCurrency;
-  viewMode: 'client' | 'admin';
   selectedDate: string; // ISO date string YYYY-MM-DD
   activeCategory: string; // 'All' or specific category
   activeAdminTab: 'schedule' | 'packs' | 'rosters' | 'policies';
+  isMobileDrawerOpen: boolean;
 
-  // Core Data
+  // Active Current User & Studio Context (Decoupled by studio_id)
+  currentUser: DatabaseUser;
+  studios: Studio[];
+  activeStudioId: string;
   studio: Studio;
+
+  // Decoupled Studio Entities
   sessions: ClassSession[];
   classPacks: ClassPack[];
   userPass: ClientPass;
@@ -38,7 +65,7 @@ interface AuraState {
   isBookingDrawerOpen: boolean;
   selectedWaitlistSession: ClassSession | null;
   isWaitlistModalOpen: boolean;
-  
+
   // Waterfall Demo Timer State
   activeWaterfallSessionId: string | null;
   activeWaterfallSecondsRemaining: number;
@@ -46,11 +73,11 @@ interface AuraState {
   // Actions
   setLocale: (locale: SupportedLocale) => void;
   setCurrency: (currency: SupportedCurrency) => void;
-  setViewMode: (mode: 'client' | 'admin') => void;
   setSelectedDate: (date: string) => void;
   setActiveCategory: (cat: string) => void;
   setActiveAdminTab: (tab: 'schedule' | 'packs' | 'rosters' | 'policies') => void;
-  
+  setMobileDrawerOpen: (open: boolean) => void;
+
   openBookingDrawer: (session: ClassSession) => void;
   closeBookingDrawer: () => void;
   openWaitlistModal: (session: ClassSession) => void;
@@ -87,28 +114,59 @@ interface AuraState {
   updateSessionCapacity: (sessionId: string, newCapacity: number) => void;
   deleteSession: (sessionId: string) => void;
   purchaseClassPack: (packId: string) => void;
+
+  // Onboarding Wizard Action
+  createStudioWithOnboarding: (data: {
+    name: string;
+    slug: string;
+    currency: SupportedCurrency;
+    cancelWindowHrs: number;
+    waitlistMins: number;
+    firstClass: {
+      title: string;
+      category: any;
+      instructor: string;
+      capacity: number;
+      price: number;
+      roomName: string;
+    };
+  }) => void;
 }
 
-const INITIAL_STUDIO: Studio = {
-  id: 'studio-aura-01',
-  slug: 'aura-flow',
-  name: 'Aura Flow',
-  tagline: 'Mindful Reformer & Dynamic Movement Sanctuary',
-  currency: 'USD',
-  stripeAccountId: 'acct_aura_fit_8892',
-  stripeAccountName: 'Aura Fitaform Loon',
-  cancelWindowHrs: 12,
-  waitlistMins: 30,
-  roomsCount: 2,
-  monthlySubscriptionPrice: 29.0,
-  platformTakeRate: 0.0,
-  logoMark: '🌿',
+const INITIAL_USER: DatabaseUser = {
+  id: 'usr-abner-01',
+  email: 'abnerchiu@hotmail.com',
+  role: 'instructor',
+  fullName: 'Abner Chiu',
+  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+  studioId: 'studio-sol-01',
+  createdAt: '2026-11-01T00:00:00.000Z',
 };
+
+const INITIAL_STUDIOS: Studio[] = [
+  {
+    id: 'studio-sol-01',
+    ownerId: 'usr-abner-01',
+    slug: 'sol-sanctuary',
+    name: 'Sol Sanctuary',
+    tagline: 'Mindful Reformer & Dynamic Movement Sanctuary',
+    currency: 'USD',
+    stripeAccountId: 'acct_sol_fit_9912',
+    stripeAccountName: 'Sol Sanctuary Loon',
+    cancelWindowHrs: 12,
+    waitlistMins: 30,
+    roomsCount: 2,
+    monthlySubscriptionPrice: 29.0,
+    platformTakeRate: 0.0,
+    logoMark: '🌿',
+    createdAt: '2026-11-01T00:00:00.000Z',
+  },
+];
 
 const INITIAL_SESSIONS: ClassSession[] = [
   {
     id: 'sess-01',
-    studioId: 'studio-aura-01',
+    studioId: 'studio-sol-01',
     title: 'Dynamic Pilates',
     category: 'Reformer',
     instructor: 'Lena S.',
@@ -124,7 +182,7 @@ const INITIAL_SESSIONS: ClassSession[] = [
   },
   {
     id: 'sess-02',
-    studioId: 'studio-aura-01',
+    studioId: 'studio-sol-01',
     title: 'Vinyasa Flow',
     category: 'Flow',
     instructor: 'Marcus K.',
@@ -140,7 +198,7 @@ const INITIAL_SESSIONS: ClassSession[] = [
   },
   {
     id: 'sess-03',
-    studioId: 'studio-aura-01',
+    studioId: 'studio-sol-01',
     title: 'Gentle Yin Yoga',
     category: 'Yin Yoga',
     instructor: 'Chloe M.',
@@ -156,7 +214,7 @@ const INITIAL_SESSIONS: ClassSession[] = [
   },
   {
     id: 'sess-04',
-    studioId: 'studio-aura-01',
+    studioId: 'studio-sol-01',
     title: 'Morning Reformer Sculpt',
     category: 'Reformer',
     instructor: 'Lena S.',
@@ -172,7 +230,7 @@ const INITIAL_SESSIONS: ClassSession[] = [
   },
   {
     id: 'sess-05',
-    studioId: 'studio-aura-01',
+    studioId: 'studio-sol-01',
     title: 'Restorative Sound Bath',
     category: 'Sound Bath',
     instructor: 'Maya Lin',
@@ -191,7 +249,7 @@ const INITIAL_SESSIONS: ClassSession[] = [
 const INITIAL_PACKS: ClassPack[] = [
   {
     id: 'pack-5',
-    studioId: 'studio-aura-01',
+    studioId: 'studio-sol-01',
     name: '5-Class Pack',
     credits: 5,
     price: 115.0,
@@ -202,7 +260,7 @@ const INITIAL_PACKS: ClassPack[] = [
   },
   {
     id: 'pack-10',
-    studioId: 'studio-aura-01',
+    studioId: 'studio-sol-01',
     name: '10-Class Committed Pack',
     credits: 10,
     price: 210.0,
@@ -213,7 +271,7 @@ const INITIAL_PACKS: ClassPack[] = [
   },
   {
     id: 'pack-dropin',
-    studioId: 'studio-aura-01',
+    studioId: 'studio-sol-01',
     name: 'Single Drop-In Pass',
     credits: 1,
     price: 28.0,
@@ -226,10 +284,11 @@ const INITIAL_PACKS: ClassPack[] = [
 const INITIAL_USER_PASS: ClientPass = {
   id: 'pass-user-991',
   userId: 'user-alyssa',
+  studioId: 'studio-sol-01',
   packId: 'pack-5',
   packName: '5-Class Pack',
   creditsTotal: 5,
-  creditsLeft: 2, // 2 Credits left as displayed in Screenshot 2!
+  creditsLeft: 2,
   expiresAt: '2026-12-31T23:59:59.000Z',
   createdAt: '2026-10-15T10:00:00.000Z',
 };
@@ -237,6 +296,7 @@ const INITIAL_USER_PASS: ClientPass = {
 const INITIAL_BOOKINGS: Booking[] = [
   {
     id: 'b-01',
+    studioId: 'studio-sol-01',
     sessionId: 'sess-03',
     sessionTitle: 'Gentle Yin Yoga',
     sessionTime: '10:30 - 11:30 AM',
@@ -251,6 +311,7 @@ const INITIAL_BOOKINGS: Booking[] = [
   },
   {
     id: 'b-02',
+    studioId: 'studio-sol-01',
     sessionId: 'sess-03',
     sessionTitle: 'Gentle Yin Yoga',
     sessionTime: '10:30 - 11:30 AM',
@@ -265,6 +326,7 @@ const INITIAL_BOOKINGS: Booking[] = [
   },
   {
     id: 'b-03',
+    studioId: 'studio-sol-01',
     sessionId: 'sess-01',
     sessionTitle: 'Dynamic Pilates',
     sessionTime: '08:00 - 08:50 AM',
@@ -282,25 +344,27 @@ const INITIAL_BOOKINGS: Booking[] = [
 const INITIAL_WAITLIST: WaitlistEntry[] = [
   {
     id: 'wl-01',
+    studioId: 'studio-sol-01',
     sessionId: 'sess-03',
     sessionTitle: 'Gentle Yin Yoga',
     clientEmail: 'selina.chen@example.com',
     clientPhone: '+1 (555) 443-8991',
     clientName: 'Selina Chen',
     priorityOrder: 1,
-    mode: 'VIP_PREAUTH', // VIP $0 Pre-auth hold
+    mode: 'VIP_PREAUTH',
     status: 'WAITING',
     createdAt: '2026-11-01T15:00:00.000Z',
   },
   {
     id: 'wl-02',
+    studioId: 'studio-sol-01',
     sessionId: 'sess-03',
     sessionTitle: 'Gentle Yin Yoga',
     clientEmail: 'david.lin@example.com',
     clientPhone: '+1 (555) 902-1144',
     clientName: 'David Lin',
     priorityOrder: 2,
-    mode: 'STANDARD', // Standard Free Queue
+    mode: 'STANDARD',
     status: 'WAITING',
     createdAt: '2026-11-01T16:30:00.000Z',
   },
@@ -310,6 +374,7 @@ const INITIAL_LEDGER: CreditLedgerEntry[] = [
   {
     id: 'led-01',
     userId: 'user-alyssa',
+    studioId: 'studio-sol-01',
     passId: 'pass-user-991',
     type: 'PURCHASE',
     delta: 5,
@@ -321,6 +386,7 @@ const INITIAL_LEDGER: CreditLedgerEntry[] = [
   {
     id: 'led-02',
     userId: 'user-alyssa',
+    studioId: 'studio-sol-01',
     passId: 'pass-user-991',
     type: 'BOOKING_DEBIT',
     delta: -1,
@@ -332,6 +398,7 @@ const INITIAL_LEDGER: CreditLedgerEntry[] = [
   {
     id: 'led-03',
     userId: 'user-alyssa',
+    studioId: 'studio-sol-01',
     passId: 'pass-user-991',
     type: 'BOOKING_DEBIT',
     delta: -1,
@@ -343,6 +410,7 @@ const INITIAL_LEDGER: CreditLedgerEntry[] = [
   {
     id: 'led-04',
     userId: 'user-alyssa',
+    studioId: 'studio-sol-01',
     passId: 'pass-user-991',
     type: 'BOOKING_DEBIT',
     delta: -1,
@@ -354,13 +422,13 @@ const INITIAL_LEDGER: CreditLedgerEntry[] = [
 ];
 
 const INITIAL_STRIPE: StripeConnectOverview = {
-  connectedAccountName: 'Aura Fitaform Loon',
-  stripeAccountId: 'acct_aura_fit_8892',
+  connectedAccountName: 'Sol Sanctuary Loon',
+  stripeAccountId: 'acct_sol_fit_9912',
   grossVolume: 3593.0,
-  platformFeeDeduction: 0.0, // $0.00 (0% take rate)
+  platformFeeDeduction: 0.0,
   stripeCardProcessingFee: 104.2,
   netBalance: 3488.8,
-  pendingPayouts: 3593.0, // Matches screenshot 3 ($3,593)
+  pendingPayouts: 3593.0,
   nextPayoutDate: '2026-12-29',
   currency: 'USD',
   payoutHistory: [
@@ -370,14 +438,19 @@ const INITIAL_STRIPE: StripeConnectOverview = {
 };
 
 export const useAuraStore = create<AuraState>((set, get) => ({
-  locale: (localStorage.getItem('aura_locale') as SupportedLocale) || 'en',
-  currency: (localStorage.getItem('aura_currency') as SupportedCurrency) || 'USD',
-  viewMode: 'client',
+  currentRoute: parseInitialRoute(),
+  locale: (typeof window !== 'undefined' && (localStorage.getItem('aura_locale') as SupportedLocale)) || 'en',
+  currency: (typeof window !== 'undefined' && (localStorage.getItem('aura_currency') as SupportedCurrency)) || 'USD',
   selectedDate: '2026-11-02',
   activeCategory: 'All',
   activeAdminTab: 'schedule',
+  isMobileDrawerOpen: false,
 
-  studio: INITIAL_STUDIO,
+  currentUser: INITIAL_USER,
+  studios: INITIAL_STUDIOS,
+  activeStudioId: 'studio-sol-01',
+  studio: INITIAL_STUDIOS[0],
+
   sessions: INITIAL_SESSIONS,
   classPacks: INITIAL_PACKS,
   userPass: INITIAL_USER_PASS,
@@ -392,31 +465,42 @@ export const useAuraStore = create<AuraState>((set, get) => ({
   isWaitlistModalOpen: false,
 
   activeWaterfallSessionId: null,
-  activeWaterfallSecondsRemaining: 1800, // 30 minutes in seconds
+  activeWaterfallSecondsRemaining: 1800,
+
+  navigateTo: (route) => {
+    let url = '/s/sol-sanctuary';
+    if (route.path === 'admin') url = '/admin';
+    else if (route.path === 'onboarding') url = '/onboarding';
+    else if (route.path === 'public_studio') url = `/s/${route.slug}`;
+
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', url);
+    }
+    set({ currentRoute: route, isMobileDrawerOpen: false });
+  },
 
   setLocale: (locale) => {
-    localStorage.setItem('aura_locale', locale);
+    if (typeof window !== 'undefined') localStorage.setItem('aura_locale', locale);
     set({ locale });
   },
 
   setCurrency: (currency) => {
-    localStorage.setItem('aura_currency', currency);
+    if (typeof window !== 'undefined') localStorage.setItem('aura_currency', currency);
     set({ currency });
   },
 
-  setViewMode: (viewMode) => set({ viewMode }),
   setSelectedDate: (selectedDate) => set({ selectedDate }),
   setActiveCategory: (activeCategory) => set({ activeCategory }),
   setActiveAdminTab: (activeAdminTab) => set({ activeAdminTab }),
+  setMobileDrawerOpen: (isMobileDrawerOpen) => set({ isMobileDrawerOpen }),
 
   openBookingDrawer: (session) => set({ selectedSessionForBooking: session, isBookingDrawerOpen: true }),
   closeBookingDrawer: () => set({ isBookingDrawerOpen: false, selectedSessionForBooking: null }),
   openWaitlistModal: (session) => set({ selectedWaitlistSession: session, isWaitlistModalOpen: true }),
   closeWaitlistModal: () => set({ isWaitlistModalOpen: false, selectedWaitlistSession: null }),
 
-  // Core Booking Engine
   confirmBooking: (sessionId, method, clientName, clientEmail) => {
-    const { sessions, userPass, creditLedger, bookings, stripeOverview } = get();
+    const { sessions, userPass, creditLedger, bookings, stripeOverview, studio } = get();
     const session = sessions.find((s) => s.id === sessionId);
 
     if (!session) return { success: false, message: 'Class session not found.' };
@@ -433,6 +517,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       const newLedgerEntry: CreditLedgerEntry = {
         id: `led-${Date.now()}`,
         userId: userPass.userId,
+        studioId: studio.id,
         passId: userPass.id,
         type: 'BOOKING_DEBIT',
         delta: -1,
@@ -444,6 +529,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
 
       const newBooking: Booking = {
         id: `bk-${Date.now()}`,
+        studioId: studio.id,
         sessionId,
         sessionTitle: session.title,
         sessionTime: `${session.startTime.substring(11, 16)} - ${session.endTime.substring(11, 16)}`,
@@ -467,9 +553,9 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       return { success: true, message: 'Pass credit redeemed successfully!' };
     }
 
-    // Direct Stripe / Apple Pay Card Flow (0% platform fee)
     const newBooking: Booking = {
       id: `bk-${Date.now()}`,
+      studioId: studio.id,
       sessionId,
       sessionTitle: session.title,
       sessionTime: `${session.startTime.substring(11, 16)} - ${session.endTime.substring(11, 16)}`,
@@ -497,13 +583,11 @@ export const useAuraStore = create<AuraState>((set, get) => ({
     return { success: true, message: 'Direct payment confirmed via Stripe Connect!' };
   },
 
-  // Cancel Booking & Trigger Automated Waitlist Cascade
   cancelBooking: (bookingId) => {
-    const { bookings, sessions, userPass, creditLedger, triggerWaterfallCascade } = get();
+    const { bookings, sessions, userPass, creditLedger, triggerWaterfallCascade, studio } = get();
     const booking = bookings.find((b) => b.id === bookingId);
     if (!booking) return;
 
-    // Refund credit if pass credit was used
     let updatedPass = userPass;
     let newLedger = creditLedger;
 
@@ -514,6 +598,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
         {
           id: `led-ref-${Date.now()}`,
           userId: userPass.userId,
+          studioId: studio.id,
           passId: userPass.id,
           type: 'CANCELLATION_REFUND',
           delta: booking.creditsDeducted,
@@ -537,7 +622,6 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       creditLedger: newLedger,
     });
 
-    // Trigger waitlist waterfall cascade for this opened spot!
     triggerWaterfallCascade(booking.sessionId);
   },
 
@@ -547,14 +631,14 @@ export const useAuraStore = create<AuraState>((set, get) => ({
     }));
   },
 
-  // Waitlist Cascade Engine
   joinWaitlist: (sessionId, clientName, clientEmail, clientPhone, mode) => {
-    const { waitlist, sessions } = get();
+    const { waitlist, sessions, studio } = get();
     const session = sessions.find((s) => s.id === sessionId);
     const existingCount = waitlist.filter((w) => w.sessionId === sessionId).length;
 
     const newEntry: WaitlistEntry = {
       id: `wl-${Date.now()}`,
+      studioId: studio.id,
       sessionId,
       sessionTitle: session?.title,
       clientName,
@@ -573,11 +657,10 @@ export const useAuraStore = create<AuraState>((set, get) => ({
   },
 
   triggerWaterfallCascade: (sessionId) => {
-    const { waitlist, sessions, bookings, stripeOverview } = get();
+    const { waitlist, sessions, bookings, stripeOverview, studio } = get();
     const session = sessions.find((s) => s.id === sessionId);
     if (!session) return;
 
-    // Find highest priority waiting person
     const candidates = waitlist
       .filter((w) => w.sessionId === sessionId && (w.status === 'WAITING' || w.status === 'OFFERED'))
       .sort((a, b) => a.priorityOrder - b.priorityOrder);
@@ -586,10 +669,10 @@ export const useAuraStore = create<AuraState>((set, get) => ({
 
     const topCandidate = candidates[0];
 
-    // IF VIP PRE-AUTH: Instantly capture payment and claim spot!
     if (topCandidate.mode === 'VIP_PREAUTH') {
       const newBooking: Booking = {
         id: `bk-vip-${Date.now()}`,
+        studioId: studio.id,
         sessionId,
         sessionTitle: session.title,
         sessionTime: `${session.startTime.substring(11, 16)} - ${session.endTime.substring(11, 16)}`,
@@ -618,8 +701,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       return;
     }
 
-    // IF STANDARD: Dispatch 30-minute offer token and start cascade timer
-    const offerExpiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const offerExpiresAt = new Date(Date.now() + studio.waitlistMins * 60 * 1000).toISOString();
     set({
       waitlist: waitlist.map((w) =>
         w.id === topCandidate.id
@@ -632,12 +714,12 @@ export const useAuraStore = create<AuraState>((set, get) => ({
           : w
       ),
       activeWaterfallSessionId: sessionId,
-      activeWaterfallSecondsRemaining: 1800, // 30 minutes
+      activeWaterfallSecondsRemaining: studio.waitlistMins * 60,
     });
   },
 
   claimWaitlistOffer: (entryId) => {
-    const { waitlist, sessions, bookings } = get();
+    const { waitlist, sessions, bookings, studio } = get();
     const entry = waitlist.find((w) => w.id === entryId);
     if (!entry) return;
 
@@ -646,6 +728,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
 
     const newBooking: Booking = {
       id: `bk-claimed-${Date.now()}`,
+      studioId: studio.id,
       sessionId: entry.sessionId,
       sessionTitle: session.title,
       sessionTime: `${session.startTime.substring(11, 16)} - ${session.endTime.substring(11, 16)}`,
@@ -677,21 +760,19 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       activeWaterfallSessionId: null,
     });
 
-    // Cascade to next candidate
     triggerWaterfallCascade(entry.sessionId);
   },
 
   tickWaterfallTimer: () => {
-    const { activeWaterfallSecondsRemaining, activeWaterfallSessionId, waitlist, triggerWaterfallCascade } = get();
+    const { activeWaterfallSecondsRemaining, activeWaterfallSessionId, waitlist, triggerWaterfallCascade, studio } = get();
     if (!activeWaterfallSessionId) return;
 
     if (activeWaterfallSecondsRemaining <= 1) {
-      // Expired! Mark currently offered as EXPIRED and cascade to #2
       const offeredEntry = waitlist.find((w) => w.sessionId === activeWaterfallSessionId && w.status === 'OFFERED');
       if (offeredEntry) {
         set({
           waitlist: waitlist.map((w) => (w.id === offeredEntry.id ? { ...w, status: 'EXPIRED' } : w)),
-          activeWaterfallSecondsRemaining: 1800,
+          activeWaterfallSecondsRemaining: studio.waitlistMins * 60,
         });
         triggerWaterfallCascade(activeWaterfallSessionId);
       }
@@ -733,7 +814,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
   },
 
   purchaseClassPack: (packId) => {
-    const { classPacks, userPass, creditLedger, stripeOverview } = get();
+    const { classPacks, userPass, creditLedger, stripeOverview, studio } = get();
     const pack = classPacks.find((p) => p.id === packId);
     if (!pack) return;
 
@@ -741,6 +822,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
     const newLedgerEntry: CreditLedgerEntry = {
       id: `led-buy-${Date.now()}`,
       userId: userPass.userId,
+      studioId: studio.id,
       passId: userPass.id,
       type: 'PURCHASE',
       delta: pack.credits,
@@ -765,5 +847,55 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       },
     });
   },
-}));
 
+  createStudioWithOnboarding: (data) => {
+    const newStudioId = `studio-${Date.now()}`;
+    const newStudio: Studio = {
+      id: newStudioId,
+      ownerId: get().currentUser.id,
+      slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+      name: data.name,
+      tagline: 'Boutique Movement & Reformer Studio',
+      currency: data.currency,
+      stripeAccountId: `acct_${Date.now()}`,
+      stripeAccountName: `${data.name} Payouts`,
+      cancelWindowHrs: data.cancelWindowHrs,
+      waitlistMins: data.waitlistMins,
+      roomsCount: 1,
+      monthlySubscriptionPrice: 29.0,
+      platformTakeRate: 0.0,
+      logoMark: '✨',
+      createdAt: new Date().toISOString(),
+    };
+
+    const firstClassSession: ClassSession = {
+      id: `sess-${Date.now()}`,
+      studioId: newStudioId,
+      title: data.firstClass.title,
+      category: data.firstClass.category,
+      instructor: data.firstClass.instructor,
+      instructorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+      startTime: '2026-11-03T09:00:00.000Z',
+      endTime: '2026-11-03T09:50:00.000Z',
+      durationMins: 50,
+      capacity: data.firstClass.capacity,
+      bookedCount: 0,
+      price: data.firstClass.price,
+      roomName: data.firstClass.roomName || 'Studio Room 1',
+      level: 'All Levels',
+    };
+
+    set((state) => ({
+      studios: [...state.studios, newStudio],
+      studio: newStudio,
+      activeStudioId: newStudioId,
+      currency: data.currency,
+      sessions: [firstClassSession, ...state.sessions],
+      currentRoute: { path: 'admin' },
+    }));
+
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/admin');
+    }
+  },
+}));

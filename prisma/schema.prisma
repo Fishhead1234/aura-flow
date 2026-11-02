@@ -7,6 +7,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum UserRole {
+  INSTRUCTOR
+  STUDENT
+}
+
 enum SupportedLocale {
   en
   zh_TW
@@ -67,8 +72,26 @@ enum LedgerEntryType {
   ADMIN_ADJUSTMENT
 }
 
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  role      UserRole @default(STUDENT)
+  fullName  String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownedStudios Studio[]
+  passes       ClientPass[]
+  ledger       CreditLedgerEntry[]
+
+  @@index([email])
+}
+
 model Studio {
   id                       String            @id @default(uuid())
+  ownerId                  String
+  owner                    User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   slug                     String            @unique
   name                     String
   tagline                  String?
@@ -84,11 +107,14 @@ model Studio {
   createdAt                DateTime          @default(now())
   updatedAt                DateTime          @updatedAt
 
-  sessions   ClassSession[]
-  classPacks ClassPack[]
-  passes     ClientPass[]
+  sessions        ClassSession[]
+  classPacks      ClassPack[]
+  passes          ClientPass[]
+  bookings        Booking[]
+  waitlistEntries WaitlistEntry[]
 
   @@index([slug])
+  @@index([ownerId])
 }
 
 model ClassSession {
@@ -139,6 +165,7 @@ model ClassPack {
 model ClientPass {
   id           String    @id @default(uuid())
   userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   studioId     String
   studio       Studio    @relation(fields: [studioId], references: [id], onDelete: Cascade)
   packId       String
@@ -153,10 +180,13 @@ model ClientPass {
   ledgerEntries CreditLedgerEntry[]
 
   @@index([userId, studioId])
+  @@index([studioId])
 }
 
 model Booking {
   id              String            @id @default(uuid())
+  studioId        String
+  studio          Studio            @relation(fields: [studioId], references: [id], onDelete: Cascade)
   sessionId       String
   session         ClassSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   clientEmail     String
@@ -170,12 +200,15 @@ model Booking {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
+  @@index([studioId, sessionId])
   @@index([sessionId, status])
   @@index([clientEmail])
 }
 
 model WaitlistEntry {
   id             String         @id @default(uuid())
+  studioId       String
+  studio         Studio         @relation(fields: [studioId], references: [id], onDelete: Cascade)
   sessionId      String
   session        ClassSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   clientEmail    String
@@ -191,12 +224,15 @@ model WaitlistEntry {
   updatedAt      DateTime       @updatedAt
 
   @@unique([sessionId, priorityOrder])
+  @@index([studioId, sessionId])
   @@index([sessionId, status])
 }
 
 model CreditLedgerEntry {
   id           String          @id @default(uuid())
   userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studioId     String
   passId       String
   pass         ClientPass      @relation(fields: [passId], references: [id], onDelete: Cascade)
   type         LedgerEntryType
@@ -207,5 +243,5 @@ model CreditLedgerEntry {
   createdAt    DateTime        @default(now())
 
   @@index([userId, passId])
+  @@index([studioId])
 }
-
