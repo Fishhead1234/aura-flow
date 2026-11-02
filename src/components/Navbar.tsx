@@ -12,7 +12,10 @@ import {
   Shield,
   Sparkles,
   Ticket,
+  Download,
+  Smartphone,
 } from 'lucide-react';
+import { usePwaInstall } from '../hooks/usePwaInstall';
 
 export const Navbar: React.FC = () => {
   const {
@@ -27,6 +30,8 @@ export const Navbar: React.FC = () => {
     isMobileDrawerOpen,
     setMobileDrawerOpen,
   } = useAuraStore();
+
+  const { canInstall, isPromptAvailable, isInstalled, triggerInstall } = usePwaInstall();
 
   const t = (key: string, params?: Record<string, string | number>) =>
     getTranslation(locale, 'common', key, params);
@@ -87,8 +92,20 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* DESKTOP BAR (>= 768px): Currency, Language, Instructor Link */}
+          {/* DESKTOP BAR (>= 768px): Currency, Language, Instructor Link & Optional PWA Install */}
           <div className="hidden md:flex items-center space-x-3">
+            {/* Optional PWA Install Button for Desktop */}
+            {canInstall && (
+              <button
+                onClick={triggerInstall}
+                aria-label="Install App"
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-900 text-amber-300 border border-stone-800 shadow-xs hover:bg-stone-800 active:scale-95 transition-all"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Install App</span>
+              </button>
+            )}
+
             {/* Currency Dropdown */}
             <div className="relative inline-flex items-center">
               <select
@@ -143,8 +160,18 @@ export const Navbar: React.FC = () => {
             )}
           </div>
 
-          {/* MOBILE BAR (< 768px): Hamburger Menu Button ONLY */}
-          <div className="flex md:hidden items-center">
+          {/* MOBILE BAR (< 768px): Subtle Install Button + Hamburger Menu */}
+          <div className="flex md:hidden items-center space-x-2">
+            {canInstall && (
+              <button
+                onClick={triggerInstall}
+                aria-label="Install App"
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-full bg-stone-900 text-amber-300 text-xs font-medium border border-stone-800 shadow-2xs hover:bg-stone-800 active:scale-95 transition-all"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Install App</span>
+              </button>
+            )}
             <button
               onClick={() => setMobileDrawerOpen(true)}
               aria-label="Open Navigation Menu"
@@ -178,18 +205,62 @@ export const Navbar: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setMobileDrawerOpen(false)}
-                  aria-label="Close Menu"
-                  className="w-9 h-9 rounded-full bg-stone-200 flex items-center justify-center text-stone-700 hover:bg-stone-300 transition-colors"
+                  aria-label="Close Navigation Menu"
+                  className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-stone-600 hover:bg-stone-300 transition-colors"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Student active pass banner (if user has active pass) */}
+              {userPass && userPass.creditsLeft > 0 && (
+                <div className="mt-4 p-3 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Ticket className="w-4 h-4 text-aura-clay" />
+                    <div>
+                      <div className="text-xs font-semibold text-stone-900">{userPass.packName}</div>
+                      <div className="text-[11px] text-stone-600">{userPass.creditsLeft} classes remaining</div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-200/70 text-amber-900 font-medium">
+                    Active
+                  </span>
+                </div>
+              )}
+
+              {/* PWA INSTALL CARD IN DRAWER (if not already installed) */}
+              {!isInstalled && (
+                <div className="mt-4 p-3.5 rounded-2xl bg-stone-100/90 border border-stone-300/80 shadow-2xs">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center space-x-2">
+                      <Smartphone className="w-4 h-4 text-aura-clay" />
+                      <span className="text-xs font-semibold text-stone-900">Install Mobile App</span>
+                    </div>
+                    <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">
+                      Android PWA
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-600 mb-2.5 leading-relaxed">
+                    Install Aura Flow on your Android device for 1-tap booking and full-screen experience.
+                  </p>
+                  <button
+                    onClick={() => {
+                      triggerInstall();
+                      setMobileDrawerOpen(false);
+                    }}
+                    className="w-full flex items-center justify-center space-x-2 py-2 px-3 rounded-xl bg-stone-900 text-amber-300 text-xs font-medium hover:bg-stone-800 transition-all shadow-xs"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{isPromptAvailable ? 'Install App' : 'Add to Android Home Screen'}</span>
+                  </button>
+                </div>
+              )}
 
               {/* 1. LANGUAGE SELECTOR */}
               <div className="mt-6">
                 <div className="flex items-center space-x-2 text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2.5">
                   <Globe className="w-3.5 h-3.5" />
-                  <span>Language / 語言 / 言語</span>
+                  <span>Language / 語言</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {languages.map((lang) => {

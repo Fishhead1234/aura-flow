@@ -1,14 +1,15 @@
 {
   "id": "/",
-  "name": "CareCircle — 家護帳本 (Family Care & Medical Fund)",
-  "short_name": "CareCircle",
-  "description": "Shared Family Care Fund & Medical Expense Coordinator",
+  "name": "Aura Flow",
+  "short_name": "Aura Flow",
+  "description": "Boutique Fitness & Workshop Booking Engine",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f172a",
-  "theme_color": "#0d9488",
+  "background_color": "#1c1917",
+  "theme_color": "#1c1917",
+  "categories": ["lifestyle", "fitness", "productivity"],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -36,4 +37,3 @@
     }
   ]
 }
-

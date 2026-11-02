@@ -1,5 +1,12 @@
-const CACHE_NAME = 'carecircle-pwa-v1';
-const ASSETS_TO_CACHE = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+const CACHE_NAME = 'aura-flow-pwa-v1';
+const ASSETS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/favicon.svg',
+  '/icon-192.png',
+  '/icon-512.png'
+];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -23,8 +30,8 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
-  // Never cache Supabase or Gemini API requests
-  if (req.url.includes('supabase.co') || req.url.includes('googleapis.com')) {
+  // Never cache external API requests or non-origin requests
+  if (!req.url.startsWith(self.location.origin) || req.url.includes('/api/')) {
     return;
   }
 
@@ -40,4 +47,3 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(req).then((cached) => cached || caches.match('/index.html')))
   );
 });
-
