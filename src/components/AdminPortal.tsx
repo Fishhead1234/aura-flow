@@ -115,10 +115,10 @@ export const AdminPortal: React.FC = () => {
           </div>
 
           {/* Center Tabs matching Screenshot 3 */}
-          <div className="flex items-center space-x-1 sm:space-x-2 bg-[#282420] p-1 rounded-full border border-[#3A342E]">
+          <div className="flex items-center space-x-1 sm:space-x-2 bg-[#282420] p-1 rounded-full border border-[#3A342E] overflow-x-auto no-scrollbar max-w-[65vw] sm:max-w-none">
             <button
               onClick={() => setActiveAdminTab('schedule')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 ${
                 activeAdminTab === 'schedule'
                   ? 'bg-[#3A332C] text-[#EAD8B1] border border-[#5A4F44] shadow-xs'
                   : 'text-[#A89F91] hover:text-[#EAD8B1]'
@@ -128,7 +128,7 @@ export const AdminPortal: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveAdminTab('packs')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 ${
                 activeAdminTab === 'packs'
                   ? 'bg-[#3A332C] text-[#EAD8B1] border border-[#5A4F44] shadow-xs'
                   : 'text-[#A89F91] hover:text-[#EAD8B1]'
@@ -138,7 +138,7 @@ export const AdminPortal: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveAdminTab('rosters')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 ${
                 activeAdminTab === 'rosters'
                   ? 'bg-[#3A332C] text-[#EAD8B1] border border-[#5A4F44] shadow-xs'
                   : 'text-[#A89F91] hover:text-[#EAD8B1]'
@@ -148,7 +148,7 @@ export const AdminPortal: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveAdminTab('policies')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 ${
                 activeAdminTab === 'policies'
                   ? 'bg-[#3A332C] text-[#EAD8B1] border border-[#5A4F44] shadow-xs'
                   : 'text-[#A89F91] hover:text-[#EAD8B1]'
