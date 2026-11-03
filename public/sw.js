@@ -1,9 +1,10 @@
-const CACHE_NAME = 'aura-flow-pwa-v1';
+const CACHE_NAME = 'aura-flow-pwa-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.svg',
+  '/favicon.png',
+  '/logo-mark.png',
   '/icon-192.png',
   '/icon-512.png'
 ];

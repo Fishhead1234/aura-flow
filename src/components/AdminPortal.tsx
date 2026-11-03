@@ -19,7 +19,7 @@ import {
   Ticket,
 } from 'lucide-react';
 import { ClassCategory } from '../types/aura';
-import { AuraLeafLogo } from './AuraLeafLogo';
+import { AuraLogoBadge } from './AuraLeafLogo';
 
 export const AdminPortal: React.FC = () => {
   const {
@@ -111,9 +111,7 @@ export const AdminPortal: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           {/* Brand Monogram */}
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#C5A059]/15 border border-[#C5A059]/30 flex items-center justify-center">
-              <AuraLeafLogo className="w-4 h-4 text-[#C5A059]" />
-            </div>
+            <AuraLogoBadge size="sm" className="w-8 h-8" />
             <span className="font-serif text-xl tracking-wider text-[#C5A059] font-medium">
               Aura Flow
             </span>
