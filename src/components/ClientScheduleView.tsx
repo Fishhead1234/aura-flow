@@ -38,7 +38,7 @@ export const ClientScheduleView: React.FC = () => {
     { dayName: 'Sun', dayNumber: 8, dateStr: '2026-11-08' },
   ];
 
-  const categories = ['All', 'Reformer', 'Flow', 'Yin Yoga', 'Sound Bath'];
+  const categories = ['All', ...Array.from(new Set(sessions.map((s) => s.category)))];
 
   // Filter sessions
   const filteredSessions = sessions.filter((s) => {
@@ -244,7 +244,9 @@ export const ClientScheduleView: React.FC = () => {
         <div className="mt-6 text-center text-xs text-stone-500">
           <p>{tBooking('policyNotice', { hours: studio.cancelWindowHrs })}</p>
           <p className="text-[11px] text-stone-400 mt-1">
-            0% Platform Fee Guarantee • Direct payouts via Stripe Connect
+            {locale === 'zh-TW'
+              ? '0% 平台抽成保證 • 款項直入 Stripe 直連帳戶'
+              : '0% Platform Fee Guarantee • Direct payouts via Stripe Connect'}
           </p>
         </div>
       </div>

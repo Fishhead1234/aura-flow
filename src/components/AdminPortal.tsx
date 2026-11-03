@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuraStore } from '../store/auraStore';
-import { getTranslation, formatCurrency } from '../i18n/auraI18n';
+import {
+  getTranslation,
+  formatCurrency,
+  formatDateLocalized,
+  getPackDisplayName,
+  getPackDisplayDescription,
+} from '../i18n/auraI18n';
 import {
   ExternalLink,
   Plus,
@@ -17,8 +23,9 @@ import {
   Settings,
   Sparkles,
   Ticket,
+  Pencil,
 } from 'lucide-react';
-import { ClassCategory } from '../types/aura';
+import { ClassCategory, CURRENCY_CONFIGS, ClassPack } from '../types/aura';
 import { AuraLogoBadge } from './AuraLeafLogo';
 
 export const AdminPortal: React.FC = () => {
@@ -44,6 +51,9 @@ export const AdminPortal: React.FC = () => {
     updateStudioPolicies,
     addSession,
     deleteSession,
+    addClassPack,
+    updateClassPack,
+    deleteClassPack,
     navigateTo,
   } = useAuraStore();
 
@@ -58,6 +68,16 @@ export const AdminPortal: React.FC = () => {
   const [newCapacity, setNewCapacity] = useState(8);
   const [newPrice, setNewPrice] = useState(28);
   const [newRoom, setNewRoom] = useState('Reformer Studio A');
+
+  // Class Pack Form State (Edit & Create)
+  const [showPackModal, setShowPackModal] = useState(false);
+  const [editingPackId, setEditingPackId] = useState<string | null>(null);
+  const [packNameInput, setPackNameInput] = useState('');
+  const [packPriceInput, setPackPriceInput] = useState(115);
+  const [packCreditsInput, setPackCreditsInput] = useState(5);
+  const [packExpiryInput, setPackExpiryInput] = useState(90);
+  const [packPopularInput, setPackPopularInput] = useState(false);
+  const [packDescInput, setPackDescInput] = useState('');
 
   const tAdmin = (key: string, params?: Record<string, string | number>) =>
     getTranslation(locale, 'admin', key, params);
@@ -82,13 +102,22 @@ export const AdminPortal: React.FC = () => {
   const handleSavePolicies = (e: React.FormEvent) => {
     e.preventDefault();
     updateStudioPolicies(cancelCutoff, waitlistMins);
-    alert('Studio policies updated successfully!');
+    alert(locale === 'zh-TW' ? '工作室規則已更新成功！' : 'Studio policies updated successfully!');
+  };
+
+  const handleOpenNewClassModal = () => {
+    const defaultPrice = currency === 'TWD' ? 900 : currency === 'JPY' ? 4000 : 28;
+    setNewPrice(defaultPrice);
+    setNewCategory(locale === 'zh-TW' ? '器械皮拉提' : 'Reformer');
+    setShowNewClassModal(true);
   };
 
   const handleCreateClass = (e: React.FormEvent) => {
     e.preventDefault();
+    const currConfig = CURRENCY_CONFIGS[currency] || CURRENCY_CONFIGS.USD;
+    const priceInBaseUSD = newPrice / (currConfig.rateToUSD || 1.0);
     addSession({
-      title: newTitle || 'Dynamic Pilates Flow',
+      title: newTitle || (locale === 'zh-TW' ? '晨間核心塑形皮拉提' : 'Dynamic Pilates Flow'),
       category: newCategory,
       instructor: newInstructor,
       instructorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
@@ -96,12 +125,64 @@ export const AdminPortal: React.FC = () => {
       endTime: '2026-11-04T08:50:00.000Z',
       durationMins: 50,
       capacity: Number(newCapacity),
-      price: Number(newPrice),
+      price: priceInBaseUSD,
       roomName: newRoom,
       level: 'All Levels',
     });
     setShowNewClassModal(false);
     setNewTitle('');
+  };
+
+  const handleOpenCreatePack = () => {
+    const defaultPrice = currency === 'TWD' ? 3680 : currency === 'JPY' ? 16000 : 115;
+    setEditingPackId(null);
+    setPackNameInput(locale === 'zh-TW' ? '5 堂精選課包' : '5-Class Pack');
+    setPackPriceInput(defaultPrice);
+    setPackCreditsInput(5);
+    setPackExpiryInput(90);
+    setPackPopularInput(false);
+    setPackDescInput('');
+    setShowPackModal(true);
+  };
+
+  const handleOpenEditPack = (pack: ClassPack) => {
+    const currConfig = CURRENCY_CONFIGS[currency] || CURRENCY_CONFIGS.USD;
+    const currentPriceInCurrency = Math.round(pack.price * (currConfig.rateToUSD || 1.0));
+    setEditingPackId(pack.id);
+    setPackNameInput(getPackDisplayName(pack.name, locale));
+    setPackPriceInput(currentPriceInCurrency);
+    setPackCreditsInput(pack.credits);
+    setPackExpiryInput(pack.expiryDays);
+    setPackPopularInput(Boolean(pack.popularBadge));
+    setPackDescInput(pack.description || '');
+    setShowPackModal(true);
+  };
+
+  const handleSavePack = (e: React.FormEvent) => {
+    e.preventDefault();
+    const currConfig = CURRENCY_CONFIGS[currency] || CURRENCY_CONFIGS.USD;
+    const priceInBaseUSD = packPriceInput / (currConfig.rateToUSD || 1.0);
+
+    if (editingPackId) {
+      updateClassPack(editingPackId, {
+        name: packNameInput,
+        price: priceInBaseUSD,
+        credits: Number(packCreditsInput),
+        expiryDays: Number(packExpiryInput),
+        popularBadge: packPopularInput,
+        description: packDescInput,
+      });
+    } else {
+      addClassPack({
+        name: packNameInput,
+        price: priceInBaseUSD,
+        credits: Number(packCreditsInput),
+        expiryDays: Number(packExpiryInput),
+        popularBadge: packPopularInput,
+        description: packDescInput,
+      });
+    }
+    setShowPackModal(false);
   };
 
   return (
@@ -167,7 +248,7 @@ export const AdminPortal: React.FC = () => {
               onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
               className="hidden sm:inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-[#2A2520] border border-[#3D352E] text-[11px] text-[#C5A059] hover:bg-[#383028] transition-colors"
             >
-              <span>Public Page</span>
+              <span>{tCommon('publicPage')}</span>
               <ExternalLink className="w-3 h-3" />
             </button>
             <div className="w-7 h-7 rounded-full bg-[#2A2520] border border-[#3D352E] flex items-center justify-center text-[#C5A059]">
@@ -207,7 +288,7 @@ export const AdminPortal: React.FC = () => {
                       {tAdmin('nextPayoutDate')}
                     </span>
                     <span className="text-sm font-medium text-[#F5F2EB]">
-                      Dec 29, 2026
+                      {formatDateLocalized('2026-12-29', locale)}
                     </span>
                   </div>
                   <div className="h-8 w-px bg-[#3E372F] hidden sm:block" />
@@ -242,12 +323,12 @@ export const AdminPortal: React.FC = () => {
                   {tAdmin('activeClassSchedule')}
                 </h3>
                 <p className="text-xs text-[#8C8274]">
-                  Hard capacity enforcement, realtime booking counts, and waitlist status.
+                  {tAdmin('activeClassScheduleSub')}
                 </p>
               </div>
 
               <button
-                onClick={() => setShowNewClassModal(true)}
+                onClick={handleOpenNewClassModal}
                 className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -295,7 +376,8 @@ export const AdminPortal: React.FC = () => {
                             isFull ? 'text-amber-400' : 'text-[#E0D8CE]'
                           }`}
                         >
-                          {session.bookedCount}/{session.capacity} booked
+                          {tAdmin('bookedCountStatus', { booked: session.bookedCount, capacity: session.capacity })}
+                          {isFull && ` • ${tAdmin('waitlistActive')}`}
                         </span>
                       </div>
 
@@ -321,18 +403,27 @@ export const AdminPortal: React.FC = () => {
         {/* SUB-TAB 2: PACKS & PRICING */}
         {activeAdminTab === 'packs' && (
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h3 className="text-lg font-medium text-[#F5F2EB] tracking-wide">
                   {tAdmin('classPacksTitle')}
                 </h3>
                 <p className="text-xs text-[#8C8274]">
-                  Automated pass bundles that auto-decrement per booking and auto-refund on valid cancellations.
+                  {tAdmin('classPacksSubtitle')}
                 </p>
               </div>
 
-              <div className="text-xs px-3 py-1.5 rounded-full bg-[#2A241E] border border-[#44382C] text-[#C5A059]">
-                0% Commission • All Payouts Direct to Stripe
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handleOpenCreatePack}
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{tAdmin('createNewPack')}</span>
+                </button>
+                <div className="text-xs px-3 py-1.5 rounded-full bg-[#2A241E] border border-[#44382C] text-[#C5A059]">
+                  {tAdmin('zeroCommissionBadge')}
+                </div>
               </div>
             </div>
 
@@ -340,25 +431,38 @@ export const AdminPortal: React.FC = () => {
               {classPacks.map((pack) => (
                 <div
                   key={pack.id}
-                  className={`bg-[#221E1A] rounded-2xl p-5 border relative overflow-hidden transition-all ${
+                  className={`bg-[#221E1A] rounded-2xl p-5 border relative overflow-hidden transition-all group ${
                     pack.popularBadge ? 'border-[#C5A059]/60 ring-1 ring-[#C5A059]/40' : 'border-[#3A332B]'
                   }`}
                 >
-                  {pack.popularBadge && (
-                    <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#C5A059] text-[#161412]">
-                      {tAdmin('popularTag')}
-                    </span>
-                  )}
-                  <h4 className="font-serif text-lg font-medium text-[#F5F2EB] mb-1">
-                    {pack.name}
-                  </h4>
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-serif text-lg font-medium text-[#F5F2EB]">
+                      {getPackDisplayName(pack.name, locale)}
+                    </h4>
+                    <div className="flex items-center space-x-1.5">
+                      {pack.popularBadge && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#C5A059] text-[#161412]">
+                          {tAdmin('popularTag')}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => handleOpenEditPack(pack)}
+                        className="p-1.5 rounded-lg bg-[#2E2822] text-[#C5A059] hover:bg-[#3E352C] border border-[#44392D] text-xs transition-colors flex items-center space-x-1"
+                        title={tAdmin('editPackAction')}
+                      >
+                        <Pencil className="w-3 h-3" />
+                        <span className="text-[11px] font-medium">{tAdmin('editPackAction')}</span>
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="text-2xl font-semibold text-[#C5A059] font-mono mb-2">
                     {formatCurrency(pack.price, currency, locale)}
                   </div>
-                  <p className="text-xs text-[#8C8274] leading-relaxed mb-4">
-                    {pack.description}
+                  <p className="text-xs text-[#8C8274] leading-relaxed mb-4 min-h-[36px]">
+                    {getPackDisplayDescription(pack, currency, locale)}
                   </p>
-                  <div className="space-y-1.5 text-xs text-[#A89F91] pt-3 border-t border-[#302B24]">
+                  <div className="space-y-1.5 text-xs text-[#A89F91] pt-3 border-t border-[#302B24] flex items-center justify-between">
                     <div>{tAdmin('creditsCount', { count: pack.credits })}</div>
                     <div>{tAdmin('validityDays', { days: pack.expiryDays })}</div>
                   </div>
@@ -369,22 +473,24 @@ export const AdminPortal: React.FC = () => {
             {/* Payout History */}
             <div className="bg-[#221E1A] rounded-2xl p-5 border border-[#3A332B]">
               <h4 className="text-sm font-medium text-[#F5F2EB] mb-3">
-                Recent Stripe Connect Direct Payouts
+                {tAdmin('recentPayoutsTitle')}
               </h4>
               <div className="space-y-2">
                 {stripeOverview.payoutHistory.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-[#1A1714] border border-[#332D26] text-xs"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-[#1A1714] border border-[#332D26] text-xs gap-2"
                   >
                     <div>
-                      <span className="font-mono text-[#E0D8CE] font-medium">
+                      <span className="font-mono text-[#E0D8CE] font-medium text-sm">
                         {formatCurrency(item.amount, currency, locale)}
                       </span>
-                      <span className="text-[#8C8274] ml-2">Initiated {item.date}</span>
+                      <span className="text-[#8C8274] ml-2">
+                        {tAdmin('initiatedOn', { date: formatDateLocalized(item.date, locale) })}
+                      </span>
                     </div>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800 text-[11px] font-semibold">
-                      PAID • Arrived {item.arrivalDate}
+                    <span className="self-start sm:self-auto px-2.5 py-1 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800 text-[11px] font-semibold">
+                      {tAdmin('paidArrived', { date: formatDateLocalized(item.arrivalDate, locale) })}
                     </span>
                   </div>
                 ))}
@@ -640,89 +746,267 @@ export const AdminPortal: React.FC = () => {
 
       {/* New Class Modal */}
       {showNewClassModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#221E1A] rounded-3xl p-6 border border-[#3A332B] w-full max-w-md text-[#F5F2EB] shadow-2xl">
-            <h3 className="font-serif text-xl font-medium text-[#C5A059] mb-4">
-              {tAdmin('createClass')}
-            </h3>
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#221E1A] rounded-3xl p-6 border border-[#3A332B] w-full max-w-lg text-[#F5F2EB] shadow-2xl">
+            <div className="flex items-center justify-between mb-4 border-b border-[#3A332B] pb-3">
+              <h3 className="font-serif text-xl font-medium text-[#C5A059]">
+                {tAdmin('createClass')}
+              </h3>
+              <button
+                onClick={() => setShowNewClassModal(false)}
+                className="text-[#8C8274] hover:text-[#F5F2EB] text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
             <form onSubmit={handleCreateClass} className="space-y-4 text-xs">
               <div>
-                <label className="block text-[#A89F91] mb-1">{tAdmin('className')}</label>
+                <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('className')}</label>
                 <input
                   type="text"
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. Athletic Reformer Burn"
-                  className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB]"
+                  placeholder={tAdmin('classNamePlaceholder')}
+                  className="w-full px-3 py-2.5 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[#A89F91] mb-1">{tAdmin('category')}</label>
-                  <select
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value as ClassCategory)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB]"
-                  >
-                    <option value="Reformer">Reformer</option>
-                    <option value="Flow">Flow</option>
-                    <option value="Sound Bath">Sound Bath</option>
-                    <option value="Yin Yoga">Yin Yoga</option>
-                  </select>
+              {/* Flexible Class Category with Custom Input & Clickable Quick Tags */}
+              <div>
+                <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('category')}</label>
+                <input
+                  type="text"
+                  required
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  placeholder={tAdmin('categoryCustomPlaceholder')}
+                  className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
+                />
+                <div className="mt-2">
+                  <span className="text-[11px] text-[#8C8274] block mb-1.5 font-medium">
+                    {tAdmin('suggestedTagsLabel')}
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(locale === 'zh-TW' || locale === 'zh-CN'
+                      ? ['皮拉提', '瑜珈', '私人教練', '頌缽音療', '重訓體能', '器械皮拉提', '拳擊體能']
+                      : ['Pilates', 'Yoga', '1-on-1 Personal', 'Sound Healing', 'Strength', 'Reformer', 'Boxing']
+                    ).map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setNewCategory(tag)}
+                        className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all ${
+                          newCategory === tag
+                            ? 'bg-[#C5A059] text-[#161412] border-[#C5A059] font-semibold shadow-xs'
+                            : 'bg-[#221E1A] text-[#C5A059] border-[#3E362C] hover:border-[#C5A059]'
+                        }`}
+                      >
+                        + {tag}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#A89F91] mb-1">{tAdmin('instructor')}</label>
+                  <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('instructor')}</label>
                   <input
                     type="text"
                     required
                     value={newInstructor}
                     onChange={(e) => setNewInstructor(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB]"
+                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('room')}</label>
+                  <input
+                    type="text"
+                    value={newRoom}
+                    onChange={(e) => setNewRoom(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#A89F91] mb-1">{tAdmin('hardCapacity')}</label>
+                  <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('hardCapacity')}</label>
                   <input
                     type="number"
                     min="1"
-                    max="50"
+                    max="100"
                     value={newCapacity}
                     onChange={(e) => setNewCapacity(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB]"
+                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[#A89F91] mb-1">{tAdmin('price')}</label>
+                  <label className="block text-[#A89F91] mb-1 font-medium">
+                    {tAdmin('price')} ({CURRENCY_CONFIGS[currency]?.symbol || '$'})
+                  </label>
                   <input
                     type="number"
-                    min="5"
-                    max="200"
+                    min="1"
+                    max="50000"
                     value={newPrice}
                     onChange={(e) => setNewPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB]"
+                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end space-x-2 pt-4">
+              <div className="flex items-center justify-end space-x-2 pt-4 border-t border-[#3A332B]">
                 <button
                   type="button"
                   onClick={() => setShowNewClassModal(false)}
-                  className="px-4 py-2 rounded-full border border-[#3A332B] text-[#A89F91]"
+                  className="px-4 py-2 rounded-full border border-[#3A332B] text-[#A89F91] hover:text-[#F5F2EB]"
                 >
                   {tCommon('cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-full bg-[#C5A059] text-[#161412] font-semibold"
+                  className="px-5 py-2 rounded-full bg-[#C5A059] text-[#161412] font-semibold hover:bg-[#D4AF37] transition-all"
                 >
                   {tAdmin('saveSession')}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT / CREATE CLASS PACK MODAL */}
+      {showPackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
+          <div className="bg-[#221E1A] border border-[#3A332B] rounded-3xl p-6 w-full max-w-md shadow-2xl text-xs text-[#F5F2EB]">
+            <div className="flex items-center justify-between mb-4 border-b border-[#3A332B] pb-3">
+              <h3 className="text-base font-serif font-medium text-[#C5A059]">
+                {editingPackId ? tAdmin('editPack') : tAdmin('createNewPack')}
+              </h3>
+              <button
+                onClick={() => setShowPackModal(false)}
+                className="text-[#8C8274] hover:text-[#F5F2EB] text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePack} className="space-y-3.5">
+              <div>
+                <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('packName')}</label>
+                <input
+                  type="text"
+                  required
+                  value={packNameInput}
+                  onChange={(e) => setPackNameInput(e.target.value)}
+                  placeholder="e.g. 5 堂精選課包 / 5-Class Pack"
+                  className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[#A89F91] mb-1 font-medium">
+                    {tAdmin('packPrice')} ({CURRENCY_CONFIGS[currency]?.symbol || '$'})
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={packPriceInput}
+                    onChange={(e) => setPackPriceInput(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[#A89F91] mb-1 font-medium">
+                    {locale === 'zh-TW' ? '堂數點數' : 'Class Credits'}
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    required
+                    value={packCreditsInput}
+                    onChange={(e) => setPackCreditsInput(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('validityDaysInput')}</label>
+                  <input
+                    type="number"
+                    min="7"
+                    max="365"
+                    required
+                    value={packExpiryInput}
+                    onChange={(e) => setPackExpiryInput(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
+                  />
+                </div>
+                <div className="flex items-center pt-5">
+                  <label className="flex items-center space-x-2 text-[#E0D8CE] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={packPopularInput}
+                      onChange={(e) => setPackPopularInput(e.target.checked)}
+                      className="w-4 h-4 rounded accent-[#C5A059]"
+                    />
+                    <span className="text-xs">{tAdmin('popularBadgeToggle')}</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('packDescription')}</label>
+                <textarea
+                  rows={2}
+                  value={packDescInput}
+                  onChange={(e) => setPackDescInput(e.target.value)}
+                  placeholder={tAdmin('packDescriptionPlaceholder')}
+                  className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-xs focus:outline-none focus:border-[#C5A059]"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-[#3A332B]">
+                {editingPackId && classPacks.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(locale === 'zh-TW' ? '確定要刪除此課包嗎？' : 'Delete this class pack?')) {
+                        deleteClassPack(editingPackId);
+                        setShowPackModal(false);
+                      }
+                    }}
+                    className="text-rose-400 hover:text-rose-300 text-xs flex items-center space-x-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{tAdmin('deletePack')}</span>
+                  </button>
+                ) : <div />}
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPackModal(false)}
+                    className="px-4 py-2 rounded-full border border-[#3A332B] text-[#A89F91] hover:text-[#F5F2EB]"
+                  >
+                    {tCommon('cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-full bg-[#C5A059] text-[#161412] font-semibold hover:bg-[#D4AF37] transition-all"
+                  >
+                    {tAdmin('savePack')}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

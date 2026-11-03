@@ -145,7 +145,7 @@ export const Navbar: React.FC = () => {
                 onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
                 className="flex items-center space-x-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-aura-clay text-white shadow-xs hover:bg-[#A25A44] transition-all"
               >
-                <span>View Public Booking Page</span>
+                <span>{t('viewPublicBookingPage')}</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </button>
             ) : (
@@ -154,7 +154,7 @@ export const Navbar: React.FC = () => {
                 className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-stone-700 bg-stone-200/80 hover:bg-stone-300/80 transition-colors"
               >
                 <Shield className="w-3.5 h-3.5 text-stone-600" />
-                <span>Instructor Portal</span>
+                <span>{locale === 'zh-TW' ? '館長管理後台' : 'Instructor Portal'}</span>
               </button>
             )}
           </div>

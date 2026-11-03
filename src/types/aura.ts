@@ -62,7 +62,8 @@ export type ClassCategory =
   | 'Yin Yoga'
   | 'Mat Pilates'
   | 'Barre'
-  | 'Workshop';
+  | 'Workshop'
+  | (string & {});
 
 export interface ClassSession {
   id: string;

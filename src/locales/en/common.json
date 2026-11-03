@@ -1,9 +1,11 @@
 {
   "brandName": "Aura Flow",
   "tagline": "Boutique Fitness & Workshop Booking Engine",
-  "switchView": "Toggle Client / Admin View",
-  "clientView": "Client Booking",
-  "adminView": "Studio Admin",
+  "switchView": "Switch Student Booking / Instructor Portal",
+  "clientView": "Client Booking View",
+  "adminView": "Instructor Admin Portal",
+  "viewPublicBookingPage": "View Public Booking Page",
+  "publicPage": "Public Page",
   "currency": "Currency",
   "language": "Language",
   "cancel": "Cancel",
@@ -11,14 +13,13 @@
   "save": "Save",
   "close": "Close",
   "loading": "Loading...",
-  "statusActive": "Active",
-  "spotsLeft": "{count} spots left",
-  "classFull": "Class Full • Join Waitlist",
+  "statusActive": "Open for Booking",
+  "spotsLeft": "{count} spots remaining",
+  "classFull": "Class Full • Waitlist Available",
   "edit": "Edit",
-  "book": "Book",
+  "book": "Book Spot",
   "joinWaitlist": "Join Waitlist",
   "allCategories": "All Classes",
-  "freeFeeNotice": "0% Platform Take-Rate • $29/mo Flat Subscription",
-  "devPreviewNotice": "Simulated Live Environment"
+  "freeFeeNotice": "0% Platform Commission • Flat $29/mo Subscription",
+  "devPreviewNotice": "Dev Preview Sandbox"
 }
-

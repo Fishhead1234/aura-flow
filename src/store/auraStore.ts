@@ -457,6 +457,9 @@ interface AuraState {
   updateSessionCapacity: (sessionId: string, newCapacity: number) => void;
   deleteSession: (sessionId: string) => void;
   purchaseClassPack: (packId: string) => void;
+  addClassPack: (pack: Omit<ClassPack, 'id' | 'studioId'>) => void;
+  updateClassPack: (id: string, updates: Partial<ClassPack>) => void;
+  deleteClassPack: (id: string) => void;
 
   createStudioWithOnboarding: (data: {
     name: string;
@@ -946,6 +949,30 @@ export const useAuraStore = create<AuraState>((set, get) => ({
         grossVolume: stripeOverview.grossVolume + pack.price,
         pendingPayouts: stripeOverview.pendingPayouts + pack.price,
       },
+    });
+  },
+
+  addClassPack: (packData) => {
+    const { classPacks, studio } = get();
+    const newPack: ClassPack = {
+      ...packData,
+      id: `pack-${Date.now()}`,
+      studioId: studio.id,
+    };
+    set({ classPacks: [...classPacks, newPack] });
+  },
+
+  updateClassPack: (id, updates) => {
+    const { classPacks } = get();
+    set({
+      classPacks: classPacks.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+    });
+  },
+
+  deleteClassPack: (id) => {
+    const { classPacks } = get();
+    set({
+      classPacks: classPacks.filter((p) => p.id !== id),
     });
   },
 

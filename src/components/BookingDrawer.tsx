@@ -241,7 +241,7 @@ export const BookingDrawer: React.FC = () => {
                 <span>{tBooking('total')}:</span>
                 <span>
                   {selectedMethod === 'PASS_CREDIT'
-                    ? '1 Credit'
+                    ? (locale === 'zh-TW' ? '1 堂課堂點數' : '1 Credit')
                     : formatCurrency(selectedSessionForBooking.price, currency, locale)}
                 </span>
               </div>
@@ -249,7 +249,11 @@ export const BookingDrawer: React.FC = () => {
               {selectedMethod !== 'PASS_CREDIT' && simulateStripePayment && (
                 <div className="mt-2 text-[11px] text-amber-800 bg-amber-50 p-2 rounded-xl flex items-center space-x-1.5 border border-amber-200">
                   <span className="font-semibold">⚡ Dev Sandbox:</span>
-                  <span>Stripe test charge will auto-approve ($0 real cost).</span>
+                  <span>
+                    {locale === 'zh-TW'
+                      ? 'Stripe 模擬測試扣款將自動核准（$0 真實支出）。'
+                      : 'Stripe test charge will auto-approve ($0 real cost).'}
+                  </span>
                 </div>
               )}
             </div>

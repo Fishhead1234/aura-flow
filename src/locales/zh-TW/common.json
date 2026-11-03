@@ -4,6 +4,8 @@
   "switchView": "切換學員預約 / 館長後台",
   "clientView": "學員預約介面",
   "adminView": "館長管理後台",
+  "viewPublicBookingPage": "查看公開預約頁",
+  "publicPage": "公開頁面",
   "currency": "幣別",
   "language": "語言",
   "cancel": "取消",
@@ -21,4 +23,3 @@
   "freeFeeNotice": "平台 0% 抽成 • 每月 US$29.00 零負擔訂閱",
   "devPreviewNotice": "即時模擬環境"
 }
-
