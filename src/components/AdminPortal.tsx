@@ -24,8 +24,23 @@ import {
   Sparkles,
   Ticket,
   Pencil,
+  MessageSquare,
+  Send,
+  QrCode,
+  Smartphone,
+  CreditCard,
+  Building,
+  Mail,
+  Instagram,
+  Check,
+  CheckCheck,
+  Copy,
+  Radio,
+  Share2,
+  Megaphone,
+  MessageCircle,
 } from 'lucide-react';
-import { ClassCategory, CURRENCY_CONFIGS, ClassPack } from '../types/aura';
+import { ClassCategory, CURRENCY_CONFIGS, ClassPack, ClassSession, AdminTabType } from '../types/aura';
 import { AuraLogoBadge } from './AuraLeafLogo';
 
 export const AdminPortal: React.FC = () => {
@@ -55,6 +70,16 @@ export const AdminPortal: React.FC = () => {
     updateClassPack,
     deleteClassPack,
     navigateTo,
+    // Messaging & Communication Module
+    conversations,
+    messages,
+    activeConversationId,
+    setActiveConversationId,
+    sendChatMessage,
+    broadcastToRoster,
+    broadcastHistory,
+    updateStudioCommunication,
+    updateStudioPayments,
   } = useAuraStore();
 
   const [cancelCutoff, setCancelCutoff] = useState(studio.cancelWindowHrs);
@@ -79,65 +104,66 @@ export const AdminPortal: React.FC = () => {
   const [packPopularInput, setPackPopularInput] = useState(false);
   const [packDescInput, setPackDescInput] = useState('');
 
-  const tAdmin = (key: string, params?: Record<string, string | number>) =>
-    getTranslation(locale, 'admin', key, params);
+  // 1-Click Roster Broadcast Modal State
+  const [broadcastingSession, setBroadcastingSession] = useState<ClassSession | null>(null);
+  const [broadcastText, setBroadcastText] = useState('');
+  const [broadcastInApp, setBroadcastInApp] = useState(true);
+  const [broadcastLine, setBroadcastLine] = useState(true);
+  const [broadcastSentToast, setBroadcastSentToast] = useState(false);
+
+  // Chat message input state
+  const [replyText, setReplyText] = useState('');
+
+  // Payment configuration state
+  const [linePayEnabled, setLinePayEnabled] = useState(studio.paymentMethods?.linePay.enabled ?? true);
+  const [linePayChannelId, setLinePayChannelId] = useState(studio.paymentMethods?.linePay.channelId ?? 'linepay_merchant_99281');
+  const [linePayChannelSecret, setLinePayChannelSecret] = useState(studio.paymentMethods?.linePay.channelSecret ?? 'sec_linepay_7721839');
+  
+  const [jkoPayEnabled, setJkoPayEnabled] = useState(studio.paymentMethods?.jkoPay.enabled ?? true);
+  const [jkoPayMerchantId, setJkoPayMerchantId] = useState(studio.paymentMethods?.jkoPay.merchantId ?? 'JKO_STORE_883019');
+
+  const [bankEnabled, setBankEnabled] = useState(studio.paymentMethods?.bankTransfer.enabled ?? true);
+  const [bankName, setBankName] = useState(studio.paymentMethods?.bankTransfer.bankName ?? '國泰世華商業銀行 (Cathay United Bank)');
+  const [bankCode, setBankCode] = useState(studio.paymentMethods?.bankTransfer.bankCode ?? '013');
+  const [bankAccount, setBankAccount] = useState(studio.paymentMethods?.bankTransfer.accountNumber ?? '013-50-6189201');
+  const [bankAccountName, setBankAccountName] = useState(studio.paymentMethods?.bankTransfer.accountName ?? '日光彼拉提斯工作室 (Elena Rostova)');
+  const [paymentSavedToast, setPaymentSavedToast] = useState(false);
+
+  // Communication settings state (LINE OA, IG, Email)
+  const [lineOaActive, setLineOaActive] = useState(studio.communication?.lineOaEnabled ?? true);
+  const [lineOaChannelId, setLineOaChannelId] = useState(studio.communication?.lineChannelId ?? '@sol_sanctuary_tw');
+  const [lineOaChannelSecret, setLineOaChannelSecret] = useState(studio.communication?.lineChannelSecret ?? 'sec_884920a9fbc10293847');
+  const [lineOaAccessToken, setLineOaAccessToken] = useState(studio.communication?.lineAccessToken ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.solsanctuary_token_sample');
+  const [igHandle, setIgHandle] = useState(studio.communication?.instagramHandle ?? '@solsanctuary.movement');
+  const [commEmail, setCommEmail] = useState(studio.communication?.supportEmail ?? 'hello@solsanctuary.studio');
+  const [commSavedToast, setCommSavedToast] = useState(false);
+
   const tCommon = (key: string, params?: Record<string, string | number>) =>
     getTranslation(locale, 'common', key, params);
+  const tAdmin = (key: string, params?: Record<string, string | number>) =>
+    getTranslation(locale, 'admin', key, params);
 
-  // Waterfall timer tick effect
-  useEffect(() => {
-    if (!activeWaterfallSessionId) return;
-    const interval = setInterval(() => {
-      tickWaterfallTimer();
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [activeWaterfallSessionId, tickWaterfallTimer]);
+  // Calculate total unread messages count
+  const totalUnreadCount = conversations.reduce((acc, conv) => acc + (conv.unreadCount || 0), 0);
 
-  const formatTimer = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleSavePolicies = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateStudioPolicies(cancelCutoff, waitlistMins);
-    alert(locale === 'zh-TW' ? '工作室規則已更新成功！' : 'Studio policies updated successfully!');
-  };
+  // Active conversation object
+  const currentConv = conversations.find((c) => c.id === activeConversationId) || conversations[0];
+  const currentConvMessages = currentConv ? messages[currentConv.id] || [] : [];
 
   const handleOpenNewClassModal = () => {
-    const defaultPrice = currency === 'TWD' ? 900 : currency === 'JPY' ? 4000 : 28;
-    setNewPrice(defaultPrice);
-    setNewCategory(locale === 'zh-TW' ? '器械皮拉提' : 'Reformer');
+    setNewTitle('');
+    setNewCategory('Reformer');
+    setNewInstructor(studio.name ? `${studio.name.split(' ')[0]} Coach` : 'Elena Rostova');
+    setNewCapacity(8);
+    setNewPrice(currency === 'TWD' ? 800 : 28);
+    setNewRoom('Reformer Studio A');
     setShowNewClassModal(true);
   };
 
-  const handleCreateClass = (e: React.FormEvent) => {
-    e.preventDefault();
-    const currConfig = CURRENCY_CONFIGS[currency] || CURRENCY_CONFIGS.USD;
-    const priceInBaseUSD = newPrice / (currConfig.rateToUSD || 1.0);
-    addSession({
-      title: newTitle || (locale === 'zh-TW' ? '晨間核心塑形皮拉提' : 'Dynamic Pilates Flow'),
-      category: newCategory,
-      instructor: newInstructor,
-      instructorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-      startTime: '2026-11-04T08:00:00.000Z',
-      endTime: '2026-11-04T08:50:00.000Z',
-      durationMins: 50,
-      capacity: Number(newCapacity),
-      price: priceInBaseUSD,
-      roomName: newRoom,
-      level: 'All Levels',
-    });
-    setShowNewClassModal(false);
-    setNewTitle('');
-  };
-
-  const handleOpenCreatePack = () => {
-    const defaultPrice = currency === 'TWD' ? 3680 : currency === 'JPY' ? 16000 : 115;
+  const handleOpenCreatePackModal = () => {
     setEditingPackId(null);
-    setPackNameInput(locale === 'zh-TW' ? '5 堂精選課包' : '5-Class Pack');
-    setPackPriceInput(defaultPrice);
+    setPackNameInput('');
+    setPackPriceInput(currency === 'TWD' ? 3500 : 115);
     setPackCreditsInput(5);
     setPackExpiryInput(90);
     setPackPopularInput(false);
@@ -145,52 +171,148 @@ export const AdminPortal: React.FC = () => {
     setShowPackModal(true);
   };
 
-  const handleOpenEditPack = (pack: ClassPack) => {
-    const currConfig = CURRENCY_CONFIGS[currency] || CURRENCY_CONFIGS.USD;
-    const currentPriceInCurrency = Math.round(pack.price * (currConfig.rateToUSD || 1.0));
+  const handleOpenEditPackModal = (pack: ClassPack) => {
     setEditingPackId(pack.id);
     setPackNameInput(getPackDisplayName(pack.name, locale));
-    setPackPriceInput(currentPriceInCurrency);
+    setPackPriceInput(pack.price);
     setPackCreditsInput(pack.credits);
     setPackExpiryInput(pack.expiryDays);
     setPackPopularInput(Boolean(pack.popularBadge));
-    setPackDescInput(pack.description || '');
+    setPackDescInput(getPackDisplayDescription(pack, currency, locale));
     setShowPackModal(true);
   };
 
   const handleSavePack = (e: React.FormEvent) => {
     e.preventDefault();
-    const currConfig = CURRENCY_CONFIGS[currency] || CURRENCY_CONFIGS.USD;
-    const priceInBaseUSD = packPriceInput / (currConfig.rateToUSD || 1.0);
+    if (!packNameInput.trim()) return;
 
     if (editingPackId) {
       updateClassPack(editingPackId, {
-        name: packNameInput,
-        price: priceInBaseUSD,
-        credits: Number(packCreditsInput),
-        expiryDays: Number(packExpiryInput),
+        name: packNameInput.trim(),
+        price: packPriceInput,
+        credits: packCreditsInput,
+        expiryDays: packExpiryInput,
         popularBadge: packPopularInput,
-        description: packDescInput,
+        description: packDescInput.trim(),
       });
     } else {
       addClassPack({
-        name: packNameInput,
-        price: priceInBaseUSD,
-        credits: Number(packCreditsInput),
-        expiryDays: Number(packExpiryInput),
+        name: packNameInput.trim(),
+        price: packPriceInput,
+        credits: packCreditsInput,
+        expiryDays: packExpiryInput,
         popularBadge: packPopularInput,
-        description: packDescInput,
+        description: packDescInput.trim(),
       });
     }
     setShowPackModal(false);
   };
 
+  const handleCreateClass = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim()) return;
+
+    addSession({
+      title: newTitle.trim(),
+      category: newCategory,
+      instructor: newInstructor.trim(),
+      instructorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80',
+      startTime: '2026-11-06T09:00:00.000Z',
+      endTime: '2026-11-06T09:50:00.000Z',
+      durationMins: 50,
+      capacity: newCapacity,
+      price: newPrice,
+      roomName: newRoom.trim(),
+      level: 'All Levels',
+    });
+
+    setShowNewClassModal(false);
+  };
+
+  const handleSavePolicies = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateStudioPolicies(cancelCutoff, waitlistMins);
+  };
+
+  const handleSaveCommunication = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateStudioCommunication({
+      lineOaEnabled: lineOaActive,
+      lineChannelId: lineOaChannelId,
+      lineChannelSecret: lineOaChannelSecret,
+      lineAccessToken: lineOaAccessToken,
+      instagramHandle: igHandle,
+      supportEmail: commEmail,
+    });
+    setCommSavedToast(true);
+    setTimeout(() => setCommSavedToast(false), 3000);
+  };
+
+  const handleSavePayments = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateStudioPayments({
+      linePay: {
+        enabled: linePayEnabled,
+        channelId: linePayChannelId,
+        channelSecret: linePayChannelSecret,
+      },
+      jkoPay: {
+        enabled: jkoPayEnabled,
+        merchantId: jkoPayMerchantId,
+      },
+      bankTransfer: {
+        enabled: bankEnabled,
+        bankName,
+        bankCode,
+        accountNumber: bankAccount,
+        accountName: bankAccountName,
+      },
+    });
+    setPaymentSavedToast(true);
+    setTimeout(() => setPaymentSavedToast(false), 3000);
+  };
+
+  const handleOpenBroadcastModal = (session: ClassSession) => {
+    setBroadcastingSession(session);
+    setBroadcastText('');
+    setBroadcastInApp(true);
+    setBroadcastLine(Boolean(studio.communication?.lineOaEnabled));
+  };
+
+  const handleSendBroadcast = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastingSession || !broadcastText.trim()) return;
+
+    const channels: ('IN_APP' | 'LINE_OA')[] = [];
+    if (broadcastInApp) channels.push('IN_APP');
+    if (broadcastLine) channels.push('LINE_OA');
+
+    broadcastToRoster(broadcastingSession.id, broadcastText.trim(), channels);
+    setBroadcastSentToast(true);
+    setTimeout(() => {
+      setBroadcastSentToast(false);
+      setBroadcastingSession(null);
+    }, 1500);
+  };
+
+  const handleSendReply = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentConv || !replyText.trim()) return;
+    sendChatMessage(currentConv.id, replyText.trim());
+    setReplyText('');
+  };
+
+  const handleQuickReply = (text: string) => {
+    if (!currentConv) return;
+    sendChatMessage(currentConv.id, text);
+  };
+
   return (
-    <div className="min-h-screen bg-[#161412] text-[#F5F2EB] pb-24 selection:bg-[#C5A059]/30">
-      {/* Tablet-optimized Top Navigation Header matching Screenshot 3 */}
-      <div className="border-b border-[#2D2824] bg-[#1E1B18]/90 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          {/* Brand Monogram */}
+    <div className="min-h-screen bg-[#1C1917] text-[#E0D8CE] pb-24 selection:bg-[#C5A059]/30">
+      {/* Top Admin Navigation matching Screenshot 3 */}
+      <header className="sticky top-0 z-30 bg-[#1C1917]/95 backdrop-blur-md border-b border-[#3A332B] px-4 py-3">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          {/* Left Brand */}
           <div className="flex items-center space-x-2.5">
             <AuraLogoBadge size="sm" className="w-8 h-8" />
             <span className="font-serif text-xl tracking-wider text-[#C5A059] font-medium">
@@ -198,8 +320,8 @@ export const AdminPortal: React.FC = () => {
             </span>
           </div>
 
-          {/* Center Tabs matching Screenshot 3 */}
-          <div className="flex items-center space-x-1 sm:space-x-2 bg-[#282420] p-1 rounded-full border border-[#3A342E] overflow-x-auto no-scrollbar max-w-[65vw] sm:max-w-none">
+          {/* Center Tabs with Badges */}
+          <div className="flex items-center space-x-1 sm:space-x-1.5 bg-[#282420] p-1 rounded-full border border-[#3A342E] overflow-x-auto no-scrollbar max-w-[70vw] sm:max-w-none">
             <button
               onClick={() => setActiveAdminTab('schedule')}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 ${
@@ -231,6 +353,31 @@ export const AdminPortal: React.FC = () => {
               {tAdmin('tabRosters')}
             </button>
             <button
+              onClick={() => setActiveAdminTab('messages')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 flex items-center space-x-1.5 ${
+                activeAdminTab === 'messages'
+                  ? 'bg-[#3A332C] text-[#EAD8B1] border border-[#5A4F44] shadow-xs'
+                  : 'text-[#A89F91] hover:text-[#EAD8B1]'
+              }`}
+            >
+              <span>{tAdmin('tabMessages')}</span>
+              {totalUnreadCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-emerald-500 text-[#161412] text-[10px] font-bold flex items-center justify-center">
+                  {totalUnreadCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveAdminTab('payments')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 ${
+                activeAdminTab === 'payments'
+                  ? 'bg-[#3A332C] text-[#EAD8B1] border border-[#5A4F44] shadow-xs'
+                  : 'text-[#A89F91] hover:text-[#EAD8B1]'
+              }`}
+            >
+              {tAdmin('tabPayments')}
+            </button>
+            <button
               onClick={() => setActiveAdminTab('policies')}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 ${
                 activeAdminTab === 'policies'
@@ -256,65 +403,46 @@ export const AdminPortal: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
+      {/* Main Admin Workspace Container */}
       <div className="max-w-6xl mx-auto px-4 pt-6">
-        {/* Stripe Direct Payouts Hero Banner matching Screenshot 3 */}
-        <div className="rounded-3xl bg-linear-to-r from-[#29241F] to-[#221E1A] p-6 border border-[#3E372F] shadow-lg mb-8 relative overflow-hidden">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-start space-x-4">
-              {/* Stripe Icon Capsule */}
-              <div className="w-12 h-12 rounded-2xl bg-[#635BFF] flex items-center justify-center text-white shadow-md font-bold text-2xl font-sans shrink-0">
-                S
+        {/* Top Payout & 0% Fee Banner matching Screenshot 3 */}
+        <div className="mb-8 rounded-3xl bg-linear-to-r from-[#24201C] via-[#2A241E] to-[#1E1B18] p-6 border border-[#3A332B] shadow-xl relative overflow-hidden">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div>
+              <div className="flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider text-[#C5A059] mb-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>{tAdmin('stripeDirectPayouts')}</span>
               </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <h2 className="text-lg font-medium text-[#F5F2EB] tracking-wide">
-                    {tAdmin('stripeDirectPayouts')}
-                  </h2>
-                </div>
-                <div className="flex items-center space-x-4 mt-2 text-xs text-[#A89F91]">
-                  <div>
-                    <span className="block text-[11px] text-[#8C8274]">
-                      {tAdmin('pendingPayouts')}
-                    </span>
-                    <span className="text-xl font-semibold text-[#F5F2EB] tracking-tight">
-                      {formatCurrency(stripeOverview.pendingPayouts, currency, locale)}
-                    </span>
-                  </div>
-                  <div className="h-8 w-px bg-[#3E372F]" />
-                  <div>
-                    <span className="block text-[11px] text-[#8C8274]">
-                      {tAdmin('nextPayoutDate')}
-                    </span>
-                    <span className="text-sm font-medium text-[#F5F2EB]">
-                      {formatDateLocalized('2026-12-29', locale)}
-                    </span>
-                  </div>
-                  <div className="h-8 w-px bg-[#3E372F] hidden sm:block" />
-                  <div className="hidden sm:block">
-                    <span className="block text-[11px] text-[#8C8274]">
-                      {tAdmin('directPayoutAccount')}
-                    </span>
-                    <span className="text-sm font-medium text-[#C5A059] flex items-center space-x-1">
-                      <span>{stripeOverview.connectedAccountName}</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <h2 className="text-3xl sm:text-4xl font-serif text-[#F5F2EB] tracking-tight">
+                {formatCurrency(stripeOverview.pendingPayouts, currency, locale)}
+              </h2>
+              <p className="text-xs text-[#8C8274] mt-1">
+                {tAdmin('nextPayoutDate')}: {formatDateLocalized('2026-11-06', locale)} • {tAdmin('directPayoutAccount')}: {stripeOverview.connectedAccountName}
+              </p>
             </div>
 
-            {/* 0% Platform Fees Badge */}
-            <div className="flex items-center space-x-3">
-              <span className="px-4 py-2 rounded-full bg-[#352D24] border border-[#524538] text-xs font-semibold text-[#D4AF37] tracking-wider shadow-xs">
-                {tAdmin('platformTakeRate')}
-              </span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="px-4 py-2.5 rounded-2xl bg-[#1A1714] border border-[#3A332B]">
+                <div className="text-[11px] text-[#8C8274]">{tAdmin('platformTakeRate')}</div>
+                <div className="text-base font-semibold text-emerald-400">
+                  {tAdmin('zeroCommissionBadge')}
+                </div>
+              </div>
+
+              <button
+                onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
+                className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-md active:scale-95"
+              >
+                <span>{tCommon('viewPublicPage')}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </div>
 
-        {/* SUB-TAB 1: SCHEDULE BUILDER & CAPACITY METERS matching Screenshot 3 */}
+        {/* SUB-TAB 1: SCHEDULE BUILDER */}
         {activeAdminTab === 'schedule' && (
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -336,7 +464,7 @@ export const AdminPortal: React.FC = () => {
               </button>
             </div>
 
-            {/* Grid of 6 Sessions matching Screenshot 3 */}
+            {/* Grid of Sessions with Roster Broadcast Button */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sessions.map((session) => {
                 const fillRatio = Math.min(100, Math.round((session.bookedCount / session.capacity) * 100));
@@ -345,53 +473,65 @@ export const AdminPortal: React.FC = () => {
                 return (
                   <div
                     key={session.id}
-                    className="bg-[#221E1A] rounded-2xl p-5 border border-[#3A332B] hover:border-[#574B3E] transition-all relative overflow-hidden group shadow-md"
+                    className="bg-[#221E1A] rounded-2xl p-5 border border-[#3A332B] hover:border-[#574B3E] transition-all relative overflow-hidden group shadow-md flex flex-col justify-between"
                   >
-                    <div className="flex items-start justify-between mb-1">
-                      <div>
-                        <h4 className="font-serif text-base font-medium text-[#F5F2EB] group-hover:text-[#EAD8B1] transition-colors">
-                          {session.title}
-                        </h4>
-                        <p className="text-xs text-[#8C8274] mt-0.5 font-mono">
-                          {session.startTime.substring(11, 16)} - {session.endTime.substring(11, 16)} • {studio.name}
-                        </p>
-                      </div>
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#2E2822] text-[#C5A059] border border-[#423930]">
-                        {session.category}
-                      </span>
-                    </div>
-
-                    <div className="text-xs text-[#A89F91] mb-5">
-                      Coach: <span className="text-[#E0D8CE] font-medium">{session.instructor}</span>
-                    </div>
-
-                    {/* Capacity Meter Bar matching Screenshot 3 */}
-                    <div className="pt-2 border-t border-[#302B24]">
-                      <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span className="text-[#8C8274] text-[11px]">
-                          {tAdmin('capacityMeters')}
-                        </span>
-                        <span
-                          className={`text-xs font-semibold font-mono ${
-                            isFull ? 'text-amber-400' : 'text-[#E0D8CE]'
-                          }`}
-                        >
-                          {tAdmin('bookedCountStatus', { booked: session.bookedCount, capacity: session.capacity })}
-                          {isFull && ` • ${tAdmin('waitlistActive')}`}
+                    <div>
+                      <div className="flex items-start justify-between mb-1">
+                        <div>
+                          <h4 className="font-serif text-base font-medium text-[#F5F2EB] group-hover:text-[#EAD8B1] transition-colors">
+                            {session.title}
+                          </h4>
+                          <p className="text-xs text-[#8C8274] mt-0.5 font-mono">
+                            {session.startTime.substring(11, 16)} - {session.endTime.substring(11, 16)} • {studio.name}
+                          </p>
+                        </div>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#2E2822] text-[#C5A059] border border-[#423930]">
+                          {session.category}
                         </span>
                       </div>
 
-                      {/* Glowing Gold Capacity Bar */}
-                      <div className="w-full h-2 rounded-full bg-[#181614] overflow-hidden p-0.5 border border-[#3A332B]">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            isFull
-                              ? 'bg-linear-to-r from-[#C5A059] to-[#E5C170] shadow-[0_0_8px_rgba(197,160,89,0.5)]'
-                              : 'bg-linear-to-r from-[#8C7A58] to-[#C5A059]'
-                          }`}
-                          style={{ width: `${fillRatio}%` }}
-                        />
+                      <div className="text-xs text-[#A89F91] mb-4">
+                        Coach: <span className="text-[#E0D8CE] font-medium">{session.instructor}</span>
                       </div>
+                    </div>
+
+                    <div>
+                      {/* Capacity Meter Bar */}
+                      <div className="pt-2 border-t border-[#302B24] mb-3">
+                        <div className="flex items-center justify-between text-xs mb-1.5">
+                          <span className="text-[#8C8274] text-[11px]">
+                            {tAdmin('capacityMeters')}
+                          </span>
+                          <span
+                            className={`text-xs font-semibold font-mono ${
+                              isFull ? 'text-amber-400' : 'text-[#E0D8CE]'
+                            }`}
+                          >
+                            {tAdmin('bookedCountStatus', { booked: session.bookedCount, capacity: session.capacity })}
+                            {isFull && ` • ${tAdmin('waitlistActive')}`}
+                          </span>
+                        </div>
+
+                        <div className="w-full h-2 rounded-full bg-[#181614] overflow-hidden p-0.5 border border-[#3A332B]">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              isFull
+                                ? 'bg-linear-to-r from-[#C5A059] to-[#E5C170] shadow-[0_0_8px_rgba(197,160,89,0.5)]'
+                                : 'bg-linear-to-r from-[#8C7A58] to-[#C5A059]'
+                            }`}
+                            style={{ width: `${fillRatio}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* 1-Click Class Roster Broadcast CTA */}
+                      <button
+                        onClick={() => handleOpenBroadcastModal(session)}
+                        className="w-full py-2 px-3 rounded-xl bg-[#2C2620] hover:bg-[#383028] border border-[#443B30] text-xs font-medium text-[#EAD8B1] flex items-center justify-center space-x-1.5 transition-colors group-hover:border-[#C5A059]/60"
+                      >
+                        <Megaphone className="w-3.5 h-3.5 text-[#C5A059]" />
+                        <span>{tAdmin('broadcastToRoster')}</span>
+                      </button>
                     </div>
                   </div>
                 );
@@ -403,7 +543,7 @@ export const AdminPortal: React.FC = () => {
         {/* SUB-TAB 2: PACKS & PRICING */}
         {activeAdminTab === 'packs' && (
           <div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-medium text-[#F5F2EB] tracking-wide">
                   {tAdmin('classPacksTitle')}
@@ -413,93 +553,66 @@ export const AdminPortal: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={handleOpenCreatePack}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{tAdmin('createNewPack')}</span>
-                </button>
-                <div className="text-xs px-3 py-1.5 rounded-full bg-[#2A241E] border border-[#44382C] text-[#C5A059]">
-                  {tAdmin('zeroCommissionBadge')}
-                </div>
-              </div>
+              <button
+                onClick={handleOpenCreatePackModal}
+                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{tAdmin('createNewPack')}</span>
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {classPacks.map((pack) => (
                 <div
                   key={pack.id}
-                  className={`bg-[#221E1A] rounded-2xl p-5 border relative overflow-hidden transition-all group ${
-                    pack.popularBadge ? 'border-[#C5A059]/60 ring-1 ring-[#C5A059]/40' : 'border-[#3A332B]'
-                  }`}
+                  className="bg-[#221E1A] rounded-2xl p-6 border border-[#3A332B] flex flex-col justify-between relative shadow-md"
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-serif text-lg font-medium text-[#F5F2EB]">
-                      {getPackDisplayName(pack.name, locale)}
-                    </h4>
-                    <div className="flex items-center space-x-1.5">
+                  <div>
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-serif text-lg font-medium text-[#F5F2EB]">
+                        {getPackDisplayName(pack.name, locale)}
+                      </h4>
                       {pack.popularBadge && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#C5A059] text-[#161412]">
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#C5A059] text-[#161412] font-semibold">
                           {tAdmin('popularTag')}
                         </span>
                       )}
-                      <button
-                        onClick={() => handleOpenEditPack(pack)}
-                        className="p-1.5 rounded-lg bg-[#2E2822] text-[#C5A059] hover:bg-[#3E352C] border border-[#44392D] text-xs transition-colors flex items-center space-x-1"
-                        title={tAdmin('editPackAction')}
-                      >
-                        <Pencil className="w-3 h-3" />
-                        <span className="text-[11px] font-medium">{tAdmin('editPackAction')}</span>
-                      </button>
+                    </div>
+
+                    <p className="text-xs text-[#A89F91] mb-4">
+                      {getPackDisplayDescription(pack, currency, locale)}
+                    </p>
+
+                    <div className="text-2xl font-semibold text-[#F5F2EB] mb-2 font-mono">
+                      {formatCurrency(pack.price, currency, locale)}
+                    </div>
+
+                    <div className="space-y-1.5 text-xs text-[#8C8274] pt-3 border-t border-[#302B24]">
+                      <div>{tAdmin('creditsCount', { count: pack.credits })}</div>
+                      <div>{tAdmin('validityDays', { days: pack.expiryDays })}</div>
                     </div>
                   </div>
 
-                  <div className="text-2xl font-semibold text-[#C5A059] font-mono mb-2">
-                    {formatCurrency(pack.price, currency, locale)}
-                  </div>
-                  <p className="text-xs text-[#8C8274] leading-relaxed mb-4 min-h-[36px]">
-                    {getPackDisplayDescription(pack, currency, locale)}
-                  </p>
-                  <div className="space-y-1.5 text-xs text-[#A89F91] pt-3 border-t border-[#302B24] flex items-center justify-between">
-                    <div>{tAdmin('creditsCount', { count: pack.credits })}</div>
-                    <div>{tAdmin('validityDays', { days: pack.expiryDays })}</div>
+                  <div className="mt-5 pt-3 border-t border-[#302B24] flex items-center justify-between">
+                    <button
+                      onClick={() => handleOpenEditPackModal(pack)}
+                      className="text-xs text-[#C5A059] hover:underline flex items-center space-x-1"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      <span>{tAdmin('editPackAction')}</span>
+                    </button>
+                    <span className="text-[11px] text-[#706658]">
+                      0% Commission
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
-
-            {/* Payout History */}
-            <div className="bg-[#221E1A] rounded-2xl p-5 border border-[#3A332B]">
-              <h4 className="text-sm font-medium text-[#F5F2EB] mb-3">
-                {tAdmin('recentPayoutsTitle')}
-              </h4>
-              <div className="space-y-2">
-                {stripeOverview.payoutHistory.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-[#1A1714] border border-[#332D26] text-xs gap-2"
-                  >
-                    <div>
-                      <span className="font-mono text-[#E0D8CE] font-medium text-sm">
-                        {formatCurrency(item.amount, currency, locale)}
-                      </span>
-                      <span className="text-[#8C8274] ml-2">
-                        {tAdmin('initiatedOn', { date: formatDateLocalized(item.date, locale) })}
-                      </span>
-                    </div>
-                    <span className="self-start sm:self-auto px-2.5 py-1 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800 text-[11px] font-semibold">
-                      {tAdmin('paidArrived', { date: formatDateLocalized(item.arrivalDate, locale) })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         )}
 
-        {/* SUB-TAB 3: LIVE ROSTERS & 30-MINUTE WAITLIST CASCADE SIMULATOR */}
+        {/* SUB-TAB 3: ROSTERS & CHECK-IN */}
         {activeAdminTab === 'rosters' && (
           <div>
             {/* Waterfall Notification Banner if Active */}
@@ -522,7 +635,6 @@ export const AdminPortal: React.FC = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    {/* Simulated Fast-forward button */}
                     <button
                       onClick={() => tickWaterfallTimer()}
                       className="px-3 py-1.5 rounded-full bg-[#181614] border border-amber-500/40 text-amber-300 text-xs hover:bg-amber-900/40 transition-colors"
@@ -568,40 +680,35 @@ export const AdminPortal: React.FC = () => {
                   {bookings.map((booking) => (
                     <div
                       key={booking.id}
-                      className="p-3.5 rounded-xl bg-[#1A1714] border border-[#332D26] flex items-center justify-between"
+                      className="p-3.5 rounded-xl bg-[#181614] border border-[#352E26] flex items-center justify-between"
                     >
                       <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-[#F5F2EB]">
-                            {booking.clientName}
-                          </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#2A241E] text-[#C5A059] border border-[#423930]">
-                            {booking.paymentMethod === 'PASS_CREDIT' ? 'Pass Pass' : 'Stripe Paid'}
+                        <div className="text-xs font-semibold text-[#F5F2EB] flex items-center space-x-2">
+                          <span>{booking.clientName}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#2A231C] text-[#C5A059]">
+                            {booking.paymentMethod}
                           </span>
                         </div>
-                        <div className="text-xs text-[#8C8274] mt-0.5">
-                          {booking.sessionTitle} • {booking.sessionTime}
+                        <div className="text-[11px] text-[#8C8274] mt-0.5">
+                          {booking.clientEmail}
                         </div>
                       </div>
 
                       <div className="flex items-center space-x-2">
-                        {booking.status === 'CHECKED_IN' ? (
-                          <span className="px-2.5 py-1 rounded-full bg-emerald-950/60 text-emerald-400 text-xs border border-emerald-800 font-medium">
-                            {tAdmin('checkedIn')}
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => checkInClient(booking.id)}
-                            className="px-3 py-1 rounded-full bg-[#2A241E] border border-[#423930] text-xs text-[#E0D8CE] hover:bg-[#383028] transition-colors"
-                          >
-                            {tAdmin('checkIn')}
-                          </button>
-                        )}
+                        <button
+                          onClick={() => checkInClient(booking.id)}
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                            booking.status === 'CHECKED_IN'
+                              ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
+                              : 'bg-[#2A2520] text-[#E0D8CE] hover:bg-[#352E26] border border-[#3D352E]'
+                          }`}
+                        >
+                          {booking.status === 'CHECKED_IN' ? tAdmin('checkedIn') : tAdmin('checkIn')}
+                        </button>
 
                         <button
                           onClick={() => cancelBooking(booking.id)}
-                          title="Simulate cancellation to test cascade"
-                          className="px-2.5 py-1 rounded-full bg-red-950/40 border border-red-900/60 text-xs text-red-300 hover:bg-red-900/60 transition-colors"
+                          className="px-3 py-1 rounded-full text-xs font-medium bg-rose-950/40 text-rose-300 hover:bg-rose-900/60 border border-rose-800/50 transition-colors"
                         >
                           {tAdmin('cancelBooking')}
                         </button>
@@ -611,69 +718,42 @@ export const AdminPortal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Waitlist Queue & Modes */}
+              {/* Waitlist Queue */}
               <div className="bg-[#221E1A] rounded-2xl p-5 border border-[#3A332B]">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-[#F5F2EB]">
-                    {tAdmin('waitlistQueue')} ({waitlist.length})
-                  </h3>
-                  <span className="text-[11px] text-[#C5A059]">
-                    VIP Pre-Auth auto-charges immediately on cancellation
-                  </span>
-                </div>
+                <h3 className="text-sm font-medium text-[#F5F2EB] mb-4">
+                  {tAdmin('waitlistQueue')} ({waitlist.length})
+                </h3>
 
                 <div className="space-y-3">
-                  {waitlist.map((entry) => (
+                  {waitlist.map((w) => (
                     <div
-                      key={entry.id}
-                      className="p-3.5 rounded-xl bg-[#1A1714] border border-[#332D26] flex items-center justify-between"
+                      key={w.id}
+                      className="p-3.5 rounded-xl bg-[#181614] border border-[#352E26] flex items-center justify-between"
                     >
                       <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="w-5 h-5 rounded-full bg-[#2A241E] text-[#C5A059] flex items-center justify-center text-xs font-mono font-bold">
-                            #{entry.priorityOrder}
-                          </span>
-                          <span className="text-sm font-medium text-[#F5F2EB]">
-                            {entry.clientName}
-                          </span>
-                          {entry.mode === 'VIP_PREAUTH' ? (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-700 font-bold flex items-center space-x-1">
-                              <Zap className="w-2.5 h-2.5 fill-amber-300" />
-                              <span>VIP Pre-Auth ($0 Hold)</span>
-                            </span>
-                          ) : (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-800 text-stone-300 border border-stone-700">
-                              Standard Free Queue
+                        <div className="text-xs font-semibold text-[#F5F2EB] flex items-center space-x-2">
+                          <span className="text-[#C5A059] font-mono">#{w.priorityOrder}</span>
+                          <span>{w.clientName}</span>
+                          {w.mode === 'VIP_PREAUTH' && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300">
+                              VIP
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-[#8C8274] mt-1 pl-7">
-                          {entry.clientPhone} • {entry.sessionTitle}
+                        <div className="text-[11px] text-[#8C8274] mt-0.5">
+                          {w.clientPhone}
                         </div>
                       </div>
 
-                      <div>
-                        {entry.status === 'WAITING' && (
-                          <span className="text-xs px-2.5 py-1 rounded-full bg-[#24201C] text-[#8C8274] border border-[#383129]">
-                            Waiting
-                          </span>
-                        )}
-                        {entry.status === 'OFFERED' && (
-                          <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold animate-pulse">
-                            30m Window Open
-                          </span>
-                        )}
-                        {entry.status === 'CLAIMED' && (
-                          <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
-                            Claimed
-                          </span>
-                        )}
-                        {entry.status === 'EXPIRED' && (
-                          <span className="text-xs px-2.5 py-1 rounded-full bg-red-950 text-red-400 border border-red-900">
-                            Expired
-                          </span>
-                        )}
-                      </div>
+                      <span
+                        className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
+                          w.status === 'OFFERED'
+                            ? 'bg-amber-400 text-[#161412] font-bold animate-pulse'
+                            : 'bg-[#2A231C] text-[#8C8274]'
+                        }`}
+                      >
+                        {w.status}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -682,67 +762,828 @@ export const AdminPortal: React.FC = () => {
           </div>
         )}
 
-        {/* SUB-TAB 4: STUDIO POLICIES & RULES */}
-        {activeAdminTab === 'policies' && (
-          <div className="max-w-2xl bg-[#221E1A] rounded-2xl p-6 border border-[#3A332B]">
-            <h3 className="font-serif text-lg font-medium text-[#F5F2EB] mb-2">
-              {tAdmin('studioRulesTitle')}
-            </h3>
-            <p className="text-xs text-[#8C8274] mb-6">
-              Configure cutoff policies and automated cascade intervals. All rules execute asynchronously with zero manual intervention.
-            </p>
-
-            <form onSubmit={handleSavePolicies} className="space-y-6">
+        {/* SUB-TAB 4: INBOX & MESSAGING SUITE ($0 BACKEND COST) */}
+        {activeAdminTab === 'messages' && (
+          <div className="bg-[#221E1A] rounded-3xl border border-[#3A332B] overflow-hidden shadow-2xl">
+            {/* Inbox Header Banner */}
+            <div className="p-5 bg-[#28231E] border-b border-[#3A332B] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <label className="block text-sm font-medium text-[#E0D8CE] mb-1">
-                  {tAdmin('cancellationCutoff')}: <span className="text-[#C5A059] font-mono">{cancelCutoff} {tAdmin('hours')}</span>
-                </label>
-                <input
-                  type="range"
-                  min="2"
-                  max="48"
-                  step="2"
-                  value={cancelCutoff}
-                  onChange={(e) => setCancelCutoff(Number(e.target.value))}
-                  className="w-full accent-[#C5A059]"
-                />
-                <p className="text-xs text-[#8C8274] mt-1">
-                  {tAdmin('cancellationCutoffDesc')}
+                <h3 className="text-lg font-serif font-medium text-[#F5F2EB] flex items-center space-x-2">
+                  <MessageSquare className="w-5 h-5 text-[#C5A059]" />
+                  <span>{tAdmin('inboxTitle')}</span>
+                </h3>
+                <p className="text-xs text-[#8C8274] mt-0.5">
+                  {tAdmin('inboxSubtitle')}
                 </p>
               </div>
 
+              <div className="flex items-center space-x-2 text-xs">
+                <span className="px-3 py-1 rounded-full bg-[#181614] border border-[#3D352E] text-[#C5A059]">
+                  LINE OA: {studio.communication?.lineOaEnabled ? '已連線 (@sol_sanctuary_tw)' : '未啟用'}
+                </span>
+              </div>
+            </div>
+
+            {/* 3-Column Studio Chat Workspace */}
+            <div className="grid grid-cols-1 md:grid-cols-12 min-h-[580px]">
+              {/* Left Column: Conversations List (4 cols) */}
+              <div className="md:col-span-4 border-r border-[#302B24] bg-[#1E1B18]/60 p-3 overflow-y-auto max-h-[620px]">
+                <div className="text-[11px] font-semibold text-[#8C8274] uppercase tracking-wider px-2 py-1 mb-2">
+                  {tAdmin('allConversations')} ({conversations.length})
+                </div>
+
+                <div className="space-y-2">
+                  {conversations.map((conv) => {
+                    const isSelected = conv.id === (currentConv?.id);
+                    return (
+                      <div
+                        key={conv.id}
+                        onClick={() => setActiveConversationId(conv.id)}
+                        className={`p-3 rounded-2xl cursor-pointer transition-all border ${
+                          isSelected
+                            ? 'bg-[#2E2822] border-[#C5A059]/60 shadow-md'
+                            : 'bg-[#221E1A] border-[#302B24] hover:bg-[#28231D]'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-1">
+                          <div className="flex items-center space-x-2.5">
+                            <img
+                              src={conv.studentAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+                              alt={conv.studentName}
+                              className="w-8 h-8 rounded-full object-cover border border-[#443B30]"
+                            />
+                            <div>
+                              <div className="text-xs font-semibold text-[#F5F2EB]">
+                                {conv.studentName}
+                              </div>
+                              <div className="text-[10px] text-[#C5A059]">
+                                {conv.sessionTitle}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-end space-y-1">
+                            <span className="text-[10px] text-[#706658]">
+                              {conv.lastMessageTime}
+                            </span>
+                            {conv.channel === 'LINE_OA' ? (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
+                                LINE OA
+                              </span>
+                            ) : (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#332B22] text-[#E0C99E]">
+                                In-App
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-[#8C8274] line-clamp-1 mt-1">
+                          {conv.lastMessage}
+                        </p>
+
+                        {conv.unreadCount > 0 && (
+                          <div className="mt-2 flex justify-end">
+                            <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-500 text-[#161412] font-bold">
+                              {conv.unreadCount} 新訊息
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Middle Column: Active Chat Thread (5 cols) */}
+              <div className="md:col-span-5 flex flex-col justify-between border-r border-[#302B24] bg-[#1C1917]">
+                {currentConv ? (
+                  <>
+                    {/* Active Thread Header */}
+                    <div className="p-3.5 bg-[#24201C] border-b border-[#302B24] flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        <img
+                          src={currentConv.studentAvatar}
+                          alt={currentConv.studentName}
+                          className="w-8 h-8 rounded-full object-cover border border-[#443B30]"
+                        />
+                        <div>
+                          <div className="text-xs font-semibold text-[#F5F2EB]">
+                            {currentConv.studentName}
+                          </div>
+                          <div className="text-[10px] text-[#8C8274]">
+                            {currentConv.sessionTitle} ({currentConv.sessionTime})
+                          </div>
+                        </div>
+                      </div>
+
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
+                        {currentConv.channel === 'LINE_OA' ? 'LINE OA 雙向同步' : '站內即時通訊'}
+                      </span>
+                    </div>
+
+                    {/* Messages Bubble Scroll Area */}
+                    <div className="flex-1 p-4 overflow-y-auto space-y-3.5 max-h-[440px]">
+                      {currentConvMessages.map((msg) => {
+                        const isInstructor = msg.senderRole === 'INSTRUCTOR';
+                        const isSystem = msg.senderRole === 'SYSTEM';
+
+                        if (isSystem) {
+                          return (
+                            <div key={msg.id} className="p-3 rounded-xl bg-amber-950/40 border border-amber-700/50 text-xs text-amber-200">
+                              <div className="font-semibold text-amber-300 flex items-center space-x-1.5 mb-1">
+                                <span>📢</span>
+                                <span>{msg.senderName}</span>
+                              </div>
+                              <div className="whitespace-pre-wrap">{msg.content}</div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={msg.id}
+                            className={`flex flex-col ${isInstructor ? 'items-end' : 'items-start'}`}
+                          >
+                            <div className="flex items-center space-x-1.5 mb-1 text-[10px] text-[#706658]">
+                              <span>{msg.senderName}</span>
+                              {msg.channel === 'LINE_OA' && (
+                                <span className="text-[9px] px-1 py-0.1 bg-emerald-950 text-emerald-400 rounded">
+                                  LINE
+                                </span>
+                              )}
+                            </div>
+
+                            <div
+                              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${
+                                isInstructor
+                                  ? 'bg-[#C5A059] text-[#161412] font-medium rounded-br-xs'
+                                  : 'bg-[#28231E] text-[#F5F2EB] border border-[#3A332B] rounded-bl-xs'
+                              }`}
+                            >
+                              <p className="whitespace-pre-wrap">{msg.content}</p>
+                            </div>
+
+                            <span className="text-[9px] text-[#706658] mt-1 font-mono">
+                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Quick Reply Preset Chips */}
+                    <div className="p-2.5 bg-[#221E1A] border-t border-[#302B24] flex items-center space-x-1.5 overflow-x-auto no-scrollbar">
+                      <button
+                        type="button"
+                        onClick={() => handleQuickReply('您好！課程適合所有程度學員，請自備防滑襪與水壺喔。')}
+                        className="text-[11px] px-3 py-1 rounded-full bg-[#181614] border border-[#3A332B] text-[#E0D8CE] hover:text-[#C5A059] shrink-0 transition-colors"
+                      >
+                        防滑襪與水壺
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickReply('沒問題，教室有提供專屬置物櫃與更衣空間。')}
+                        className="text-[11px] px-3 py-1 rounded-full bg-[#181614] border border-[#3A332B] text-[#E0D8CE] hover:text-[#C5A059] shrink-0 transition-colors"
+                      >
+                        置物櫃與更衣室
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickReply('感謝詢問！本堂課尚有名額，歡迎直接於頁面點選預約。')}
+                        className="text-[11px] px-3 py-1 rounded-full bg-[#181614] border border-[#3A332B] text-[#E0D8CE] hover:text-[#C5A059] shrink-0 transition-colors"
+                      >
+                        尚有名額歡迎預約
+                      </button>
+                    </div>
+
+                    {/* Reply Form */}
+                    <form onSubmit={handleSendReply} className="p-3 bg-[#24201C] border-t border-[#302B24] flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder={tAdmin('replyPlaceholder')}
+                        className="flex-1 px-4 py-2 rounded-full bg-[#181614] border border-[#3A332B] text-xs text-[#F5F2EB] placeholder:text-[#706658] focus:outline-none focus:border-[#C5A059]"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!replyText.trim()}
+                        className="w-9 h-9 rounded-full bg-[#C5A059] text-[#161412] flex items-center justify-center hover:bg-[#D4AF37] disabled:opacity-40 transition-colors shadow-xs"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-xs text-[#706658]">
+                    {tAdmin('noConversations')}
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Student Profile & Passes Sidebar (3 cols) */}
+              <div className="md:col-span-3 p-4 bg-[#1E1B18]/40 space-y-5">
+                <div className="text-[11px] font-semibold text-[#8C8274] uppercase tracking-wider mb-2">
+                  {tAdmin('studentInfoTitle')}
+                </div>
+
+                {currentConv && (
+                  <>
+                    {/* Student Basic Card */}
+                    <div className="text-center p-4 bg-[#24201C] rounded-2xl border border-[#302B24]">
+                      <img
+                        src={currentConv.studentAvatar}
+                        alt={currentConv.studentName}
+                        className="w-14 h-14 rounded-full object-cover mx-auto mb-2 border border-[#443B30]"
+                      />
+                      <h4 className="text-sm font-semibold text-[#F5F2EB]">
+                        {currentConv.studentName}
+                      </h4>
+                      <p className="text-[11px] text-[#8C8274]">
+                        {currentConv.studentEmail}
+                      </p>
+                      {currentConv.studentPhone && (
+                        <p className="text-[11px] text-[#C5A059] font-mono mt-0.5">
+                          {currentConv.studentPhone}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Active Passes */}
+                    <div className="p-3.5 bg-[#24201C] rounded-2xl border border-[#302B24]">
+                      <div className="flex items-center space-x-1.5 text-xs font-semibold text-[#C5A059] mb-2">
+                        <Ticket className="w-3.5 h-3.5" />
+                        <span>{tAdmin('studentActivePasses')}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-[#181614] border border-[#352E26] text-xs">
+                        <div className="font-medium text-[#F5F2EB]">5 堂精選課包 (Sol Sanctuary)</div>
+                        <div className="text-[#C5A059] font-mono mt-1 font-bold">剩餘 2 堂額度</div>
+                        <div className="text-[10px] text-[#706658] mt-0.5">到期日：2027年01月30日</div>
+                      </div>
+                    </div>
+
+                    {/* Upcoming Bookings */}
+                    <div className="p-3.5 bg-[#24201C] rounded-2xl border border-[#302B24]">
+                      <div className="flex items-center space-x-1.5 text-xs font-semibold text-[#EAD8B1] mb-2">
+                        <Clock className="w-3.5 h-3.5 text-[#C5A059]" />
+                        <span>{tAdmin('studentUpcomingClasses')}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-[#181614] border border-[#352E26] text-xs space-y-1">
+                        <div className="font-medium text-[#F5F2EB]">{currentConv.sessionTitle}</div>
+                        <div className="text-[11px] text-[#8C8274] font-mono">週三 08:00 - 08:50</div>
+                        <span className="inline-block text-[9px] px-2 py-0.2 rounded-full bg-emerald-950 text-emerald-400 font-medium">
+                          席位已確認
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SUB-TAB 5: PAYMENT METHODS (GLOBAL + TAIWAN) */}
+        {activeAdminTab === 'payments' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="block text-sm font-medium text-[#E0D8CE] mb-1">
-                  {tAdmin('waitlistOfferTimeout')}: <span className="text-[#C5A059] font-mono">{waitlistMins} {tAdmin('minutes')}</span>
-                </label>
-                <input
-                  type="range"
-                  min="10"
-                  max="120"
-                  step="5"
-                  value={waitlistMins}
-                  onChange={(e) => setWaitlistMins(Number(e.target.value))}
-                  className="w-full accent-[#C5A059]"
-                />
-                <p className="text-xs text-[#8C8274] mt-1">
-                  {tAdmin('waitlistOfferTimeoutDesc')}
+                <h3 className="text-lg font-medium text-[#F5F2EB] tracking-wide">
+                  {tAdmin('paymentSettingsTitle')}
+                </h3>
+                <p className="text-xs text-[#8C8274]">
+                  {tAdmin('paymentSettingsSubtitle')}
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#1A1714] border border-[#352E26] text-xs text-[#A89F91]">
-                {tAdmin('flatSubscriptionBanner')}
+              {paymentSavedToast && (
+                <div className="px-3 py-1.5 rounded-full bg-emerald-950 border border-emerald-600 text-emerald-300 text-xs flex items-center space-x-1.5 animate-in fade-in">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>已儲存付款設定！</span>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleSavePayments} className="space-y-6">
+              {/* Card 1: Stripe Connect (Card / Apple Pay / GPay) */}
+              <div className="bg-[#221E1A] rounded-2xl p-6 border border-[#3A332B] relative shadow-md">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#2D261E] border border-[#44392D] flex items-center justify-center text-[#C5A059]">
+                      <CreditCard className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-serif text-base font-medium text-[#F5F2EB]">
+                        {tAdmin('stripeCardApplePayTitle')}
+                      </h4>
+                      <p className="text-xs text-[#8C8274]">
+                        {tAdmin('stripeCardApplePayDesc')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="text-xs px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold flex items-center space-x-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span>{tAdmin('stripeConnectedBadge')}</span>
+                  </span>
+                </div>
+
+                <div className="mt-4 p-4 rounded-xl bg-[#181614] border border-[#352E26] flex items-center justify-between text-xs text-[#A89F91]">
+                  <div>
+                    <span className="text-[#8C8274]">直連帳戶代號: </span>
+                    <span className="font-mono text-[#F5F2EB]">{studio.paymentMethods?.stripe.accountName || 'acct_sol_sanctuary_8829'}</span>
+                  </div>
+                  <span className="text-emerald-400 font-semibold">0% 抽成 • 自動結清撥款</span>
+                </div>
               </div>
 
-              <button
-                type="submit"
-                className="px-6 py-2.5 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-md"
-              >
-                {tCommon('save')}
-              </button>
+              {/* Card 2: LINE Pay Mobile Payment */}
+              <div className="bg-[#221E1A] rounded-2xl p-6 border border-[#3A332B] relative shadow-md">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-950/60 border border-emerald-700/60 flex items-center justify-center text-emerald-400">
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-serif text-base font-medium text-[#F5F2EB]">
+                        {tAdmin('linePayTitle')}
+                      </h4>
+                      <p className="text-xs text-[#8C8274]">
+                        {tAdmin('linePayDesc')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={linePayEnabled}
+                      onChange={(e) => setLinePayEnabled(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[#352E26] peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                </div>
+
+                {linePayEnabled && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#302B24] text-xs">
+                    <div>
+                      <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('linePayChannelId')}</label>
+                      <input
+                        type="text"
+                        value={linePayChannelId}
+                        onChange={(e) => setLinePayChannelId(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] font-mono focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('linePayChannelSecret')}</label>
+                      <input
+                        type="password"
+                        value={linePayChannelSecret}
+                        onChange={(e) => setLinePayChannelSecret(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] font-mono focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Card 3: JKOPAY 街口支付 */}
+              <div className="bg-[#221E1A] rounded-2xl p-6 border border-[#3A332B] relative shadow-md">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl bg-red-950/60 border border-red-700/60 flex items-center justify-center text-red-400">
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-serif text-base font-medium text-[#F5F2EB]">
+                        {tAdmin('jkoPayTitle')}
+                      </h4>
+                      <p className="text-xs text-[#8C8274]">
+                        {tAdmin('jkoPayDesc')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={jkoPayEnabled}
+                      onChange={(e) => setJkoPayEnabled(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[#352E26] peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
+                </div>
+
+                {jkoPayEnabled && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#302B24] text-xs">
+                    <div>
+                      <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('jkoPayMerchantId')}</label>
+                      <input
+                        type="text"
+                        value={jkoPayMerchantId}
+                        onChange={(e) => setJkoPayMerchantId(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] font-mono focus:outline-none focus:border-red-500"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Card 4: Bank Transfer / ATM */}
+              <div className="bg-[#221E1A] rounded-2xl p-6 border border-[#3A332B] relative shadow-md">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#2D261E] border border-[#44392D] flex items-center justify-center text-[#C5A059]">
+                      <Building className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-serif text-base font-medium text-[#F5F2EB]">
+                        {tAdmin('bankTransferTitle')}
+                      </h4>
+                      <p className="text-xs text-[#8C8274]">
+                        {tAdmin('bankTransferDesc')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={bankEnabled}
+                      onChange={(e) => setBankEnabled(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[#352E26] peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#C5A059]"></div>
+                  </label>
+                </div>
+
+                {bankEnabled && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#302B24] text-xs">
+                    <div>
+                      <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('bankName')}</label>
+                      <input
+                        type="text"
+                        value={bankName}
+                        onChange={(e) => setBankName(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] focus:outline-none focus:border-[#C5A059]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('bankCode')}</label>
+                      <input
+                        type="text"
+                        value={bankCode}
+                        onChange={(e) => setBankCode(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] font-mono focus:outline-none focus:border-[#C5A059]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('bankAccount')}</label>
+                      <input
+                        type="text"
+                        value={bankAccount}
+                        onChange={(e) => setBankAccount(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] font-mono focus:outline-none focus:border-[#C5A059]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('bankAccountName')}</label>
+                      <input
+                        type="text"
+                        value={bankAccountName}
+                        onChange={(e) => setBankAccountName(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] focus:outline-none focus:border-[#C5A059]"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-md"
+                >
+                  {tAdmin('savePaymentConfig')}
+                </button>
+              </div>
             </form>
           </div>
         )}
+
+        {/* SUB-TAB 6: STUDIO POLICIES & COMMUNICATION */}
+        {activeAdminTab === 'policies' && (
+          <div className="space-y-6 max-w-3xl">
+            {/* Part 1: Automated Waitlist & Cancellation Policies */}
+            <div className="bg-[#221E1A] rounded-2xl p-6 border border-[#3A332B]">
+              <h3 className="font-serif text-lg font-medium text-[#F5F2EB] mb-2">
+                {tAdmin('studioRulesTitle')}
+              </h3>
+              <p className="text-xs text-[#8C8274] mb-6">
+                Configure cutoff policies and automated cascade intervals. All rules execute asynchronously with zero manual intervention.
+              </p>
+
+              <form onSubmit={handleSavePolicies} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-[#E0D8CE] mb-1">
+                    {tAdmin('cancellationCutoff')}: <span className="text-[#C5A059] font-mono">{cancelCutoff} {tAdmin('hours')}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="2"
+                    max="48"
+                    step="2"
+                    value={cancelCutoff}
+                    onChange={(e) => setCancelCutoff(Number(e.target.value))}
+                    className="w-full accent-[#C5A059]"
+                  />
+                  <p className="text-xs text-[#8C8274] mt-1">
+                    {tAdmin('cancellationCutoffDesc')}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#E0D8CE] mb-1">
+                    {tAdmin('waitlistOfferTimeout')}: <span className="text-[#C5A059] font-mono">{waitlistMins} {tAdmin('minutes')}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="10"
+                    max="120"
+                    step="5"
+                    value={waitlistMins}
+                    onChange={(e) => setWaitlistMins(Number(e.target.value))}
+                    className="w-full accent-[#C5A059]"
+                  />
+                  <p className="text-xs text-[#8C8274] mt-1">
+                    {tAdmin('waitlistOfferTimeoutDesc')}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#1A1714] border border-[#352E26] text-xs text-[#A89F91]">
+                  {tAdmin('flatSubscriptionBanner')}
+                </div>
+
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-md"
+                >
+                  {tCommon('save')}
+                </button>
+              </form>
+            </div>
+
+            {/* Part 2: Communication Channels & LINE OA Integration */}
+            <div className="bg-[#221E1A] rounded-2xl p-6 border border-[#3A332B]">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-serif text-lg font-medium text-[#F5F2EB]">
+                  {tAdmin('commSettingsTitle')}
+                </h3>
+                {commSavedToast && (
+                  <span className="text-xs text-emerald-400 animate-in fade-in">
+                    已儲存通訊設定！
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#8C8274] mb-6">
+                {tAdmin('commSettingsSubtitle')}
+              </p>
+
+              <form onSubmit={handleSaveCommunication} className="space-y-5">
+                {/* LINE OA Toggle */}
+                <div className="p-4 rounded-xl bg-[#181614] border border-[#352E26] flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <span className="w-8 h-8 rounded-lg bg-emerald-950 flex items-center justify-center text-emerald-400 font-bold text-xs">
+                      LINE
+                    </span>
+                    <div>
+                      <div className="text-xs font-semibold text-[#F5F2EB]">
+                        {tAdmin('lineOaEnableToggle')}
+                      </div>
+                      <div className="text-[11px] text-[#8C8274]">
+                        支援課堂名冊自動推播，學員回覆直入 Aura Flow 收件匣
+                      </div>
+                    </div>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={lineOaActive}
+                      onChange={(e) => setLineOaActive(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[#352E26] peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                </div>
+
+                {lineOaActive && (
+                  <div className="space-y-4 pt-2">
+                    <div>
+                      <label className="block text-xs font-medium text-[#A89F91] mb-1">
+                        {tAdmin('lineChannelId')}
+                      </label>
+                      <input
+                        type="text"
+                        value={lineOaChannelId}
+                        onChange={(e) => setLineOaChannelId(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-xs text-[#F5F2EB] font-mono focus:outline-none focus:border-[#C5A059]"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-[#A89F91] mb-1">
+                          {tAdmin('lineChannelSecret')}
+                        </label>
+                        <input
+                          type="password"
+                          value={lineOaChannelSecret}
+                          onChange={(e) => setLineOaChannelSecret(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-xs text-[#F5F2EB] font-mono focus:outline-none focus:border-[#C5A059]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[#A89F91] mb-1">
+                          {tAdmin('lineAccessToken')}
+                        </label>
+                        <input
+                          type="password"
+                          value={lineOaAccessToken}
+                          onChange={(e) => setLineOaAccessToken(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-xs text-[#F5F2EB] font-mono focus:outline-none focus:border-[#C5A059]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#302B24]">
+                  <div>
+                    <label className="block text-xs font-medium text-[#A89F91] mb-1">
+                      {tAdmin('instagramHandle')}
+                    </label>
+                    <input
+                      type="text"
+                      value={igHandle}
+                      onChange={(e) => setIgHandle(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-xs text-[#F5F2EB] focus:outline-none focus:border-[#C5A059]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#A89F91] mb-1">
+                      {tAdmin('supportEmail')}
+                    </label>
+                    <input
+                      type="email"
+                      value={commEmail}
+                      onChange={(e) => setCommEmail(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-xs text-[#F5F2EB] focus:outline-none focus:border-[#C5A059]"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-md"
+                  >
+                    儲存通訊管道設定
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* 1-Click Roster Broadcast Modal */}
+      {broadcastingSession && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#221E1A] rounded-3xl p-6 border border-[#3A332B] w-full max-w-lg text-[#F5F2EB] shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between mb-4 border-b border-[#3A332B] pb-3">
+              <div>
+                <h3 className="font-serif text-lg font-medium text-[#C5A059] flex items-center space-x-2">
+                  <Megaphone className="w-5 h-5 text-[#C5A059]" />
+                  <span>{tAdmin('broadcastModalTitle')}</span>
+                </h3>
+                <p className="text-xs text-[#8C8274] mt-0.5">
+                  {broadcastingSession.title} ({broadcastingSession.startTime.substring(11, 16)} - {broadcastingSession.endTime.substring(11, 16)})
+                </p>
+              </div>
+              <button
+                onClick={() => setBroadcastingSession(null)}
+                className="text-[#8C8274] hover:text-[#F5F2EB] text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSendBroadcast} className="space-y-4 text-xs">
+              {/* Audience info */}
+              <div className="p-3 bg-[#181614] rounded-xl border border-[#352E26] flex items-center justify-between">
+                <span className="text-[#8C8274]">{tAdmin('broadcastTarget')}</span>
+                <span className="text-[#C5A059] font-semibold">
+                  {tAdmin('broadcastTargetRoster', { count: broadcastingSession.bookedCount })}
+                </span>
+              </div>
+
+              {/* Delivery Channels */}
+              <div>
+                <label className="block text-[#A89F91] mb-2 font-medium">{tAdmin('broadcastChannels')}</label>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2 text-[#E0D8CE] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={broadcastInApp}
+                      onChange={(e) => setBroadcastInApp(e.target.checked)}
+                      className="w-4 h-4 rounded accent-[#C5A059]"
+                    />
+                    <span>{tAdmin('broadcastChannelInApp')}</span>
+                  </label>
+                  <label className="flex items-center space-x-2 text-[#E0D8CE] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={broadcastLine}
+                      onChange={(e) => setBroadcastLine(e.target.checked)}
+                      className="w-4 h-4 rounded accent-[#C5A059]"
+                    />
+                    <span>{tAdmin('broadcastChannelLine')} (@sol_sanctuary_tw)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Quick Template Chips */}
+              <div>
+                <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('broadcastQuickTemplates')}</label>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setBroadcastText('今日上課請攜帶乾淨防滑襪與水壺，教室已為各位備妥專屬器械、酒精擦巾與置物櫃！')}
+                    className="px-2.5 py-1 rounded-lg bg-[#2E2822] text-[#E0C99E] border border-[#44392D] text-[11px] hover:bg-[#3A332C]"
+                  >
+                    防滑襪與水壺提醒
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBroadcastText('溫馨提醒：請提早 10 分鐘抵達教室進行關節熱身，課程將準時開始以維持完整訓練節奏。')}
+                    className="px-2.5 py-1 rounded-lg bg-[#2E2822] text-[#E0C99E] border border-[#44392D] text-[11px] hover:bg-[#3A332C]"
+                  >
+                    提早 10 分鐘暖身
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBroadcastText('教室位於 2 樓，備有密碼鎖置物櫃與更衣淋浴間，如有身體不適請於課前向教練說明。')}
+                    className="px-2.5 py-1 rounded-lg bg-[#2E2822] text-[#E0C99E] border border-[#44392D] text-[11px] hover:bg-[#3A332C]"
+                  >
+                    更衣置物與更衣設施
+                  </button>
+                </div>
+              </div>
+
+              {/* Message Content */}
+              <div>
+                <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('broadcastContent')}</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={broadcastText}
+                  onChange={(e) => setBroadcastText(e.target.value)}
+                  placeholder={tAdmin('broadcastPlaceholder')}
+                  className="w-full px-3 py-2.5 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-xs focus:outline-none focus:border-[#C5A059]"
+                />
+              </div>
+
+              {broadcastSentToast && (
+                <div className="p-2.5 rounded-xl bg-emerald-950 border border-emerald-600 text-emerald-300 text-xs flex items-center space-x-2">
+                  <Check className="w-4 h-4" />
+                  <span>{tAdmin('broadcastSuccess')}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-[#3A332B]">
+                <button
+                  type="button"
+                  onClick={() => setBroadcastingSession(null)}
+                  className="px-4 py-2 rounded-full border border-[#3A332B] text-[#A89F91] hover:text-[#F5F2EB]"
+                >
+                  {tCommon('cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={!broadcastText.trim()}
+                  className="px-5 py-2 rounded-full bg-[#C5A059] text-[#161412] font-semibold hover:bg-[#D4AF37] transition-all disabled:opacity-40"
+                >
+                  {tAdmin('sendBroadcast')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* New Class Modal */}
       {showNewClassModal && (
@@ -782,35 +1623,28 @@ export const AdminPortal: React.FC = () => {
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
                   placeholder={tAdmin('categoryCustomPlaceholder')}
-                  className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
+                  className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-xs focus:outline-none focus:border-[#C5A059]"
                 />
-                <div className="mt-2">
-                  <span className="text-[11px] text-[#8C8274] block mb-1.5 font-medium">
-                    {tAdmin('suggestedTagsLabel')}
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(locale === 'zh-TW' || locale === 'zh-CN'
-                      ? ['皮拉提', '瑜珈', '私人教練', '頌缽音療', '重訓體能', '器械皮拉提', '拳擊體能']
-                      : ['Pilates', 'Yoga', '1-on-1 Personal', 'Sound Healing', 'Strength', 'Reformer', 'Boxing']
-                    ).map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => setNewCategory(tag)}
-                        className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all ${
-                          newCategory === tag
-                            ? 'bg-[#C5A059] text-[#161412] border-[#C5A059] font-semibold shadow-xs'
-                            : 'bg-[#221E1A] text-[#C5A059] border-[#3E362C] hover:border-[#C5A059]'
-                        }`}
-                      >
-                        + {tag}
-                      </button>
-                    ))}
-                  </div>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] text-[#706658] mr-1">{tAdmin('suggestedTagsLabel')}</span>
+                  {['皮拉提', '瑜珈', '私人教練', '頌缽音療', '重訓體能', 'Reformer', 'Mat Flow', 'Barre'].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setNewCategory(tag)}
+                      className={`text-[10px] px-2.5 py-0.5 rounded-full border transition-colors ${
+                        newCategory === tag
+                          ? 'bg-[#C5A059] text-[#161412] font-semibold border-[#C5A059]'
+                          : 'bg-[#1E1B18] text-[#A89F91] border-[#3A332B] hover:text-[#F5F2EB]'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('instructor')}</label>
                   <input
@@ -818,16 +1652,17 @@ export const AdminPortal: React.FC = () => {
                     required
                     value={newInstructor}
                     onChange={(e) => setNewInstructor(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
+                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-xs focus:outline-none focus:border-[#C5A059]"
                   />
                 </div>
                 <div>
                   <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('room')}</label>
                   <input
                     type="text"
+                    required
                     value={newRoom}
                     onChange={(e) => setNewRoom(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
+                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-xs focus:outline-none focus:border-[#C5A059]"
                   />
                 </div>
               </div>
@@ -838,20 +1673,19 @@ export const AdminPortal: React.FC = () => {
                   <input
                     type="number"
                     min="1"
-                    max="100"
+                    max="50"
+                    required
                     value={newCapacity}
                     onChange={(e) => setNewCapacity(Number(e.target.value))}
                     className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[#A89F91] mb-1 font-medium">
-                    {tAdmin('price')} ({CURRENCY_CONFIGS[currency]?.symbol || '$'})
-                  </label>
+                  <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('price')} ({CURRENCY_CONFIGS[currency].symbol})</label>
                   <input
                     type="number"
-                    min="1"
-                    max="50000"
+                    min="0"
+                    required
                     value={newPrice}
                     onChange={(e) => setNewPrice(Number(e.target.value))}
                     className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
@@ -879,12 +1713,12 @@ export const AdminPortal: React.FC = () => {
         </div>
       )}
 
-      {/* EDIT / CREATE CLASS PACK MODAL */}
+      {/* Class Pack Modal (Edit & Create) */}
       {showPackModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
-          <div className="bg-[#221E1A] border border-[#3A332B] rounded-3xl p-6 w-full max-w-md shadow-2xl text-xs text-[#F5F2EB]">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#221E1A] rounded-3xl p-6 border border-[#3A332B] w-full max-w-lg text-[#F5F2EB] shadow-2xl">
             <div className="flex items-center justify-between mb-4 border-b border-[#3A332B] pb-3">
-              <h3 className="text-base font-serif font-medium text-[#C5A059]">
+              <h3 className="font-serif text-xl font-medium text-[#C5A059]">
                 {editingPackId ? tAdmin('editPack') : tAdmin('createNewPack')}
               </h3>
               <button
@@ -895,7 +1729,7 @@ export const AdminPortal: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSavePack} className="space-y-3.5">
+            <form onSubmit={handleSavePack} className="space-y-4 text-xs">
               <div>
                 <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('packName')}</label>
                 <input
@@ -903,16 +1737,14 @@ export const AdminPortal: React.FC = () => {
                   required
                   value={packNameInput}
                   onChange={(e) => setPackNameInput(e.target.value)}
-                  placeholder="e.g. 5 堂精選課包 / 5-Class Pack"
-                  className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
+                  placeholder="例如：5 堂精選課包"
+                  className="w-full px-3 py-2.5 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#A89F91] mb-1 font-medium">
-                    {tAdmin('packPrice')} ({CURRENCY_CONFIGS[currency]?.symbol || '$'})
-                  </label>
+                  <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('packPrice')} ({CURRENCY_CONFIGS[currency].symbol})</label>
                   <input
                     type="number"
                     min="1"
@@ -923,13 +1755,10 @@ export const AdminPortal: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[#A89F91] mb-1 font-medium">
-                    {locale === 'zh-TW' ? '堂數點數' : 'Class Credits'}
-                  </label>
+                  <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('creditsCount', { count: '' })}</label>
                   <input
                     type="number"
                     min="1"
-                    max="100"
                     required
                     value={packCreditsInput}
                     onChange={(e) => setPackCreditsInput(Number(e.target.value))}
@@ -943,8 +1772,7 @@ export const AdminPortal: React.FC = () => {
                   <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('validityDaysInput')}</label>
                   <input
                     type="number"
-                    min="7"
-                    max="365"
+                    min="1"
                     required
                     value={packExpiryInput}
                     onChange={(e) => setPackExpiryInput(Number(e.target.value))}
@@ -1015,4 +1843,3 @@ export const AdminPortal: React.FC = () => {
     </div>
   );
 };
-

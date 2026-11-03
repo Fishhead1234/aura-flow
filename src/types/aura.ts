@@ -37,6 +37,42 @@ export interface DatabaseUser {
   createdAt: string;
 }
 
+export interface StudioCommunicationSettings {
+  lineOaEnabled: boolean;
+  lineChannelId: string;
+  lineChannelSecret: string;
+  lineAccessToken: string;
+  instagramHandle: string;
+  supportEmail: string;
+}
+
+export interface StudioPaymentConfig {
+  stripe: {
+    enabled: boolean;
+    connected: boolean;
+    accountName: string;
+    supportedCards: string[];
+  };
+  linePay: {
+    enabled: boolean;
+    channelId: string;
+    channelSecret: string;
+    qrCodeUrl?: string;
+  };
+  jkoPay: {
+    enabled: boolean;
+    merchantId: string;
+    qrCodeUrl?: string;
+  };
+  bankTransfer: {
+    enabled: boolean;
+    bankName: string;
+    bankCode: string;
+    accountNumber: string;
+    accountName: string;
+  };
+}
+
 export interface Studio {
   id: string;
   ownerId: string;
@@ -53,6 +89,8 @@ export interface Studio {
   platformTakeRate: number; // 0%
   logoMark: string;
   createdAt: string;
+  communication?: StudioCommunicationSettings;
+  paymentMethods?: StudioPaymentConfig;
 }
 
 export type ClassCategory = 
@@ -107,7 +145,56 @@ export interface ClientPass {
   createdAt: string;
 }
 
-export type PaymentMethodType = 'PASS_CREDIT' | 'STRIPE_CARD' | 'APPLE_PAY';
+export type PaymentMethodType =
+  | 'PASS_CREDIT'
+  | 'STRIPE_CARD'
+  | 'APPLE_PAY'
+  | 'LINE_PAY'
+  | 'JKOPAY'
+  | 'BANK_TRANSFER';
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderRole: 'STUDENT' | 'INSTRUCTOR' | 'SYSTEM';
+  senderName: string;
+  senderAvatar?: string;
+  content: string;
+  channel: 'IN_APP' | 'LINE_OA';
+  createdAt: string;
+  isRead: boolean;
+}
+
+export interface Conversation {
+  id: string;
+  studioId: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  studentPhone?: string;
+  studentAvatar?: string;
+  sessionId?: string;
+  sessionTitle?: string;
+  sessionTime?: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount: number;
+  channel: 'IN_APP' | 'LINE_OA';
+}
+
+export interface RosterBroadcast {
+  id: string;
+  studioId: string;
+  sessionId: string;
+  sessionTitle: string;
+  instructorName: string;
+  message: string;
+  channels: ('IN_APP' | 'LINE_OA')[];
+  recipientCount: number;
+  sentAt: string;
+}
+
+export type AdminTabType = 'schedule' | 'packs' | 'rosters' | 'messages' | 'payments' | 'policies';
 
 export interface Booking {
   id: string;

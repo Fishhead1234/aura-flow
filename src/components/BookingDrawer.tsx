@@ -1,7 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { getTranslation, formatCurrency } from '../i18n/auraI18n';
-import { X, CreditCard, Check, Sparkles, AlertCircle } from 'lucide-react';
+import {
+  X,
+  CreditCard,
+  Check,
+  Sparkles,
+  AlertCircle,
+  Copy,
+  CheckCheck,
+  QrCode,
+  Smartphone,
+  Building,
+} from 'lucide-react';
 import { PaymentMethodType } from '../types/aura';
 import confetti from 'canvas-confetti';
 
@@ -10,6 +21,7 @@ export const BookingDrawer: React.FC = () => {
   const {
     locale,
     currency,
+    studio,
     isBookingDrawerOpen,
     closeBookingDrawer,
     selectedSessionForBooking,
@@ -22,14 +34,25 @@ export const BookingDrawer: React.FC = () => {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>(
     userPass.creditsLeft > 0 ? 'PASS_CREDIT' : 'APPLE_PAY'
   );
+  const [directPaymentTab, setDirectPaymentTab] = useState<'CARD' | 'LINE_PAY' | 'JKOPAY' | 'BANK'>('CARD');
+  const [copiedBank, setCopiedBank] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+
   const [clientName, setClientName] = useState(currentUser.name || 'Maya Lin');
   const [clientEmail, setClientEmail] = useState(currentUser.email || 'maya@example.com');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
+  const payments = studio.paymentMethods;
+
   // Sync state when active persona changes
   useEffect(() => {
-    setSelectedMethod(userPass.creditsLeft > 0 ? 'PASS_CREDIT' : 'APPLE_PAY');
+    if (userPass.creditsLeft > 0) {
+      setSelectedMethod('PASS_CREDIT');
+    } else {
+      setSelectedMethod('APPLE_PAY');
+      setDirectPaymentTab('CARD');
+    }
     setClientName(currentUser.name);
     setClientEmail(currentUser.email);
   }, [userPass.creditsLeft, currentUser]);
@@ -56,9 +79,14 @@ export const BookingDrawer: React.FC = () => {
     }
   }, [isBookingDrawerOpen]);
 
-  // Handle ESC or native dialog close
   const handleClose = () => {
     closeBookingDrawer();
+  };
+
+  const handleCopyAccount = (accountNo: string) => {
+    navigator.clipboard?.writeText(accountNo);
+    setCopiedBank(true);
+    setTimeout(() => setCopiedBank(false), 2500);
   };
 
   const handleConfirm = () => {
@@ -133,83 +161,254 @@ export const BookingDrawer: React.FC = () => {
                 {selectedSessionForBooking.title} - {formatCurrency(selectedSessionForBooking.price, currency, locale)}
               </h4>
               <p className="text-xs text-stone-500 mt-1">
-                Fri, Nov 6 • 8:30 AM
+                {selectedSessionForBooking.startTime.substring(0, 10)} • {selectedSessionForBooking.startTime.substring(11, 16)} - {selectedSessionForBooking.endTime.substring(11, 16)}
               </p>
             </div>
 
-            {/* Payment Method Section matching Screenshot 2 */}
+            {/* Payment Method Section */}
             <div className="mb-5">
               <h3 className="font-serif text-lg font-medium text-stone-800 mb-3">
                 {tBooking('paymentMethod')}
               </h3>
 
               <div className="space-y-3">
-                {/* Option 1: Use 1 Class Pass Credit */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedMethod('PASS_CREDIT')}
-                  className={`w-full flex items-center justify-between p-4 rounded-2xl border text-left transition-all ${
-                    selectedMethod === 'PASS_CREDIT'
-                      ? 'bg-[#EFEAE2] border-stone-400 ring-1 ring-stone-400'
-                      : 'bg-white border-stone-200 hover:border-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-9 h-9 rounded-xl bg-stone-200/60 flex items-center justify-center text-stone-700">
-                      <CreditCard className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-stone-900">
-                        {tBooking('useClassPass')}
-                      </div>
-                      <div className="text-xs text-stone-500">
-                        {tBooking('remainingCredits', { count: userPass.creditsLeft })}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                      selectedMethod === 'PASS_CREDIT'
-                        ? 'border-aura-clay bg-aura-clay text-white'
-                        : 'border-stone-300 bg-white'
-                    }`}
-                  >
-                    {selectedMethod === 'PASS_CREDIT' && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
-                </button>
-
-                {/* Option 2: Pay with Credit or Mobile Pay / Apple Pay */}
-                <div
-                  onClick={() => setSelectedMethod('APPLE_PAY')}
-                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                    selectedMethod === 'APPLE_PAY' || selectedMethod === 'STRIPE_CARD'
-                      ? 'bg-[#EFEAE2] border-stone-400 ring-1 ring-stone-400'
-                      : 'bg-white border-stone-200 hover:border-stone-300'
-                  }`}
-                >
-                  <div className="text-xs font-medium text-stone-600 mb-2.5">
-                    {tBooking('payWithCreditOrMobile')}
-                  </div>
-
-                  {/* Official Apple Pay Button matching Screenshot 2 */}
+                {/* Option 1: Use 1 Class Pass Credit (if has pass) */}
+                {userPass.creditsLeft > 0 && (
                   <button
                     type="button"
-                    onClick={() => setSelectedMethod('APPLE_PAY')}
-                    className="w-full h-11 rounded-xl bg-black text-white flex items-center justify-center space-x-1.5 hover:bg-neutral-800 transition-colors shadow-xs"
+                    onClick={() => setSelectedMethod('PASS_CREDIT')}
+                    className={`w-full flex items-center justify-between p-4 rounded-2xl border text-left transition-all ${
+                      selectedMethod === 'PASS_CREDIT'
+                        ? 'bg-[#EFEAE2] border-stone-400 ring-1 ring-stone-400'
+                        : 'bg-white border-stone-200 hover:border-stone-300'
+                    }`}
                   >
-                    <span className="text-base font-semibold tracking-tighter">Pay</span>
-                  </button>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-9 h-9 rounded-xl bg-stone-200/60 flex items-center justify-center text-stone-700">
+                        <CreditCard className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-stone-900">
+                          {tBooking('useClassPass')}
+                        </div>
+                        <div className="text-xs text-stone-500">
+                          {tBooking('remainingCredits', { count: userPass.creditsLeft })}
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="mt-2 text-center">
+                    <div
+                      className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                        selectedMethod === 'PASS_CREDIT'
+                          ? 'border-aura-clay bg-aura-clay text-white'
+                          : 'border-stone-300 bg-white'
+                      }`}
+                    >
+                      {selectedMethod === 'PASS_CREDIT' && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                  </button>
+                )}
+
+                {/* Option 2: Direct Studio Payment Methods */}
+                <div
+                  className={`p-4 rounded-2xl border text-left transition-all ${
+                    selectedMethod !== 'PASS_CREDIT'
+                      ? 'bg-[#EFEAE2] border-stone-400 ring-1 ring-stone-400'
+                      : 'bg-white border-stone-200 hover:border-stone-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="text-xs font-semibold text-stone-700">
+                      {locale === 'zh-TW' ? '工作室支援之多元收款管道' : 'Studio Accepted Payment Options'}
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">
+                      0% 手續費
+                    </span>
+                  </div>
+
+                  {/* Segmented selector tabs for payment methods */}
+                  <div className="grid grid-cols-4 gap-1.5 p-1 bg-stone-200/70 rounded-xl mb-3 text-[11px] font-medium">
                     <button
                       type="button"
-                      onClick={() => setSelectedMethod('STRIPE_CARD')}
-                      className="text-[11px] text-stone-500 hover:text-stone-800 underline underline-offset-2"
+                      onClick={() => {
+                        setDirectPaymentTab('CARD');
+                        setSelectedMethod('APPLE_PAY');
+                      }}
+                      className={`py-1.5 rounded-lg transition-all text-center ${
+                        directPaymentTab === 'CARD'
+                          ? 'bg-white text-stone-900 shadow-2xs font-semibold'
+                          : 'text-stone-600 hover:text-stone-900'
+                      }`}
                     >
-                      {tBooking('payCard')}
+                      {tBooking('payMethodStripe')}
                     </button>
+
+                    {(!payments || payments.linePay.enabled) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDirectPaymentTab('LINE_PAY');
+                          setSelectedMethod('LINE_PAY');
+                        }}
+                        className={`py-1.5 rounded-lg transition-all text-center ${
+                          directPaymentTab === 'LINE_PAY'
+                            ? 'bg-emerald-600 text-white shadow-2xs font-semibold'
+                            : 'text-stone-600 hover:text-stone-900'
+                        }`}
+                      >
+                        LINE Pay
+                      </button>
+                    )}
+
+                    {(!payments || payments.jkoPay.enabled) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDirectPaymentTab('JKOPAY');
+                          setSelectedMethod('JKOPAY');
+                        }}
+                        className={`py-1.5 rounded-lg transition-all text-center ${
+                          directPaymentTab === 'JKOPAY'
+                            ? 'bg-red-600 text-white shadow-2xs font-semibold'
+                            : 'text-stone-600 hover:text-stone-900'
+                        }`}
+                      >
+                        街口支付
+                      </button>
+                    )}
+
+                    {(!payments || payments.bankTransfer.enabled) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDirectPaymentTab('BANK');
+                          setSelectedMethod('BANK_TRANSFER');
+                        }}
+                        className={`py-1.5 rounded-lg transition-all text-center ${
+                          directPaymentTab === 'BANK'
+                            ? 'bg-[#1C1917] text-amber-300 shadow-2xs font-semibold'
+                            : 'text-stone-600 hover:text-stone-900'
+                        }`}
+                      >
+                        {tBooking('payMethodBank')}
+                      </button>
+                    )}
                   </div>
+
+                  {/* Tab 1: Apple Pay & Credit Card */}
+                  {directPaymentTab === 'CARD' && (
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMethod('APPLE_PAY')}
+                        className="w-full h-11 rounded-xl bg-black text-white flex items-center justify-center space-x-1.5 hover:bg-neutral-800 transition-colors shadow-xs"
+                      >
+                        <span className="text-base font-semibold tracking-tighter">Pay</span>
+                      </button>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMethod('STRIPE_CARD')}
+                          className="text-[11px] text-stone-600 hover:text-stone-900 underline underline-offset-2 flex items-center space-x-1"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" />
+                          <span>{tBooking('payCard')}</span>
+                        </button>
+                        <span className="text-[10px] text-stone-400 font-mono">
+                          Visa • MC • JCB • GPay
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 2: LINE Pay */}
+                  {directPaymentTab === 'LINE_PAY' && (
+                    <div className="p-3 bg-white rounded-xl border border-stone-200 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />
+                          <span className="text-xs font-semibold text-emerald-800">LINE Pay 官方條碼付款</span>
+                        </div>
+                        <span className="text-[10px] text-stone-400">LINE Points 折抵</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMethod('LINE_PAY')}
+                        className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs flex items-center justify-center space-x-1.5 transition-colors shadow-xs"
+                      >
+                        <Smartphone className="w-4 h-4" />
+                        <span>{tBooking('linePayCta')}</span>
+                      </button>
+                      <p className="text-[10px] text-stone-500 text-center">
+                        {tBooking('linePayQrTip')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Tab 3: JKOPAY */}
+                  {directPaymentTab === 'JKOPAY' && (
+                    <div className="p-3 bg-white rounded-xl border border-stone-200 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="w-2.5 h-2.5 bg-red-500 rounded-full" />
+                          <span className="text-xs font-semibold text-red-700">街口支付 (JKOPAY)</span>
+                        </div>
+                        <span className="text-[10px] text-stone-400">街口幣最高折抵 100%</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMethod('JKOPAY')}
+                        className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium text-xs flex items-center justify-center space-x-1.5 transition-colors shadow-xs"
+                      >
+                        <Smartphone className="w-4 h-4" />
+                        <span>{tBooking('jkoPayCta')}</span>
+                      </button>
+                      <p className="text-[10px] text-stone-500 text-center">
+                        {tBooking('jkoPayQrTip')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Tab 4: Bank Transfer / ATM */}
+                  {directPaymentTab === 'BANK' && (
+                    <div className="p-3.5 bg-white rounded-xl border border-stone-200 space-y-2">
+                      <div className="text-[11px] font-medium text-stone-700">
+                        {tBooking('bankTransferInstructions')}
+                      </div>
+
+                      <div className="space-y-1.5 text-xs text-stone-800 bg-stone-50 p-2.5 rounded-lg border border-stone-200">
+                        <div className="flex justify-between">
+                          <span className="text-stone-500">{tBooking('bankNameLabel')}:</span>
+                          <span className="font-medium">{payments?.bankTransfer.bankName || '國泰世華商業銀行'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-500">{tBooking('bankCodeLabel')}:</span>
+                          <span className="font-mono font-bold text-[#B86B53]">{payments?.bankTransfer.bankCode || '013'}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-stone-500">{tBooking('bankAccountLabel')}:</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono font-bold tracking-wider">{payments?.bankTransfer.accountNumber || '013-50-6189201'}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyAccount(payments?.bankTransfer.accountNumber || '013-50-6189201')}
+                              className="px-2 py-0.5 rounded bg-stone-200 hover:bg-stone-300 text-[10px] font-semibold flex items-center space-x-1 transition-colors"
+                            >
+                              {copiedBank ? <CheckCheck className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                              <span>{copiedBank ? tBooking('accountCopied') : tBooking('copyAccount')}</span>
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-500">{tBooking('bankAccountNameLabel')}:</span>
+                          <span className="font-medium">{payments?.bankTransfer.accountName || '日光彼拉提斯工作室 (Elena Rostova)'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -277,4 +476,3 @@ export const BookingDrawer: React.FC = () => {
     </dialog>
   );
 };
-

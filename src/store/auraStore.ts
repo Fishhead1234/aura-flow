@@ -15,6 +15,12 @@ import {
   AppRoute,
   DatabaseUser,
   PersonaType,
+  ChatMessage,
+  Conversation,
+  RosterBroadcast,
+  StudioCommunicationSettings,
+  StudioPaymentConfig,
+  AdminTabType,
 } from '../types/aura';
 
 function parseInitialRoute(): AppRoute {
@@ -74,6 +80,42 @@ const PERSONA_NEW_OWNER: DatabaseUser = {
   createdAt: '2026-11-02T00:00:00.000Z',
 };
 
+const DEFAULT_COMMUNICATION: StudioCommunicationSettings = {
+  lineOaEnabled: true,
+  lineChannelId: '@sol_sanctuary_tw',
+  lineChannelSecret: 'sec_884920a9fbc10293847',
+  lineAccessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.solsanctuary_token_sample',
+  instagramHandle: '@solsanctuary.movement',
+  supportEmail: 'hello@solsanctuary.studio',
+};
+
+const DEFAULT_PAYMENTS: StudioPaymentConfig = {
+  stripe: {
+    enabled: true,
+    connected: true,
+    accountName: 'Sol Sanctuary Direct Payouts (acct_sol_sanctuary_8829)',
+    supportedCards: ['Visa', 'Mastercard', 'JCB', 'Apple Pay', 'Google Pay'],
+  },
+  linePay: {
+    enabled: true,
+    channelId: 'linepay_merchant_99281',
+    channelSecret: 'sec_linepay_7721839',
+    qrCodeUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=300&auto=format&fit=crop&q=80',
+  },
+  jkoPay: {
+    enabled: true,
+    merchantId: 'JKO_STORE_883019',
+    qrCodeUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=300&auto=format&fit=crop&q=80',
+  },
+  bankTransfer: {
+    enabled: true,
+    bankName: '國泰世華商業銀行 (Cathay United Bank)',
+    bankCode: '013',
+    accountNumber: '013-50-6189201',
+    accountName: '日光彼拉提斯工作室 (Elena Rostova)',
+  },
+};
+
 // 1 Studio ("Sol Sanctuary", slug: "sol-sanctuary")
 const INITIAL_STUDIOS: Studio[] = [
   {
@@ -92,6 +134,135 @@ const INITIAL_STUDIOS: Studio[] = [
     platformTakeRate: 0.0,
     logoMark: '🌿',
     createdAt: '2026-11-01T00:00:00.000Z',
+    communication: DEFAULT_COMMUNICATION,
+    paymentMethods: DEFAULT_PAYMENTS,
+  },
+];
+
+const INITIAL_CONVERSATIONS: Conversation[] = [
+  {
+    id: 'conv-maya-01',
+    studioId: 'studio-sol-01',
+    studentId: 'usr-maya-student',
+    studentName: 'Maya Lin',
+    studentEmail: 'maya@example.com',
+    studentPhone: '+886 912-345-678',
+    studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    sessionId: 'sess-01',
+    sessionTitle: 'Dynamic Pilates',
+    sessionTime: '08:00 - 08:50',
+    lastMessage: 'Maya 您好！這堂課適合所有程度學員，請自備水壺並穿著防滑襪，教室有提供更衣間與置物櫃。',
+    lastMessageTime: '10:42 AM',
+    unreadCount: 0,
+    channel: 'IN_APP',
+  },
+  {
+    id: 'conv-lucas-02',
+    studioId: 'studio-sol-01',
+    studentId: 'usr-lucas-student',
+    studentName: 'Lucas Chen (陳立安)',
+    studentEmail: 'lucas.chen@example.com',
+    studentPhone: '+886 928-888-123',
+    studentAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+    sessionId: 'sess-02',
+    sessionTitle: 'Athletic Reformer Burn',
+    sessionTime: '09:30 - 10:20',
+    lastMessage: '教練您好，已綁定 LINE 官方帳號，請問週六這場還有名額可以候補嗎？',
+    lastMessageTime: '09:15 AM',
+    unreadCount: 1,
+    channel: 'LINE_OA',
+  },
+  {
+    id: 'conv-sophia-03',
+    studioId: 'studio-sol-01',
+    studentId: 'usr-sophia-student',
+    studentName: 'Sophia Wang',
+    studentEmail: 'sophia.w@example.com',
+    studentPhone: '+886 933-777-999',
+    studentAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
+    sessionId: 'sess-05',
+    sessionTitle: 'Evening Sound Bath',
+    sessionTime: '18:00 - 19:00',
+    lastMessage: '請問音療頌缽課程需要自備瑜珈墊嗎？還是教室有專屬厚墊呢？',
+    lastMessageTime: '昨天',
+    unreadCount: 0,
+    channel: 'IN_APP',
+  },
+];
+
+const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
+  'conv-maya-01': [
+    {
+      id: 'msg-m1',
+      conversationId: 'conv-maya-01',
+      senderRole: 'STUDENT',
+      senderName: 'Maya Lin',
+      senderAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+      content: 'Elena 教練您好！我剛預約了週三的 Dynamic Pilates，請問需要準備特別的裝備嗎？初學者跟得上嗎？',
+      channel: 'IN_APP',
+      createdAt: '2026-11-03T02:30:00.000Z',
+      isRead: true,
+    },
+    {
+      id: 'msg-m2',
+      conversationId: 'conv-maya-01',
+      senderRole: 'INSTRUCTOR',
+      senderName: 'Elena Rostova',
+      content: 'Maya 您好！這堂課適合所有程度學員，動作會由淺入深給予不同進階選項。請自備水壺並穿著防滑五趾襪，教室有提供更衣間與密碼置物櫃。期待課堂見！🌿',
+      channel: 'IN_APP',
+      createdAt: '2026-11-03T02:42:00.000Z',
+      isRead: true,
+    },
+  ],
+  'conv-lucas-02': [
+    {
+      id: 'msg-l1',
+      conversationId: 'conv-lucas-02',
+      senderRole: 'STUDENT',
+      senderName: 'Lucas Chen',
+      senderAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+      content: '教練您好，已綁定 LINE 官方帳號，請問週六這場還有名額可以候補嗎？',
+      channel: 'LINE_OA',
+      createdAt: '2026-11-03T01:15:00.000Z',
+      isRead: false,
+    },
+  ],
+  'conv-sophia-03': [
+    {
+      id: 'msg-s1',
+      conversationId: 'conv-sophia-03',
+      senderRole: 'STUDENT',
+      senderName: 'Sophia Wang',
+      senderAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
+      content: '請問音療頌缽課程需要自備瑜珈墊嗎？還是教室有專屬厚墊呢？',
+      channel: 'IN_APP',
+      createdAt: '2026-11-02T10:00:00.000Z',
+      isRead: true,
+    },
+    {
+      id: 'msg-s2',
+      conversationId: 'conv-sophia-03',
+      senderRole: 'INSTRUCTOR',
+      senderName: 'Elena Rostova',
+      content: 'Sophia 晚安！教室會為大家準備高磅數羊毛瑜珈墊與眼枕，您只要穿著舒適保暖衣物前來即可放鬆享受療癒時光。',
+      channel: 'IN_APP',
+      createdAt: '2026-11-02T10:15:00.000Z',
+      isRead: true,
+    },
+  ],
+};
+
+const INITIAL_BROADCASTS: RosterBroadcast[] = [
+  {
+    id: 'bc-1',
+    studioId: 'studio-sol-01',
+    sessionId: 'sess-01',
+    sessionTitle: 'Dynamic Pilates',
+    instructorName: 'Elena Rostova',
+    message: '【課前提醒】今日器械皮拉提請著防滑底五趾襪，教室備有置物櫃，建議提早 10 分鐘到場更衣暖身。',
+    channels: ['IN_APP', 'LINE_OA'],
+    recipientCount: 6,
+    sentAt: '2026-11-02T07:00:00.000Z',
   },
 ];
 
@@ -388,8 +559,16 @@ interface AuraState {
   currency: SupportedCurrency;
   selectedDate: string;
   activeCategory: string;
-  activeAdminTab: 'schedule' | 'packs' | 'rosters' | 'policies';
+  activeAdminTab: AdminTabType;
   isMobileDrawerOpen: boolean;
+
+  // Messaging & Communication Suite
+  conversations: Conversation[];
+  messages: Record<string, ChatMessage[]>;
+  activeConversationId: string | null;
+  broadcastHistory: RosterBroadcast[];
+  isStudentChatOpen: boolean;
+  studentChatSessionContext: { sessionId?: string; sessionTitle?: string } | null;
 
   // Active User & Studio Context
   currentUser: DatabaseUser;
@@ -421,8 +600,31 @@ interface AuraState {
   setCurrency: (currency: SupportedCurrency) => void;
   setSelectedDate: (date: string) => void;
   setActiveCategory: (cat: string) => void;
-  setActiveAdminTab: (tab: 'schedule' | 'packs' | 'rosters' | 'policies') => void;
+  setActiveAdminTab: (tab: AdminTabType) => void;
   setMobileDrawerOpen: (open: boolean) => void;
+
+  // Messaging Actions
+  setActiveConversationId: (id: string | null) => void;
+  openStudentChat: (sessionId?: string, sessionTitle?: string) => void;
+  closeStudentChat: () => void;
+  sendChatMessage: (
+    conversationId: string,
+    content: string,
+    senderRole?: 'STUDENT' | 'INSTRUCTOR',
+    channel?: 'IN_APP' | 'LINE_OA'
+  ) => void;
+  sendStudentInquiry: (
+    content: string,
+    sessionId?: string,
+    sessionTitle?: string
+  ) => string;
+  broadcastToRoster: (
+    sessionId: string,
+    message: string,
+    channels: ('IN_APP' | 'LINE_OA')[]
+  ) => void;
+  updateStudioCommunication: (settings: Partial<StudioCommunicationSettings>) => void;
+  updateStudioPayments: (config: Partial<StudioPaymentConfig>) => void;
 
   openBookingDrawer: (session: ClassSession) => void;
   closeBookingDrawer: () => void;
@@ -489,6 +691,14 @@ export const useAuraStore = create<AuraState>((set, get) => ({
   activeCategory: 'All',
   activeAdminTab: 'schedule',
   isMobileDrawerOpen: false,
+
+  // Messaging & Communication Initial State
+  conversations: INITIAL_CONVERSATIONS,
+  messages: INITIAL_MESSAGES,
+  activeConversationId: 'conv-maya-01',
+  broadcastHistory: INITIAL_BROADCASTS,
+  isStudentChatOpen: false,
+  studentChatSessionContext: null,
 
   currentUser: PERSONA_MAYA,
   studios: INITIAL_STUDIOS,
@@ -576,6 +786,12 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       waitlist: INITIAL_WAITLIST,
       creditLedger: INITIAL_LEDGER,
       stripeOverview: INITIAL_STRIPE,
+      conversations: INITIAL_CONVERSATIONS,
+      messages: INITIAL_MESSAGES,
+      activeConversationId: 'conv-maya-01',
+      broadcastHistory: INITIAL_BROADCASTS,
+      isStudentChatOpen: false,
+      studentChatSessionContext: null,
       activeWaterfallSessionId: null,
       activeWaterfallSecondsRemaining: 1800,
       selectedSessionForBooking: null,
@@ -597,6 +813,193 @@ export const useAuraStore = create<AuraState>((set, get) => ({
   setActiveCategory: (activeCategory) => set({ activeCategory }),
   setActiveAdminTab: (activeAdminTab) => set({ activeAdminTab }),
   setMobileDrawerOpen: (isMobileDrawerOpen) => set({ isMobileDrawerOpen }),
+
+  setActiveConversationId: (activeConversationId) => {
+    set({ activeConversationId });
+    if (activeConversationId) {
+      // Mark conversation as read
+      const { conversations } = get();
+      set({
+        conversations: conversations.map((c) =>
+          c.id === activeConversationId ? { ...c, unreadCount: 0 } : c
+        ),
+      });
+    }
+  },
+
+  openStudentChat: (sessionId, sessionTitle) => {
+    set({
+      isStudentChatOpen: true,
+      studentChatSessionContext: sessionId ? { sessionId, sessionTitle: sessionTitle || '' } : null,
+    });
+  },
+
+  closeStudentChat: () => set({ isStudentChatOpen: false, studentChatSessionContext: null }),
+
+  sendChatMessage: (conversationId, content, senderRole = 'INSTRUCTOR', channel = 'IN_APP') => {
+    const { messages, conversations, currentUser, studio } = get();
+    const existing = messages[conversationId] || [];
+    const newMsg: ChatMessage = {
+      id: `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      conversationId,
+      senderRole,
+      senderName: senderRole === 'INSTRUCTOR' ? (studio.name || 'Elena Rostova') : currentUser.name,
+      senderAvatar: senderRole === 'INSTRUCTOR' ? undefined : currentUser.avatarUrl,
+      content,
+      channel,
+      createdAt: new Date().toISOString(),
+      isRead: senderRole === 'INSTRUCTOR',
+    };
+
+    const updatedConversations = conversations.map((conv) => {
+      if (conv.id === conversationId) {
+        return {
+          ...conv,
+          lastMessage: content,
+          lastMessageTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          unreadCount: senderRole === 'STUDENT' ? conv.unreadCount + 1 : 0,
+        };
+      }
+      return conv;
+    });
+
+    set({
+      messages: {
+        ...messages,
+        [conversationId]: [...existing, newMsg],
+      },
+      conversations: updatedConversations,
+    });
+  },
+
+  sendStudentInquiry: (content, sessionId, sessionTitle) => {
+    const { currentUser, studio, conversations } = get();
+    let conv = conversations.find(
+      (c) => c.studentEmail === currentUser.email && (!sessionId || c.sessionId === sessionId)
+    );
+
+    const convId = conv ? conv.id : `conv-${currentUser.id}-${Date.now()}`;
+
+    if (!conv) {
+      const newConv: Conversation = {
+        id: convId,
+        studioId: studio.id,
+        studentId: currentUser.id,
+        studentName: currentUser.name,
+        studentEmail: currentUser.email,
+        studentPhone: '+886 912-345-678',
+        studentAvatar: currentUser.avatarUrl,
+        sessionId: sessionId || 'sess-01',
+        sessionTitle: sessionTitle || 'General Inquiry',
+        sessionTime: '08:00 - 08:50',
+        lastMessage: content,
+        lastMessageTime: '剛剛',
+        unreadCount: 1,
+        channel: 'IN_APP',
+      };
+      set({ conversations: [newConv, ...conversations] });
+    }
+
+    get().sendChatMessage(convId, content, 'STUDENT', 'IN_APP');
+    return convId;
+  },
+
+  broadcastToRoster: (sessionId, message, channels) => {
+    const { sessions, studio, broadcastHistory, bookings, conversations, messages } = get();
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return;
+
+    const newBroadcast: RosterBroadcast = {
+      id: `bc-${Date.now()}`,
+      studioId: studio.id,
+      sessionId,
+      sessionTitle: session.title,
+      instructorName: session.instructor,
+      message,
+      channels,
+      recipientCount: session.bookedCount,
+      sentAt: new Date().toISOString(),
+    };
+
+    // Inject message into conversation of each booked student
+    const sessionBookings = bookings.filter((b) => b.sessionId === sessionId && b.status !== 'CANCELLED');
+    const updatedMessages = { ...messages };
+    let updatedConversations = [...conversations];
+
+    sessionBookings.forEach((bk) => {
+      let conv = updatedConversations.find(
+        (c) => c.studentEmail === bk.clientEmail || c.studentName === bk.clientName
+      );
+      const convId = conv ? conv.id : `conv-${bk.id}`;
+      if (!conv) {
+        conv = {
+          id: convId,
+          studioId: studio.id,
+          studentId: bk.clientEmail,
+          studentName: bk.clientName,
+          studentEmail: bk.clientEmail,
+          studentPhone: bk.clientPhone,
+          sessionId: session.id,
+          sessionTitle: session.title,
+          lastMessage: `📢【課堂公告】${message}`,
+          lastMessageTime: '剛剛',
+          unreadCount: 0,
+          channel: channels.includes('LINE_OA') ? 'LINE_OA' : 'IN_APP',
+        };
+        updatedConversations.unshift(conv);
+      }
+
+      const existingMsgs = updatedMessages[convId] || [];
+      updatedMessages[convId] = [
+        ...existingMsgs,
+        {
+          id: `msg-bc-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          conversationId: convId,
+          senderRole: 'SYSTEM',
+          senderName: `${session.instructor} (課堂廣播)`,
+          content: `📢【${session.title} 課堂公告】\n${message}`,
+          channel: channels.includes('LINE_OA') ? 'LINE_OA' : 'IN_APP',
+          createdAt: new Date().toISOString(),
+          isRead: true,
+        },
+      ];
+    });
+
+    set({
+      broadcastHistory: [newBroadcast, ...broadcastHistory],
+      messages: updatedMessages,
+      conversations: updatedConversations,
+    });
+  },
+
+  updateStudioCommunication: (settings) => {
+    const { studio, studios } = get();
+    const current = studio.communication || DEFAULT_COMMUNICATION;
+    const updated = { ...current, ...settings };
+    const updatedStudio = { ...studio, communication: updated };
+    set({
+      studio: updatedStudio,
+      studios: studios.map((s) => (s.id === studio.id ? updatedStudio : s)),
+    });
+  },
+
+  updateStudioPayments: (config) => {
+    const { studio, studios } = get();
+    const current = studio.paymentMethods || DEFAULT_PAYMENTS;
+    const updated = {
+      ...current,
+      ...config,
+      stripe: { ...current.stripe, ...(config.stripe || {}) },
+      linePay: { ...current.linePay, ...(config.linePay || {}) },
+      jkoPay: { ...current.jkoPay, ...(config.jkoPay || {}) },
+      bankTransfer: { ...current.bankTransfer, ...(config.bankTransfer || {}) },
+    };
+    const updatedStudio = { ...studio, paymentMethods: updated };
+    set({
+      studio: updatedStudio,
+      studios: studios.map((s) => (s.id === studio.id ? updatedStudio : s)),
+    });
+  },
 
   openBookingDrawer: (session) => set({ selectedSessionForBooking: session, isBookingDrawerOpen: true }),
   closeBookingDrawer: () => set({ isBookingDrawerOpen: false, selectedSessionForBooking: null }),

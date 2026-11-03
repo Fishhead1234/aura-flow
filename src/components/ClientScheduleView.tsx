@@ -1,9 +1,10 @@
 import React from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { getTranslation, formatCurrency, formatTimeRange } from '../i18n/auraI18n';
-import { Clock, SlidersHorizontal, Sparkles, AlertCircle, CheckCircle2, Ticket } from 'lucide-react';
+import { Clock, SlidersHorizontal, Sparkles, AlertCircle, CheckCircle2, Ticket, MessageCircle } from 'lucide-react';
 import { ClassSession } from '../types/aura';
 import { AuraLeafBadge } from './AuraLeafLogo';
+import { StudentChatModal } from './StudentChatModal';
 
 export const ClientScheduleView: React.FC = () => {
   const {
@@ -20,6 +21,7 @@ export const ClientScheduleView: React.FC = () => {
     userPass,
     purchaseClassPack,
     classPacks,
+    openStudentChat,
   } = useAuraStore();
 
   const tCommon = (key: string, params?: Record<string, string | number>) =>
@@ -67,6 +69,14 @@ export const ClientScheduleView: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-2">
+            <button
+              onClick={() => openStudentChat()}
+              aria-label="Direct Chat with Coach"
+              className="w-9 h-9 rounded-full bg-stone-200/70 hover:bg-stone-300/80 flex items-center justify-center text-stone-700 transition-colors relative"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white" />
+            </button>
             <div className="w-8 h-8 rounded-full overflow-hidden border border-stone-300">
               <img
                 src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
@@ -74,14 +84,44 @@ export const ClientScheduleView: React.FC = () => {
                 className="w-full h-full object-cover"
               />
             </div>
-            <button
-              aria-label="Filter"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-aura-charcoal/80 hover:bg-stone-200/50 transition-colors"
-            >
-              <SlidersHorizontal className="w-4 h-4 stroke-[1.5]" />
-            </button>
           </div>
         </div>
+
+        {/* Active Pass Wallet Card with Contact Instructor CTA */}
+        {userPass && userPass.creditsLeft > 0 && (
+          <div className="mb-6 p-4 rounded-3xl bg-linear-to-br from-[#2D2824] to-[#1E1B18] text-white shadow-lg border border-[#443D36]">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <Ticket className="w-4 h-4 text-[#D4AF37]" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#EAD8B1]">
+                  {tBooking('creditWallet')}
+                </span>
+              </div>
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#3F362C] text-[#E0C99E] border border-[#5A4F44]">
+                {tBooking('passesRemaining', { count: userPass.creditsLeft })}
+              </span>
+            </div>
+
+            <div className="flex items-end justify-between pt-1">
+              <div>
+                <div className="text-sm font-medium text-stone-100">
+                  {locale === 'zh-TW' ? '5 堂精選課包 • Sol Sanctuary' : '5-Class Pack • Sol Sanctuary'}
+                </div>
+                <div className="text-[11px] text-stone-400 mt-0.5">
+                  {tBooking('passExpiresOn', { date: locale === 'zh-TW' ? '2027年01月30日' : 'Jan 30, 2027' })}
+                </div>
+              </div>
+
+              <button
+                onClick={() => openStudentChat()}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-[#C5A059] hover:bg-[#D4AF37] text-[#161412] text-xs font-semibold transition-all shadow-xs"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>{tBooking('messageInstructor')}</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Date Strip matching Screenshot 1 */}
         <div className="mb-6 overflow-x-auto no-scrollbar py-1">
@@ -160,35 +200,49 @@ export const ClientScheduleView: React.FC = () => {
                         {tCommon('spotsLeft', { count: spotsLeft })}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-medium bg-[#7D8D7B] text-white">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-medium bg-stone-100 text-stone-700">
                         {tCommon('spotsLeft', { count: spotsLeft })}
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Sub info */}
-                <div className="flex items-center space-x-2 text-[11px] text-stone-500 mb-4">
+                {/* Tags & Room info */}
+                <div className="flex items-center space-x-2 text-xs text-stone-600 mb-4">
+                  <span className="px-2.5 py-0.5 rounded-full bg-stone-100 font-medium">
+                    {session.category}
+                  </span>
+                  <span>•</span>
                   <span>{session.roomName}</span>
                   <span>•</span>
-                  <span>{session.level}</span>
-                  <span>•</span>
-                  <span className="font-medium text-stone-800">
+                  <span className="font-semibold text-stone-800">
                     {formatCurrency(session.price, currency, locale)}
                   </span>
                 </div>
 
                 {/* Instructor & Action Row */}
                 <div className="flex items-center justify-between pt-2 border-t border-stone-100">
-                  <div className="flex items-center space-x-2.5">
+                  <div className="flex items-center space-x-2">
                     <img
                       src={session.instructorAvatar}
                       alt={session.instructor}
                       className="w-9 h-9 rounded-full object-cover border border-stone-200"
                     />
-                    <span className="text-sm font-medium text-stone-800">
-                      {session.instructor}
-                    </span>
+                    <div>
+                      <div className="text-sm font-medium text-stone-800 flex items-center space-x-1.5">
+                        <span>{session.instructor}</span>
+                        <button
+                          onClick={() => openStudentChat(session.id, session.title)}
+                          className="text-stone-400 hover:text-aura-clay transition-colors"
+                          title={tBooking('messageInstructor')}
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <span className="text-[10px] text-stone-400">
+                        {locale === 'zh-TW' ? '資深認證師資' : 'Certified Coach'}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -250,7 +304,9 @@ export const ClientScheduleView: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* In-App Direct Student Chat Modal */}
+      <StudentChatModal />
     </div>
   );
 };
-
