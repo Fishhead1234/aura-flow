@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { SupportedCurrency, ClassCategory, CURRENCY_CONFIGS } from '../types/aura';
 import { Sparkles, ArrowRight, ArrowLeft, CheckCircle2, Shield, Calendar, DollarSign, Building } from 'lucide-react';
+import { AuraLeafBadge } from './AuraLeafLogo';
 
 export const OnboardingWizard: React.FC = () => {
   const { createStudioWithOnboarding, navigateTo } = useAuraStore();
@@ -57,8 +58,8 @@ export const OnboardingWizard: React.FC = () => {
       <div className="w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-stone-200/80">
         {/* Step Indicator Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl">✨</span>
+          <div className="flex items-center space-x-2.5">
+            <AuraLeafBadge size="sm" />
             <span className="font-serif text-xl font-semibold text-aura-charcoal">
               Instructor Onboarding
             </span>

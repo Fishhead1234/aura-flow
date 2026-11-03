@@ -4,19 +4,18 @@
       <stop offset="0%" stop-color="#1c1917" />
       <stop offset="100%" stop-color="#141210" />
     </linearGradient>
-    <linearGradient id="terracottaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E0A96D" />
-      <stop offset="50%" stop-color="#C4704F" />
-      <stop offset="100%" stop-color="#8E462E" />
+    <linearGradient id="leafGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#A25A44" />
+      <stop offset="40%" stop-color="#C4704F" />
+      <stop offset="100%" stop-color="#E0A96D" />
     </linearGradient>
-    <linearGradient id="goldGlow" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#C4704F" stop-opacity="0.3" />
-      <stop offset="50%" stop-color="#E0A96D" stop-opacity="0.6" />
-      <stop offset="100%" stop-color="#F5E6D3" stop-opacity="0.9" />
+    <linearGradient id="leafAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F7F4EE" />
+      <stop offset="100%" stop-color="#E5DEC9" />
     </linearGradient>
-    <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#E0A96D" stop-opacity="0.25" />
-      <stop offset="60%" stop-color="#C4704F" stop-opacity="0.1" />
+    <radialGradient id="auraGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#C4704F" stop-opacity="0.22" />
+      <stop offset="60%" stop-color="#E0A96D" stop-opacity="0.08" />
       <stop offset="100%" stop-color="#1c1917" stop-opacity="0" />
     </radialGradient>
   </defs>
@@ -25,32 +24,42 @@
   <rect width="512" height="512" fill="url(#bgGrad)" />
 
   <!-- Ambient glowing aura disk -->
-  <circle cx="256" cy="256" r="190" fill="url(#sunGlow)" />
+  <circle cx="256" cy="245" r="195" fill="url(#auraGlow)" />
 
-  <!-- Concentric Zen Halo Ring -->
-  <circle cx="256" cy="256" r="148" fill="none" stroke="url(#terracottaGrad)" stroke-width="3" stroke-dasharray="6 8" opacity="0.6" />
-  <circle cx="256" cy="256" r="132" fill="none" stroke="#E0A96D" stroke-width="1.5" opacity="0.4" />
+  <!-- Outer Zen Minimalist Ring -->
+  <circle cx="256" cy="245" r="148" fill="none" stroke="#C4704F" stroke-width="2.5" stroke-dasharray="4 6" opacity="0.45" />
 
-  <!-- Central Aura Flow Icon: Rising Sun & Mindful Wave / Lotus Form -->
-  <g transform="translate(256, 256)">
-    <!-- Ascending Sun Disc -->
-    <circle cx="0" cy="-32" r="38" fill="url(#terracottaGrad)" />
-    <circle cx="0" cy="-32" r="28" fill="#F7F4EE" opacity="0.15" />
+  <!-- Botanical Leaf Sprig Emblem -->
+  <g transform="translate(256, 240) scale(1.45)">
+    <!-- Central Organic Curved Stem -->
+    <path d="M -22 68 C -8 38, 4 2, 2 -58" fill="none" stroke="url(#leafGrad)" stroke-width="4.5" stroke-linecap="round" />
 
-    <!-- Mindful Flow Petals / Cradle Waves -->
-    <!-- Left flow arc -->
-    <path d="M -80 48 C -64 0, -20 -20, 0 10 C -30 20, -50 40, -80 48 Z" fill="url(#goldGlow)" />
-    <!-- Right flow arc -->
-    <path d="M 80 48 C 64 0, 20 -20, 0 10 C 30 20, 50 40, 80 48 Z" fill="url(#goldGlow)" />
-    
-    <!-- Base Lotus Basin (Harmonic Wave) -->
-    <path d="M -90 44 C -45 92, 45 92, 90 44 C 55 76, -55 76, -90 44 Z" fill="url(#terracottaGrad)" />
+    <!-- Terminal Crown Leaf -->
+    <path d="M 2 -58 C 14 -72, 2 -92, -4 -94 C -10 -92, -18 -72, 2 -58 Z" fill="url(#leafGrad)" />
+    <!-- Leaf midrib -->
+    <path d="M 2 -58 C -1 -72, -3 -86, -4 -94" fill="none" stroke="#F7F4EE" stroke-width="1.2" opacity="0.6" stroke-linecap="round" />
 
-    <!-- Center Radiant Seed Dot -->
-    <circle cx="0" cy="28" r="7" fill="#F7F4EE" />
+    <!-- Upper Right Leaf -->
+    <path d="M 2 -32 C 22 -44, 46 -38, 52 -28 C 48 -14, 26 -14, 2 -32 Z" fill="url(#leafGrad)" />
+    <path d="M 2 -32 C 24 -34, 42 -30, 52 -28" fill="none" stroke="#F7F4EE" stroke-width="1.2" opacity="0.5" stroke-linecap="round" />
+
+    <!-- Upper Left Leaf -->
+    <path d="M -2 -14 C -22 -26, -46 -20, -52 -10 C -48 4, -26 4, -2 -14 Z" fill="url(#leafGrad)" />
+    <path d="M -2 -14 C -24 -16, -42 -12, -52 -10" fill="none" stroke="#F7F4EE" stroke-width="1.2" opacity="0.5" stroke-linecap="round" />
+
+    <!-- Middle Right Leaf -->
+    <path d="M -6 10 C 16 -2, 40 4, 46 14 C 42 28, 20 28, -6 10 Z" fill="url(#leafGrad)" />
+    <path d="M -6 10 C 16 8, 36 12, 46 14" fill="none" stroke="#F7F4EE" stroke-width="1.2" opacity="0.5" stroke-linecap="round" />
+
+    <!-- Lower Left Leaf -->
+    <path d="M -12 34 C -32 22, -56 28, -62 38 C -58 52, -36 52, -12 34 Z" fill="url(#leafGrad)" />
+    <path d="M -12 34 C -34 32, -52 36, -62 38" fill="none" stroke="#F7F4EE" stroke-width="1.2" opacity="0.5" stroke-linecap="round" />
+
+    <!-- Base Sprout Petal -->
+    <circle cx="-22" cy="68" r="3.5" fill="#E0A96D" opacity="0.9" />
   </g>
 
-  <!-- Elegant Brand Typography Sub-badge -->
-  <text x="256" y="420" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Playfair Display', serif" font-size="28" font-weight="600" letter-spacing="8" fill="#EFECE6" text-anchor="middle" opacity="0.95">AURA FLOW</text>
-  <text x="256" y="444" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-size="12" font-weight="500" letter-spacing="4" fill="#E0A96D" text-anchor="middle" opacity="0.75">STUDIO</text>
+  <!-- Typography Brand Subtext -->
+  <text x="256" y="425" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Playfair Display', serif" font-size="26" font-weight="600" letter-spacing="8" fill="#EFECE6" text-anchor="middle" opacity="0.95">AURA FLOW</text>
+  <text x="256" y="450" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-size="12" font-weight="500" letter-spacing="4" fill="#C4704F" text-anchor="middle" opacity="0.85">STUDIO</text>
 </svg>

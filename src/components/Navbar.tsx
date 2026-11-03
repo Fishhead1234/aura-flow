@@ -16,6 +16,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { usePwaInstall } from '../hooks/usePwaInstall';
+import { AuraLeafBadge } from './AuraLeafLogo';
 
 export const Navbar: React.FC = () => {
   const {
@@ -75,9 +76,7 @@ export const Navbar: React.FC = () => {
             className="flex items-center space-x-2.5 cursor-pointer shrink-0"
             onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
           >
-            <div className="w-9 h-9 rounded-full bg-aura-clay/15 border border-aura-clay/30 flex items-center justify-center text-aura-clay shadow-xs">
-              <span className="font-serif text-lg font-bold">{studio.logoMark || '🌿'}</span>
-            </div>
+            <AuraLeafBadge size="md" />
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-serif text-lg sm:text-xl font-semibold tracking-wide text-aura-charcoal">
@@ -197,8 +196,8 @@ export const Navbar: React.FC = () => {
             <div>
               {/* Header with Title and Close Button */}
               <div className="flex items-center justify-between pb-4 border-b border-stone-300">
-                <div className="flex items-center space-x-2">
-                  <span className="text-xl">🌿</span>
+                <div className="flex items-center space-x-2.5">
+                  <AuraLeafBadge size="sm" />
                   <span className="font-serif text-lg font-semibold text-aura-charcoal">
                     {studio.name || 'Sol Sanctuary'}
                   </span>

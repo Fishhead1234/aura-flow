@@ -19,6 +19,7 @@ import {
   Ticket,
 } from 'lucide-react';
 import { ClassCategory } from '../types/aura';
+import { AuraLeafLogo } from './AuraLeafLogo';
 
 export const AdminPortal: React.FC = () => {
   const {
@@ -109,7 +110,10 @@ export const AdminPortal: React.FC = () => {
       <div className="border-b border-[#2D2824] bg-[#1E1B18]/90 backdrop-blur-md sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           {/* Brand Monogram */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-full bg-[#C5A059]/15 border border-[#C5A059]/30 flex items-center justify-center">
+              <AuraLeafLogo className="w-4 h-4 text-[#C5A059]" />
+            </div>
             <span className="font-serif text-xl tracking-wider text-[#C5A059] font-medium">
               Aura Flow
             </span>

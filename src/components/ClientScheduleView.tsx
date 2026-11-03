@@ -3,6 +3,7 @@ import { useAuraStore } from '../store/auraStore';
 import { getTranslation, formatCurrency, formatTimeRange } from '../i18n/auraI18n';
 import { Clock, SlidersHorizontal, Sparkles, AlertCircle, CheckCircle2, Ticket } from 'lucide-react';
 import { ClassSession } from '../types/aura';
+import { AuraLeafBadge } from './AuraLeafLogo';
 
 export const ClientScheduleView: React.FC = () => {
   const {
@@ -59,9 +60,7 @@ export const ClientScheduleView: React.FC = () => {
           </button>
 
           <div className="flex flex-col items-center">
-            <div className="w-7 h-7 rounded-full border border-stone-400 flex items-center justify-center text-aura-charcoal mb-1">
-              <span className="text-xs">🌿</span>
-            </div>
+            <AuraLeafBadge size="sm" className="mb-1" />
             <h1 className="font-serif text-2xl font-normal tracking-wide text-aura-charcoal">
               {studio.name}
             </h1>
