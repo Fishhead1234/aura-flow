@@ -89,9 +89,40 @@ export const BookingDrawer: React.FC = () => {
     setTimeout(() => setCopiedBank(false), 2500);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!selectedSessionForBooking) return;
     setIsSubmitting(true);
+
+    // If live payment mode is selected (simulateStripePayment = false), attempt real gateway checkout
+    if (
+      !simulateStripePayment &&
+      (selectedMethod === 'STRIPE_CARD' || selectedMethod === 'APPLE_PAY' || selectedMethod === 'LINE_PAY')
+    ) {
+      try {
+        const resp = await fetch('/api/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider: selectedMethod,
+            amount: selectedSessionForBooking.price,
+            currency,
+            sessionTitle: selectedSessionForBooking.title,
+            sessionId: selectedSessionForBooking.id,
+            clientEmail,
+            originUrl: typeof window !== 'undefined' ? window.location.origin : 'https://auraflow-bay.vercel.app',
+            linePayChannelId: payments?.linePay.channelId,
+            linePayChannelSecret: payments?.linePay.channelSecret,
+          }),
+        });
+        const data = await resp.json();
+        if (data.ok && !data.simulated && data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+          return;
+        }
+      } catch {
+        // Fallback to local booking confirmation if offline
+      }
+    }
 
     setTimeout(() => {
       const res = confirmBooking(

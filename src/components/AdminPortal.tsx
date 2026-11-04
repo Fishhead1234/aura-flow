@@ -1673,7 +1673,7 @@ export const AdminPortal: React.FC = () => {
                   <input
                     type="number"
                     min="1"
-                    max="50"
+                    step="1"
                     required
                     value={newCapacity}
                     onChange={(e) => setNewCapacity(Number(e.target.value))}
@@ -1685,6 +1685,7 @@ export const AdminPortal: React.FC = () => {
                   <input
                     type="number"
                     min="0"
+                    step="any"
                     required
                     value={newPrice}
                     onChange={(e) => setNewPrice(Number(e.target.value))}
@@ -1747,7 +1748,8 @@ export const AdminPortal: React.FC = () => {
                   <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('packPrice')} ({CURRENCY_CONFIGS[currency].symbol})</label>
                   <input
                     type="number"
-                    min="1"
+                    min="0"
+                    step="any"
                     required
                     value={packPriceInput}
                     onChange={(e) => setPackPriceInput(Number(e.target.value))}

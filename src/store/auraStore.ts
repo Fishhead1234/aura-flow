@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import {
   Studio,
   ClassSession,
@@ -680,7 +681,9 @@ interface AuraState {
   }) => void;
 }
 
-export const useAuraStore = create<AuraState>((set, get) => ({
+export const useAuraStore = create<AuraState>()(
+  persist(
+    (set, get) => ({
   currentRoute: parseInitialRoute(),
   activePersona: 'maya_student',
   simulateStripePayment: true, // Default to auto-approving test transactions
@@ -970,6 +973,19 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       messages: updatedMessages,
       conversations: updatedConversations,
     });
+
+    // If LINE_OA channel is enabled, dispatch real broadcast via serverless endpoint
+    if (channels.includes('LINE_OA') && typeof window !== 'undefined') {
+      fetch('/api/line-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessToken: studio.communication?.lineAccessToken,
+          sessionTitle: session.title,
+          message,
+        }),
+      }).catch(() => {});
+    }
   },
 
   updateStudioCommunication: (settings) => {
@@ -1397,6 +1413,8 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       platformTakeRate: 0.0,
       logoMark: '✨',
       createdAt: new Date().toISOString(),
+      communication: DEFAULT_COMMUNICATION,
+      paymentMethods: DEFAULT_PAYMENTS,
     };
 
     const firstClassSession: ClassSession = {
@@ -1430,4 +1448,26 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       window.history.pushState({}, '', '/admin');
     }
   },
-}));
+}),
+    {
+      name: 'aura-flow-db-v1',
+      partialize: (state) => ({
+        locale: state.locale,
+        currency: state.currency,
+        studios: state.studios,
+        studio: state.studio,
+        activeStudioId: state.activeStudioId,
+        sessions: state.sessions,
+        classPacks: state.classPacks,
+        userPass: state.userPass,
+        bookings: state.bookings,
+        waitlist: state.waitlist,
+        creditLedger: state.creditLedger,
+        stripeOverview: state.stripeOverview,
+        conversations: state.conversations,
+        messages: state.messages,
+        broadcastHistory: state.broadcastHistory,
+      }),
+    }
+  )
+);
