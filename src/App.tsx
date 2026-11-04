@@ -10,7 +10,33 @@ import { DevSandboxToolbar } from './components/DevSandboxToolbar';
 import { AppRoute } from './types/aura';
 
 export const App: React.FC = () => {
-  const { currentRoute, navigateTo } = useAuraStore();
+  const { currentRoute, navigateTo, syncFromCloud, confirmBooking, currentUser } = useAuraStore();
+
+  // Real-time multi-device Cloud Sync + Stripe/LINE Pay Redirect Return Handler
+  useEffect(() => {
+    syncFromCloud();
+    const interval = setInterval(() => {
+      syncFromCloud();
+    }, 6000);
+
+    // Handle Stripe Checkout / LINE Pay return URL (?booking=success&session_id=...&method=...)
+    const params = new URLSearchParams(window.location.search);
+    const bookingStatus = params.get('booking');
+    const returnedSessionId = params.get('session_id');
+    const returnedMethod = params.get('method') as any;
+
+    if (bookingStatus === 'success' && returnedSessionId) {
+      confirmBooking(
+        returnedSessionId,
+        returnedMethod || 'STRIPE_CARD',
+        currentUser.name,
+        currentUser.email
+      );
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    return () => clearInterval(interval);
+  }, [syncFromCloud, confirmBooking, currentUser.name, currentUser.email]);
 
   // Listen to browser forward/back buttons (HTML5 History API)
   useEffect(() => {

@@ -13,21 +13,27 @@ export default async function handler(req, res) {
       currency = 'TWD',
       sessionTitle = 'Aura Flow Class Booking',
       sessionId = 'sess-01',
+      studioSlug = 'sol-sanctuary',
       clientEmail,
       originUrl = 'https://auraflow-bay.vercel.app',
+      stripeSecretKey: bodyStripeKey,
       linePayChannelId,
       linePayChannelSecret,
-      linePaySandbox = false,
+      linePaySandbox = true,
     } = req.body || {};
 
-    // 1. STRIPE CHECKOUT SESSION
+    // 1. STRIPE CHECKOUT SESSION (Card / Apple Pay / Google Pay)
     if (provider === 'STRIPE_CARD' || provider === 'APPLE_PAY') {
-      const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+      const stripeSecretKey =
+        (bodyStripeKey && bodyStripeKey.startsWith('sk_'))
+          ? bodyStripeKey.trim()
+          : process.env.STRIPE_SECRET_KEY;
+
       if (!stripeSecretKey) {
         return res.status(200).json({
           ok: true,
           simulated: true,
-          message: 'STRIPE_SECRET_KEY not set in environment; using instant sandbox confirmation.',
+          message: 'No live Stripe Secret Key configured; processed via instant sandbox confirmation.',
         });
       }
 
@@ -38,8 +44,11 @@ export default async function handler(req, res) {
 
       const params = new URLSearchParams();
       params.append('mode', 'payment');
-      params.append('success_url', `${originUrl}/s/sol-sanctuary?booking=success&session_id=${sessionId}`);
-      params.append('cancel_url', `${originUrl}/s/sol-sanctuary?booking=cancelled`);
+      params.append(
+        'success_url',
+        `${originUrl}/s/${studioSlug}?booking=success&session_id=${encodeURIComponent(sessionId)}&method=${provider}`
+      );
+      params.append('cancel_url', `${originUrl}/s/${studioSlug}?booking=cancelled`);
       if (clientEmail) params.append('customer_email', clientEmail);
       params.append('line_items[0][price_data][currency]', currency.toLowerCase());
       params.append('line_items[0][price_data][product_data][name]', sessionTitle);
@@ -57,7 +66,10 @@ export default async function handler(req, res) {
 
       const data = await stripeRes.json();
       if (!stripeRes.ok) {
-        return res.status(stripeRes.status).json({ ok: false, error: data.error?.message || 'Stripe error' });
+        return res.status(stripeRes.status).json({
+          ok: false,
+          error: data.error?.message || 'Stripe Checkout session creation failed',
+        });
       }
 
       return res.status(200).json({
@@ -72,18 +84,18 @@ export default async function handler(req, res) {
     if (provider === 'LINE_PAY') {
       const channelId =
         linePayChannelId && !linePayChannelId.includes('linepay_merchant')
-          ? linePayChannelId
+          ? linePayChannelId.trim()
           : process.env.LINE_PAY_CHANNEL_ID;
       const channelSecret =
         linePayChannelSecret && !linePayChannelSecret.includes('sec_linepay')
-          ? linePayChannelSecret
+          ? linePayChannelSecret.trim()
           : process.env.LINE_PAY_CHANNEL_SECRET;
 
       if (!channelId || !channelSecret) {
         return res.status(200).json({
           ok: true,
           simulated: true,
-          message: 'LINE Pay Merchant credentials not configured yet; using sandbox confirmation.',
+          message: 'LINE Pay Merchant credentials not configured yet; using instant confirmation.',
         });
       }
 
@@ -91,27 +103,27 @@ export default async function handler(req, res) {
       const nonce = crypto.randomUUID();
       const orderId = `order_${Date.now()}`;
       const bodyObj = {
-        amount: Math.round(Number(amount)),
+        amount: Math.max(1, Math.round(Number(amount))),
         currency: currency.toUpperCase() === 'TWD' ? 'TWD' : 'USD',
         orderId,
         packages: [
           {
             id: `pkg_${sessionId}`,
-            amount: Math.round(Number(amount)),
+            amount: Math.max(1, Math.round(Number(amount))),
             name: 'Aura Flow Studio',
             products: [
               {
                 id: sessionId,
                 name: sessionTitle,
                 quantity: 1,
-                price: Math.round(Number(amount)),
+                price: Math.max(1, Math.round(Number(amount))),
               },
             ],
           },
         ],
         redirectUrls: {
-          confirmUrl: `${originUrl}/s/sol-sanctuary?linepay=confirm&orderId=${orderId}`,
-          cancelUrl: `${originUrl}/s/sol-sanctuary?linepay=cancel`,
+          confirmUrl: `${originUrl}/s/${studioSlug}?booking=success&session_id=${encodeURIComponent(sessionId)}&method=LINE_PAY&orderId=${orderId}`,
+          cancelUrl: `${originUrl}/s/${studioSlug}?booking=cancelled`,
         },
       };
 

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { auraCloudSync } from '../services/auraCloudSync';
 import {
   Studio,
   ClassSession,
@@ -636,8 +637,14 @@ interface AuraState {
     sessionId: string,
     method: PaymentMethodType,
     clientName: string,
-    clientEmail: string
+    clientEmail: string,
+    remittanceLast5?: string
   ) => { success: boolean; message: string };
+
+  cloudConnected: boolean;
+  lastCloudSyncAt: string | null;
+  syncFromCloud: () => Promise<void>;
+  syncToCloud: () => Promise<void>;
 
   cancelBooking: (bookingId: string) => void;
   checkInClient: (bookingId: string) => void;
@@ -724,6 +731,65 @@ export const useAuraStore = create<AuraState>()(
   activeWaterfallSessionId: null,
   activeWaterfallSecondsRemaining: 1800,
 
+  cloudConnected: false,
+  lastCloudSyncAt: null,
+
+  syncFromCloud: async () => {
+    const res = await auraCloudSync.pullState();
+    if (!res.ok) return;
+    if (!res.snapshot) {
+      set({ cloudConnected: true });
+      get().syncToCloud();
+      return;
+    }
+    const snap = res.snapshot;
+    const cloudTime = res.updatedAt || snap.updatedAt;
+    const currentLastSync = get().lastCloudSyncAt;
+    if (currentLastSync && cloudTime && cloudTime <= currentLastSync) {
+      set({ cloudConnected: true });
+      return;
+    }
+    set((state) => ({
+      cloudConnected: true,
+      lastCloudSyncAt: cloudTime || new Date().toISOString(),
+      studios: snap.studios || state.studios,
+      studio: snap.studio || state.studio,
+      activeStudioId: snap.activeStudioId || state.activeStudioId,
+      sessions: snap.sessions || state.sessions,
+      classPacks: snap.classPacks || state.classPacks,
+      userPass: snap.userPass || state.userPass,
+      bookings: snap.bookings || state.bookings,
+      waitlist: snap.waitlist || state.waitlist,
+      creditLedger: snap.creditLedger || state.creditLedger,
+      stripeOverview: snap.stripeOverview || state.stripeOverview,
+      conversations: snap.conversations || state.conversations,
+      messages: snap.messages || state.messages,
+      broadcastHistory: snap.broadcastHistory || state.broadcastHistory,
+    }));
+  },
+
+  syncToCloud: async () => {
+    const state = get();
+    const res = await auraCloudSync.pushState({
+      studios: state.studios,
+      studio: state.studio,
+      activeStudioId: state.activeStudioId,
+      sessions: state.sessions,
+      classPacks: state.classPacks,
+      userPass: state.userPass,
+      bookings: state.bookings,
+      waitlist: state.waitlist,
+      creditLedger: state.creditLedger,
+      stripeOverview: state.stripeOverview,
+      conversations: state.conversations,
+      messages: state.messages,
+      broadcastHistory: state.broadcastHistory,
+    });
+    if (res.ok) {
+      set({ cloudConnected: true, lastCloudSyncAt: res.updatedAt || new Date().toISOString() });
+    }
+  },
+
   navigateTo: (route) => {
     let url = '/s/sol-sanctuary';
     if (route.path === 'admin') url = '/admin';
@@ -800,6 +866,7 @@ export const useAuraStore = create<AuraState>()(
       selectedSessionForBooking: null,
       isBookingDrawerOpen: false,
     });
+    get().syncToCloud();
   },
 
   setLocale: (locale) => {
@@ -866,6 +933,8 @@ export const useAuraStore = create<AuraState>()(
       return conv;
     });
 
+    const targetConv = conversations.find((c) => c.id === conversationId);
+
     set({
       messages: {
         ...messages,
@@ -873,6 +942,28 @@ export const useAuraStore = create<AuraState>()(
       },
       conversations: updatedConversations,
     });
+
+    // If instructor replies to a LINE_OA conversation or with LINE_OA channel, push to LINE
+    if (
+      senderRole === 'INSTRUCTOR' &&
+      (channel === 'LINE_OA' || targetConv?.channel === 'LINE_OA') &&
+      studio.communication?.lineOaEnabled &&
+      studio.communication?.lineAccessToken &&
+      typeof window !== 'undefined'
+    ) {
+      fetch('/api/line-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessToken: studio.communication.lineAccessToken,
+          sessionTitle: targetConv?.sessionTitle || studio.name,
+          message: content,
+          toUserId: targetConv?.lineUserId,
+        }),
+      }).catch(() => {});
+    }
+
+    get().syncToCloud();
   },
 
   sendStudentInquiry: (content, sessionId, sessionTitle) => {
@@ -986,6 +1077,8 @@ export const useAuraStore = create<AuraState>()(
         }),
       }).catch(() => {});
     }
+
+    get().syncToCloud();
   },
 
   updateStudioCommunication: (settings) => {
@@ -997,6 +1090,7 @@ export const useAuraStore = create<AuraState>()(
       studio: updatedStudio,
       studios: studios.map((s) => (s.id === studio.id ? updatedStudio : s)),
     });
+    get().syncToCloud();
   },
 
   updateStudioPayments: (config) => {
@@ -1015,6 +1109,7 @@ export const useAuraStore = create<AuraState>()(
       studio: updatedStudio,
       studios: studios.map((s) => (s.id === studio.id ? updatedStudio : s)),
     });
+    get().syncToCloud();
   },
 
   openBookingDrawer: (session) => set({ selectedSessionForBooking: session, isBookingDrawerOpen: true }),
@@ -1022,13 +1117,37 @@ export const useAuraStore = create<AuraState>()(
   openWaitlistModal: (session) => set({ selectedWaitlistSession: session, isWaitlistModalOpen: true }),
   closeWaitlistModal: () => set({ isWaitlistModalOpen: false, selectedWaitlistSession: null }),
 
-  confirmBooking: (sessionId, method, clientName, clientEmail) => {
-    const { sessions, userPass, creditLedger, bookings, stripeOverview, studio, currentUser } = get();
+  confirmBooking: (sessionId, method, clientName, clientEmail, remittanceLast5) => {
+    const { sessions, userPass, creditLedger, bookings, stripeOverview, studio, currentUser, currency } = get();
     const session = sessions.find((s) => s.id === sessionId);
 
     if (!session) return { success: false, message: 'Class session not found.' };
     if (session.bookedCount >= session.capacity) {
       return { success: false, message: 'Class is full. Please join the waitlist.' };
+    }
+
+    const sessionTimeStr = `${session.startTime.substring(11, 16)} - ${session.endTime.substring(11, 16)}`;
+    const targetEmail = clientEmail || currentUser.email;
+    const targetName = clientName || currentUser.name;
+
+    if (typeof window !== 'undefined' && targetEmail) {
+      fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: targetEmail,
+          clientName: targetName,
+          studioName: studio.name,
+          sessionTitle: session.title,
+          sessionTime: sessionTimeStr,
+          instructor: session.instructor,
+          roomName: session.roomName,
+          paymentMethod: method,
+          amountPaid: method === 'PASS_CREDIT' ? '1 Pass Credit' : `${currency} ${session.price}`,
+          resendApiKey: studio.communication?.resendApiKey,
+          type: 'BOOKING_CONFIRMATION',
+        }),
+      }).catch(() => {});
     }
 
     if (method === 'PASS_CREDIT') {
@@ -1055,9 +1174,9 @@ export const useAuraStore = create<AuraState>()(
         studioId: studio.id,
         sessionId,
         sessionTitle: session.title,
-        sessionTime: `${session.startTime.substring(11, 16)} - ${session.endTime.substring(11, 16)}`,
-        clientEmail: clientEmail || currentUser.email,
-        clientName: clientName || currentUser.name,
+        sessionTime: sessionTimeStr,
+        clientEmail: targetEmail,
+        clientName: targetName,
         paymentMethod: 'PASS_CREDIT',
         amountPaid: 0.0,
         creditsDeducted: 1,
@@ -1073,6 +1192,7 @@ export const useAuraStore = create<AuraState>()(
         isBookingDrawerOpen: false,
       });
 
+      get().syncToCloud();
       return { success: true, message: 'Pass credit redeemed successfully!' };
     }
 
@@ -1081,11 +1201,12 @@ export const useAuraStore = create<AuraState>()(
       studioId: studio.id,
       sessionId,
       sessionTitle: session.title,
-      sessionTime: `${session.startTime.substring(11, 16)} - ${session.endTime.substring(11, 16)}`,
-      clientEmail: clientEmail || currentUser.email,
-      clientName: clientName || currentUser.name,
+      sessionTime: sessionTimeStr,
+      clientEmail: targetEmail,
+      clientName: targetName,
       paymentMethod: method,
-      stripePaymentId: `ch_${Date.now()}_simulated`,
+      stripePaymentId: `ch_${Date.now()}_live`,
+      remittanceLast5: remittanceLast5 || undefined,
       amountPaid: session.price,
       creditsDeducted: 0,
       status: 'CONFIRMED',
@@ -1103,7 +1224,8 @@ export const useAuraStore = create<AuraState>()(
       isBookingDrawerOpen: false,
     });
 
-    return { success: true, message: 'Direct payment confirmed via Stripe Connect!' };
+    get().syncToCloud();
+    return { success: true, message: 'Direct payment confirmed!' };
   },
 
   cancelBooking: (bookingId) => {
@@ -1146,12 +1268,14 @@ export const useAuraStore = create<AuraState>()(
     });
 
     triggerWaterfallCascade(booking.sessionId);
+    get().syncToCloud();
   },
 
   checkInClient: (bookingId) => {
     set((state) => ({
       bookings: state.bookings.map((b) => (b.id === bookingId ? { ...b, status: 'CHECKED_IN' } : b)),
     }));
+    get().syncToCloud();
   },
 
   joinWaitlist: (sessionId, clientName, clientEmail, clientPhone, mode) => {
@@ -1177,6 +1301,7 @@ export const useAuraStore = create<AuraState>()(
       waitlist: [...waitlist, newEntry],
       isWaitlistModalOpen: false,
     });
+    get().syncToCloud();
   },
 
   triggerWaterfallCascade: (sessionId) => {
@@ -1312,6 +1437,7 @@ export const useAuraStore = create<AuraState>()(
         waitlistMins,
       },
     }));
+    get().syncToCloud();
   },
 
   addSession: (sessionData) => {
@@ -1322,18 +1448,21 @@ export const useAuraStore = create<AuraState>()(
       bookedCount: 0,
     };
     set((state) => ({ sessions: [...state.sessions, newSession] }));
+    get().syncToCloud();
   },
 
   updateSessionCapacity: (sessionId, newCapacity) => {
     set((state) => ({
       sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, capacity: newCapacity } : s)),
     }));
+    get().syncToCloud();
   },
 
   deleteSession: (sessionId) => {
     set((state) => ({
       sessions: state.sessions.filter((s) => s.id !== sessionId),
     }));
+    get().syncToCloud();
   },
 
   purchaseClassPack: (packId) => {
@@ -1369,6 +1498,7 @@ export const useAuraStore = create<AuraState>()(
         pendingPayouts: stripeOverview.pendingPayouts + pack.price,
       },
     });
+    get().syncToCloud();
   },
 
   addClassPack: (packData) => {
@@ -1379,6 +1509,7 @@ export const useAuraStore = create<AuraState>()(
       studioId: studio.id,
     };
     set({ classPacks: [...classPacks, newPack] });
+    get().syncToCloud();
   },
 
   updateClassPack: (id, updates) => {
@@ -1386,6 +1517,7 @@ export const useAuraStore = create<AuraState>()(
     set({
       classPacks: classPacks.map((p) => (p.id === id ? { ...p, ...updates } : p)),
     });
+    get().syncToCloud();
   },
 
   deleteClassPack: (id) => {
@@ -1393,6 +1525,7 @@ export const useAuraStore = create<AuraState>()(
     set({
       classPacks: classPacks.filter((p) => p.id !== id),
     });
+    get().syncToCloud();
   },
 
   createStudioWithOnboarding: (data) => {
@@ -1447,6 +1580,7 @@ export const useAuraStore = create<AuraState>()(
     if (typeof window !== 'undefined') {
       window.history.pushState({}, '', '/admin');
     }
+    get().syncToCloud();
   },
 }),
     {

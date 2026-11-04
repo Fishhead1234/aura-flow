@@ -40,6 +40,7 @@ export const BookingDrawer: React.FC = () => {
 
   const [clientName, setClientName] = useState(currentUser.name || 'Maya Lin');
   const [clientEmail, setClientEmail] = useState(currentUser.email || 'maya@example.com');
+  const [remittanceLast5, setRemittanceLast5] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
@@ -93,9 +94,12 @@ export const BookingDrawer: React.FC = () => {
     if (!selectedSessionForBooking) return;
     setIsSubmitting(true);
 
-    // If live payment mode is selected (simulateStripePayment = false), attempt real gateway checkout
+    // Attempt real gateway checkout whenever Stripe Secret Key or LINE Pay credentials are configured (or when simulateStripePayment = false)
+    const hasRealStripeKey = Boolean(payments?.stripe.secretKey);
+    const hasRealLinePayKey = Boolean(payments?.linePay.channelId && payments?.linePay.channelSecret);
+
     if (
-      !simulateStripePayment &&
+      (!simulateStripePayment || hasRealStripeKey || hasRealLinePayKey) &&
       (selectedMethod === 'STRIPE_CARD' || selectedMethod === 'APPLE_PAY' || selectedMethod === 'LINE_PAY')
     ) {
       try {
@@ -108,10 +112,13 @@ export const BookingDrawer: React.FC = () => {
             currency,
             sessionTitle: selectedSessionForBooking.title,
             sessionId: selectedSessionForBooking.id,
+            studioSlug: studio.slug,
             clientEmail,
             originUrl: typeof window !== 'undefined' ? window.location.origin : 'https://auraflow-bay.vercel.app',
+            stripeSecretKey: payments?.stripe.secretKey,
             linePayChannelId: payments?.linePay.channelId,
             linePayChannelSecret: payments?.linePay.channelSecret,
+            linePaySandbox: payments?.linePay.sandbox !== false,
           }),
         });
         const data = await resp.json();
@@ -129,7 +136,8 @@ export const BookingDrawer: React.FC = () => {
         selectedSessionForBooking.id,
         selectedMethod,
         clientName,
-        clientEmail
+        clientEmail,
+        remittanceLast5
       );
 
       setIsSubmitting(false);
@@ -364,6 +372,19 @@ export const BookingDrawer: React.FC = () => {
                         <span className="text-[10px] text-stone-400">LINE Points 折抵</span>
                       </div>
 
+                      <div className="flex items-center justify-center py-1">
+                        <img
+                          src={
+                            payments?.linePay.qrCodeUrl ||
+                            `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(
+                              `https://auraflow-bay.vercel.app/s/${studio.slug}?pay=linepay&session=${selectedSessionForBooking.id}&amt=${selectedSessionForBooking.price}`
+                            )}`
+                          }
+                          alt="LINE Pay QR Code"
+                          className="w-28 h-28 rounded-lg border border-emerald-200 p-1.5 bg-white shadow-2xs"
+                        />
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => setSelectedMethod('LINE_PAY')}
@@ -389,6 +410,19 @@ export const BookingDrawer: React.FC = () => {
                         <span className="text-[10px] text-stone-400">街口幣最高折抵 100%</span>
                       </div>
 
+                      <div className="flex items-center justify-center py-1">
+                        <img
+                          src={
+                            payments?.jkoPay.qrCodeUrl ||
+                            `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(
+                              `https://auraflow-bay.vercel.app/s/${studio.slug}?pay=jkopay&session=${selectedSessionForBooking.id}&amt=${selectedSessionForBooking.price}`
+                            )}`
+                          }
+                          alt="JKOPAY QR Code"
+                          className="w-28 h-28 rounded-lg border border-red-200 p-1.5 bg-white shadow-2xs"
+                        />
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => setSelectedMethod('JKOPAY')}
@@ -405,7 +439,7 @@ export const BookingDrawer: React.FC = () => {
 
                   {/* Tab 4: Bank Transfer / ATM */}
                   {directPaymentTab === 'BANK' && (
-                    <div className="p-3.5 bg-white rounded-xl border border-stone-200 space-y-2">
+                    <div className="p-3.5 bg-white rounded-xl border border-stone-200 space-y-2.5">
                       <div className="text-[11px] font-medium text-stone-700">
                         {tBooking('bankTransferInstructions')}
                       </div>
@@ -437,6 +471,20 @@ export const BookingDrawer: React.FC = () => {
                           <span className="text-stone-500">{tBooking('bankAccountNameLabel')}:</span>
                           <span className="font-medium">{payments?.bankTransfer.accountName || '日光彼拉提斯工作室 (Elena Rostova)'}</span>
                         </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-stone-700 mb-1">
+                          {locale === 'zh-TW' ? '您的轉帳帳號後五碼 (對帳驗證用)' : 'Last 5 Digits of Your Bank Account'}
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={5}
+                          value={remittanceLast5}
+                          onChange={(e) => setRemittanceLast5(e.target.value.replace(/[^0-9]/g, ''))}
+                          placeholder={locale === 'zh-TW' ? '例如：58291' : 'e.g. 58291'}
+                          className="w-full h-9 px-3 rounded-lg bg-stone-50 border border-stone-300 text-xs font-mono tracking-widest focus:outline-hidden focus:border-aura-clay"
+                        />
                       </div>
                     </div>
                   )}

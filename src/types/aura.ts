@@ -44,6 +44,7 @@ export interface StudioCommunicationSettings {
   lineAccessToken: string;
   instagramHandle: string;
   supportEmail: string;
+  resendApiKey?: string;
 }
 
 export interface StudioPaymentConfig {
@@ -52,11 +53,14 @@ export interface StudioPaymentConfig {
     connected: boolean;
     accountName: string;
     supportedCards: string[];
+    secretKey?: string;
+    publishableKey?: string;
   };
   linePay: {
     enabled: boolean;
     channelId: string;
     channelSecret: string;
+    sandbox?: boolean;
     qrCodeUrl?: string;
   };
   jkoPay: {
@@ -173,6 +177,7 @@ export interface Conversation {
   studentEmail: string;
   studentPhone?: string;
   studentAvatar?: string;
+  lineUserId?: string;
   sessionId?: string;
   sessionTitle?: string;
   sessionTime?: string;
@@ -207,6 +212,7 @@ export interface Booking {
   clientPhone?: string;
   paymentMethod: PaymentMethodType;
   stripePaymentId?: string;
+  remittanceLast5?: string;
   amountPaid: number;
   creditsDeducted: number;
   status: 'CONFIRMED' | 'CANCELLED' | 'CHECKED_IN';

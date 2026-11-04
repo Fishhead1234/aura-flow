@@ -80,6 +80,9 @@ export const AdminPortal: React.FC = () => {
     broadcastHistory,
     updateStudioCommunication,
     updateStudioPayments,
+    cloudConnected,
+    lastCloudSyncAt,
+    syncFromCloud,
   } = useAuraStore();
 
   const [cancelCutoff, setCancelCutoff] = useState(studio.cancelWindowHrs);
@@ -115,12 +118,16 @@ export const AdminPortal: React.FC = () => {
   const [replyText, setReplyText] = useState('');
 
   // Payment configuration state
+  const [stripeSecretKey, setStripeSecretKey] = useState(studio.paymentMethods?.stripe.secretKey ?? '');
+  const [stripePublishableKey, setStripePublishableKey] = useState(studio.paymentMethods?.stripe.publishableKey ?? '');
   const [linePayEnabled, setLinePayEnabled] = useState(studio.paymentMethods?.linePay.enabled ?? true);
   const [linePayChannelId, setLinePayChannelId] = useState(studio.paymentMethods?.linePay.channelId ?? 'linepay_merchant_99281');
   const [linePayChannelSecret, setLinePayChannelSecret] = useState(studio.paymentMethods?.linePay.channelSecret ?? 'sec_linepay_7721839');
+  const [linePayQrCodeUrl, setLinePayQrCodeUrl] = useState(studio.paymentMethods?.linePay.qrCodeUrl ?? '');
   
   const [jkoPayEnabled, setJkoPayEnabled] = useState(studio.paymentMethods?.jkoPay.enabled ?? true);
   const [jkoPayMerchantId, setJkoPayMerchantId] = useState(studio.paymentMethods?.jkoPay.merchantId ?? 'JKO_STORE_883019');
+  const [jkoPayQrCodeUrl, setJkoPayQrCodeUrl] = useState(studio.paymentMethods?.jkoPay.qrCodeUrl ?? '');
 
   const [bankEnabled, setBankEnabled] = useState(studio.paymentMethods?.bankTransfer.enabled ?? true);
   const [bankName, setBankName] = useState(studio.paymentMethods?.bankTransfer.bankName ?? '國泰世華商業銀行 (Cathay United Bank)');
@@ -129,14 +136,17 @@ export const AdminPortal: React.FC = () => {
   const [bankAccountName, setBankAccountName] = useState(studio.paymentMethods?.bankTransfer.accountName ?? '日光彼拉提斯工作室 (Elena Rostova)');
   const [paymentSavedToast, setPaymentSavedToast] = useState(false);
 
-  // Communication settings state (LINE OA, IG, Email)
+  // Communication settings state (LINE OA, IG, Email, Resend)
   const [lineOaActive, setLineOaActive] = useState(studio.communication?.lineOaEnabled ?? true);
   const [lineOaChannelId, setLineOaChannelId] = useState(studio.communication?.lineChannelId ?? '@sol_sanctuary_tw');
   const [lineOaChannelSecret, setLineOaChannelSecret] = useState(studio.communication?.lineChannelSecret ?? 'sec_884920a9fbc10293847');
   const [lineOaAccessToken, setLineOaAccessToken] = useState(studio.communication?.lineAccessToken ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.solsanctuary_token_sample');
   const [igHandle, setIgHandle] = useState(studio.communication?.instagramHandle ?? '@solsanctuary.movement');
   const [commEmail, setCommEmail] = useState(studio.communication?.supportEmail ?? 'hello@solsanctuary.studio');
+  const [resendApiKey, setResendApiKey] = useState(studio.communication?.resendApiKey ?? '');
   const [commSavedToast, setCommSavedToast] = useState(false);
+  const [webhookCopied, setWebhookCopied] = useState(false);
+  const [testActionResult, setTestActionResult] = useState<string | null>(null);
 
   const tCommon = (key: string, params?: Record<string, string | number>) =>
     getTranslation(locale, 'common', key, params);
@@ -243,6 +253,7 @@ export const AdminPortal: React.FC = () => {
       lineAccessToken: lineOaAccessToken,
       instagramHandle: igHandle,
       supportEmail: commEmail,
+      resendApiKey,
     });
     setCommSavedToast(true);
     setTimeout(() => setCommSavedToast(false), 3000);
@@ -251,14 +262,24 @@ export const AdminPortal: React.FC = () => {
   const handleSavePayments = (e: React.FormEvent) => {
     e.preventDefault();
     updateStudioPayments({
+      stripe: {
+        enabled: true,
+        connected: true,
+        accountName: studio.paymentMethods?.stripe.accountName || 'acct_sol_sanctuary_8829',
+        supportedCards: studio.paymentMethods?.stripe.supportedCards || ['Visa', 'Mastercard', 'JCB', 'Apple Pay', 'Google Pay'],
+        secretKey: stripeSecretKey,
+        publishableKey: stripePublishableKey,
+      },
       linePay: {
         enabled: linePayEnabled,
         channelId: linePayChannelId,
         channelSecret: linePayChannelSecret,
+        qrCodeUrl: linePayQrCodeUrl,
       },
       jkoPay: {
         enabled: jkoPayEnabled,
         merchantId: jkoPayMerchantId,
+        qrCodeUrl: jkoPayQrCodeUrl,
       },
       bankTransfer: {
         enabled: bankEnabled,
@@ -270,6 +291,74 @@ export const AdminPortal: React.FC = () => {
     });
     setPaymentSavedToast(true);
     setTimeout(() => setPaymentSavedToast(false), 3000);
+  };
+
+  const handleTestLinePush = async () => {
+    setTestActionResult(locale === 'zh-TW' ? '正在發送 LINE OA 測試推播...' : 'Sending LINE OA test push...');
+    try {
+      const resp = await fetch('/api/line-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessToken: lineOaAccessToken,
+          sessionTitle: studio.name || 'Aura Flow Studio',
+          message: locale === 'zh-TW' ? '這是一則來自 Aura Flow 工作室後台的 LINE OA 連線測試通知！' : 'Test broadcast from Aura Flow Studio Admin!',
+        }),
+      });
+      const data = await resp.json();
+      if (data.ok && !data.simulated) {
+        setTestActionResult(locale === 'zh-TW' ? '✅ LINE 官方帳號真實廣播已成功送出！' : '✅ Live LINE OA broadcast sent!');
+      } else {
+        setTestActionResult(
+          locale === 'zh-TW'
+            ? `ℹ️ API 測試完成 (${data.message || '請填入正式 LINE Channel Access Token 以推播至真實手機'})`
+            : `ℹ️ API test complete (${data.message || 'Enter a live LINE Channel Access Token for real delivery'})`
+        );
+      }
+    } catch {
+      setTestActionResult(locale === 'zh-TW' ? '❌ 連線失敗' : '❌ Connection error');
+    }
+    setTimeout(() => setTestActionResult(null), 5000);
+  };
+
+  const handleTestEmailSend = async () => {
+    setTestActionResult(locale === 'zh-TW' ? '正在發送測試確認信...' : 'Sending test confirmation email...');
+    try {
+      const resp = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: commEmail || 'hello@solsanctuary.studio',
+          clientName: 'Elena Rostova',
+          studioName: studio.name || 'Sol Sanctuary',
+          sessionTitle: 'Dynamic Reformer Pilates',
+          sessionTime: '09:00 - 09:50',
+          instructor: 'Elena Rostova',
+          roomName: 'Reformer Studio A',
+          paymentMethod: 'STRIPE_CARD',
+          amountPaid: `${currency} 800`,
+          resendApiKey,
+          type: 'TEST_EMAIL',
+        }),
+      });
+      const data = await resp.json();
+      if (data.ok && !data.simulated) {
+        setTestActionResult(
+          locale === 'zh-TW'
+            ? `✅ 真實確認信已寄出至 ${commEmail} (ID: ${data.emailId})！`
+            : `✅ Live email sent to ${commEmail} (ID: ${data.emailId})!`
+        );
+      } else {
+        setTestActionResult(
+          locale === 'zh-TW'
+            ? `ℹ️ 郵件佇列已觸發 (${data.message || '填入 Resend API Key 即可寄送真實信件'})`
+            : `ℹ️ Email queue triggered (${data.message || 'Add Resend API Key for live delivery'})`
+        );
+      }
+    } catch {
+      setTestActionResult(locale === 'zh-TW' ? '❌ 寄送失敗' : '❌ Failed to send email');
+    }
+    setTimeout(() => setTestActionResult(null), 5000);
   };
 
   const handleOpenBroadcastModal = (session: ClassSession) => {
@@ -390,7 +479,16 @@ export const AdminPortal: React.FC = () => {
           </div>
 
           {/* Right Status */}
-          <div className="flex items-center space-x-3 text-xs text-[#A89F91]">
+          <div className="flex items-center space-x-2.5 text-xs text-[#A89F91]">
+            <button
+              type="button"
+              onClick={() => syncFromCloud()}
+              title={lastCloudSyncAt ? `Last synced: ${new Date(lastCloudSyncAt).toLocaleTimeString()}` : 'Click to sync with Supabase Cloud'}
+              className="hidden md:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/70 text-[10px] text-emerald-300 hover:bg-emerald-900/60 transition-colors"
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${cloudConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+              <span>{cloudConnected ? (locale === 'zh-TW' ? '雲端即時同步中' : 'Cloud Live') : (locale === 'zh-TW' ? '連線雲端...' : 'Connecting...')}</span>
+            </button>
             <button
               onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
               className="hidden sm:inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-[#2A2520] border border-[#3D352E] text-[11px] text-[#C5A059] hover:bg-[#383028] transition-colors"
@@ -683,11 +781,16 @@ export const AdminPortal: React.FC = () => {
                       className="p-3.5 rounded-xl bg-[#181614] border border-[#352E26] flex items-center justify-between"
                     >
                       <div>
-                        <div className="text-xs font-semibold text-[#F5F2EB] flex items-center space-x-2">
+                        <div className="text-xs font-semibold text-[#F5F2EB] flex items-center flex-wrap gap-2">
                           <span>{booking.clientName}</span>
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#2A231C] text-[#C5A059]">
                             {booking.paymentMethod}
                           </span>
+                          {booking.remittanceLast5 && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-700/60 text-amber-300 font-mono">
+                              {locale === 'zh-TW' ? `末五碼: ${booking.remittanceLast5}` : `Acct Last 5: ${booking.remittanceLast5}`}
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] text-[#8C8274] mt-0.5">
                           {booking.clientEmail}
@@ -1096,6 +1199,33 @@ export const AdminPortal: React.FC = () => {
                   </div>
                   <span className="text-emerald-400 font-semibold">0% 抽成 • 自動結清撥款</span>
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#302B24] text-xs">
+                  <div>
+                    <label className="block text-[#A89F91] mb-1 font-medium">
+                      {locale === 'zh-TW' ? 'Stripe Publishable Key (公開金鑰 pk_...)' : 'Stripe Publishable Key (pk_...)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={stripePublishableKey}
+                      onChange={(e) => setStripePublishableKey(e.target.value)}
+                      placeholder="pk_live_... or pk_test_..."
+                      className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] font-mono focus:outline-none focus:border-[#C5A059]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#A89F91] mb-1 font-medium">
+                      {locale === 'zh-TW' ? 'Stripe Secret Key (私密金鑰 sk_... 啟用真實結帳跳轉)' : 'Stripe Secret Key (sk_... enables live Checkout)'}
+                    </label>
+                    <input
+                      type="password"
+                      value={stripeSecretKey}
+                      onChange={(e) => setStripeSecretKey(e.target.value)}
+                      placeholder="sk_live_... or sk_test_..."
+                      className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] font-mono focus:outline-none focus:border-[#C5A059]"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Card 2: LINE Pay Mobile Payment */}
@@ -1127,7 +1257,7 @@ export const AdminPortal: React.FC = () => {
                 </div>
 
                 {linePayEnabled && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#302B24] text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-[#302B24] text-xs">
                     <div>
                       <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('linePayChannelId')}</label>
                       <input
@@ -1143,6 +1273,18 @@ export const AdminPortal: React.FC = () => {
                         type="password"
                         value={linePayChannelSecret}
                         onChange={(e) => setLinePayChannelSecret(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] font-mono focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[#A89F91] mb-1 font-medium">
+                        {locale === 'zh-TW' ? '自訂收款 QR Code 圖片網址 (選填)' : 'Custom QR Code Image URL (Optional)'}
+                      </label>
+                      <input
+                        type="url"
+                        value={linePayQrCodeUrl}
+                        onChange={(e) => setLinePayQrCodeUrl(e.target.value)}
+                        placeholder="https://..."
                         className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] font-mono focus:outline-none focus:border-emerald-500"
                       />
                     </div>
@@ -1186,6 +1328,18 @@ export const AdminPortal: React.FC = () => {
                         type="text"
                         value={jkoPayMerchantId}
                         onChange={(e) => setJkoPayMerchantId(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] font-mono focus:outline-none focus:border-red-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[#A89F91] mb-1 font-medium">
+                        {locale === 'zh-TW' ? '街口收款 QR Code 圖片網址 (選填)' : 'JKOPAY QR Code Image URL (Optional)'}
+                      </label>
+                      <input
+                        type="url"
+                        value={jkoPayQrCodeUrl}
+                        onChange={(e) => setJkoPayQrCodeUrl(e.target.value)}
+                        placeholder="https://..."
                         className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] font-mono focus:outline-none focus:border-red-500"
                       />
                     </div>
@@ -1418,6 +1572,42 @@ export const AdminPortal: React.FC = () => {
                         />
                       </div>
                     </div>
+
+                    {/* LINE Webhook URL & Live Test Push */}
+                    <div className="p-3.5 rounded-xl bg-[#181614] border border-[#352E26] space-y-2.5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="text-xs font-semibold text-emerald-400">
+                            {locale === 'zh-TW' ? 'LINE Developers 雙向訊息 Webhook 網址' : 'LINE Developers Inbound Webhook URL'}
+                          </div>
+                          <div className="text-[11px] text-[#8C8274] font-mono break-all mt-0.5">
+                            https://auraflow-bay.vercel.app/api/line-webhook
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard?.writeText('https://auraflow-bay.vercel.app/api/line-webhook');
+                              setWebhookCopied(true);
+                              setTimeout(() => setWebhookCopied(false), 2500);
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-[#2A2520] hover:bg-[#383028] border border-[#3D352E] text-[11px] text-[#E0D8CE] flex items-center space-x-1"
+                          >
+                            {webhookCopied ? <CheckCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                            <span>{webhookCopied ? (locale === 'zh-TW' ? '已複製' : 'Copied') : (locale === 'zh-TW' ? '複製 Webhook' : 'Copy URL')}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleTestLinePush}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-950 hover:bg-emerald-900 border border-emerald-700 text-[11px] text-emerald-300 font-semibold flex items-center space-x-1"
+                          >
+                            <Send className="w-3 h-3" />
+                            <span>{locale === 'zh-TW' ? '測試發送 LINE 推播' : 'Test LINE Push'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -1445,6 +1635,49 @@ export const AdminPortal: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                {/* Resend Email Notification API */}
+                <div className="p-4 rounded-xl bg-[#181614] border border-[#352E26] space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-semibold text-[#F5F2EB] flex items-center space-x-1.5">
+                        <Mail className="w-3.5 h-3.5 text-[#C5A059]" />
+                        <span>{locale === 'zh-TW' ? '自動預約確認信與候補通知 (Resend API)' : 'Automated Booking Confirmation Emails (Resend API)'}</span>
+                      </div>
+                      <p className="text-[11px] text-[#8C8274] mt-0.5">
+                        {locale === 'zh-TW'
+                          ? '學員完成預約時自動發送 HTML 電子票券與課前提醒信。'
+                          : 'Automatically dispatches HTML booking confirmation passes to students.'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTestEmailSend}
+                      className="px-3 py-1.5 rounded-lg bg-[#2A2520] hover:bg-[#383028] border border-[#3D352E] text-[11px] text-[#C5A059] font-semibold shrink-0 flex items-center space-x-1"
+                    >
+                      <Mail className="w-3 h-3" />
+                      <span>{locale === 'zh-TW' ? '發送測試確認信' : 'Send Test Email'}</span>
+                    </button>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#A89F91] mb-1">
+                      Resend API Key (re_...)
+                    </label>
+                    <input
+                      type="password"
+                      value={resendApiKey}
+                      onChange={(e) => setResendApiKey(e.target.value)}
+                      placeholder="re_123456789..."
+                      className="w-full px-3 py-2 rounded-xl bg-[#221E1A] border border-[#3A332B] text-xs text-[#F5F2EB] font-mono focus:outline-none focus:border-[#C5A059]"
+                    />
+                  </div>
+                </div>
+
+                {testActionResult && (
+                  <div className="p-3 rounded-xl bg-[#181614] border border-[#C5A059]/60 text-xs text-[#EAD8B1]">
+                    {testActionResult}
+                  </div>
+                )}
 
                 <div className="pt-2">
                   <button
