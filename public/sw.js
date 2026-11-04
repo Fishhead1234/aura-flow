@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aura-flow-pwa-v3';
+const CACHE_NAME = 'aura-flow-pwa-v4';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
