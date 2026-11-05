@@ -2,15 +2,41 @@ import React, { useEffect } from 'react';
 import { useAuraStore } from './store/auraStore';
 import { Navbar } from './components/Navbar';
 import { ClientScheduleView } from './components/ClientScheduleView';
+import { ExploreStudiosView } from './components/ExploreStudiosView';
 import { BookingDrawer } from './components/BookingDrawer';
 import { WaitlistModal } from './components/WaitlistModal';
 import { AdminPortal } from './components/AdminPortal';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { DevSandboxToolbar } from './components/DevSandboxToolbar';
-import { AppRoute } from './types/aura';
+import { WelcomeModal } from './components/WelcomeModal';
+import { PaywallModal } from './components/PaywallModal';
 
 export const App: React.FC = () => {
-  const { currentRoute, navigateTo, syncFromCloud, confirmBooking, currentUser } = useAuraStore();
+  const {
+    currentRoute,
+    navigateTo,
+    syncFromCloud,
+    confirmBooking,
+    currentUser,
+    setWelcomeModalOpen,
+    resetToCleanGuestState,
+  } = useAuraStore();
+
+  // First-Run & Clean-State Detection (`auraflow_has_launched` and `?reset=true`)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const isResetParam = params.get('reset') === 'true';
+    const hasLaunched = localStorage.getItem('auraflow_has_launched');
+
+    if (isResetParam) {
+      resetToCleanGuestState();
+      return;
+    }
+
+    if (!hasLaunched) {
+      setWelcomeModalOpen(true);
+    }
+  }, [resetToCleanGuestState, setWelcomeModalOpen]);
 
   // Real-time multi-device Cloud Sync + Stripe/LINE Pay Redirect Return Handler
   useEffect(() => {
@@ -46,6 +72,11 @@ export const App: React.FC = () => {
         navigateTo({ path: 'admin' });
       } else if (pathname === '/onboarding' || pathname.startsWith('/onboarding')) {
         navigateTo({ path: 'onboarding' });
+      } else if (pathname === '/explore' || pathname.startsWith('/explore')) {
+        navigateTo({ path: 'explore' });
+      } else if (pathname.startsWith('/studio/')) {
+        const slug = pathname.replace('/studio/', '').split('/')[0] || 'sol-sanctuary';
+        navigateTo({ path: 'public_studio', slug });
       } else if (pathname.startsWith('/s/')) {
         const slug = pathname.replace('/s/', '').split('/')[0] || 'sol-sanctuary';
         navigateTo({ path: 'public_studio', slug });
@@ -67,8 +98,15 @@ export const App: React.FC = () => {
       <main>
         {currentRoute.path === 'admin' && <AdminPortal />}
         {currentRoute.path === 'onboarding' && <OnboardingWizard />}
+        {currentRoute.path === 'explore' && <ExploreStudiosView />}
         {currentRoute.path === 'public_studio' && <ClientScheduleView />}
       </main>
+
+      {/* Initial First-Run Welcome & Role Selection Modal */}
+      <WelcomeModal />
+
+      {/* Value-First RevenueCat 14-Day Free Trial Paywall Modal */}
+      <PaywallModal />
 
       {/* Booking Checkout Bottom Sheet Drawer (Public Client Flow) */}
       <BookingDrawer />

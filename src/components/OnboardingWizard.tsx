@@ -434,7 +434,11 @@ export const OnboardingWizard: React.FC = () => {
                 className="flex items-center space-x-2 px-7 py-3 rounded-full bg-emerald-800 text-white text-xs font-semibold shadow-md hover:bg-emerald-900 transition-all"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>{locale === 'zh-TW' ? '啟動工作室並進入管理後台' : 'Launch Studio & Enter Admin'}</span>
+                <span>
+                  {locale === 'zh-TW'
+                    ? '免費完成建立並進入後台 (免綁卡)'
+                    : 'Complete Free Setup & Enter Studio Admin'}
+                </span>
               </button>
             </div>
           </form>

@@ -42,8 +42,10 @@ import {
 } from 'lucide-react';
 import { ClassCategory, CURRENCY_CONFIGS, ClassPack, ClassSession, AdminTabType } from '../types/aura';
 import { AuraLogoBadge } from './AuraLeafLogo';
+import { useSubscription } from '../hooks/useSubscription';
 
 export const AdminPortal: React.FC = () => {
+  const { isPro, openPaywall } = useSubscription();
   const {
     locale,
     currency,
@@ -64,6 +66,7 @@ export const AdminPortal: React.FC = () => {
     activeWaterfallSecondsRemaining,
     tickWaterfallTimer,
     updateStudioPolicies,
+    updateStudioSettings,
     addSession,
     deleteSession,
     addClassPack,
@@ -87,6 +90,13 @@ export const AdminPortal: React.FC = () => {
 
   const [cancelCutoff, setCancelCutoff] = useState(studio.cancelWindowHrs);
   const [waitlistMins, setWaitlistMins] = useState(studio.waitlistMins);
+  const [announcementBanner, setAnnouncementBanner] = useState(
+    studio.announcementBanner ?? '🎉 教室最新公告：新學員首堂體驗現折 NT$ 200 • 歡迎線上預約！'
+  );
+  const [discoverable, setDiscoverable] = useState(studio.discoverable !== false);
+  const [studioCity, setStudioCity] = useState(studio.city ?? 'Taipei • Da-an District (台北大安)');
+  const [copiedStudioLink, setCopiedStudioLink] = useState(false);
+  const [policiesSavedToast, setPoliciesSavedToast] = useState(false);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
 
   // New Class Form State
@@ -242,6 +252,24 @@ export const AdminPortal: React.FC = () => {
   const handleSavePolicies = (e: React.FormEvent) => {
     e.preventDefault();
     updateStudioPolicies(cancelCutoff, waitlistMins);
+    updateStudioSettings({
+      announcementBanner: announcementBanner.trim(),
+      discoverable,
+      city: studioCity.trim(),
+    });
+    setPoliciesSavedToast(true);
+    setTimeout(() => setPoliciesSavedToast(false), 3000);
+  };
+
+  const handlePublishOrShareStudioLink = (reason: 'PUBLISH_SCHEDULE' | 'SHARE_LINK') => {
+    if (!isPro) {
+      openPaywall(reason);
+      return;
+    }
+    const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://auraflow-bay.vercel.app'}/studio/${studio.slug}`;
+    navigator.clipboard?.writeText(shareUrl);
+    setCopiedStudioLink(true);
+    setTimeout(() => setCopiedStudioLink(false), 2500);
   };
 
   const handleSaveCommunication = (e: React.FormEvent) => {
@@ -505,6 +533,88 @@ export const AdminPortal: React.FC = () => {
 
       {/* Main Admin Workspace Container */}
       <div className="max-w-6xl mx-auto px-4 pt-6">
+        {/* Value-First Publish & Share Live Booking Link Banner */}
+        <div
+          className={`mb-5 rounded-2xl p-4 sm:p-5 border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+            isPro
+              ? 'bg-emerald-950/30 border-emerald-700/50'
+              : 'bg-amber-950/40 border-[#C5A059]/60 shadow-lg'
+          }`}
+        >
+          <div className="flex items-start space-x-3">
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                isPro
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-[#C5A059]/20 text-[#C5A059] border border-[#C5A059]/40'
+              }`}
+            >
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="text-sm font-semibold text-[#F5F2EB]">
+                  {isPro
+                    ? locale === 'zh-TW'
+                      ? '課表已公開上線 • 專屬獨立預約連結已啟用'
+                      : 'Schedule is Live • Private Studio Booking Link Active'
+                    : locale === 'zh-TW'
+                    ? '草稿預覽模式 • 發布課表即可開始接收學員預約'
+                    : 'Draft Preview Mode • Publish Schedule to Accept Client Bookings'}
+                </h3>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                    isPro
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-600/40'
+                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  }`}
+                >
+                  {isPro ? 'PRO LIVE' : locale === 'zh-TW' ? '尚未發布' : 'UNPUBLISHED'}
+                </span>
+              </div>
+              <p className="text-xs text-[#A89F91] mt-0.5">
+                {locale === 'zh-TW' ? '專屬無廣告預約網址：' : 'Your private ad-free studio link: '}
+                <span className="font-mono text-[#EAD8B1]">/studio/{studio.slug}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => handlePublishOrShareStudioLink('SHARE_LINK')}
+              className="px-4 py-2 rounded-full bg-[#2A241E] hover:bg-[#383028] border border-[#4A4035] text-xs font-medium text-[#E0D8CE] flex items-center space-x-1.5 transition-all"
+            >
+              {copiedStudioLink ? (
+                <>
+                  <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{locale === 'zh-TW' ? '已複製專屬網址！' : 'Link Copied!'}</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5 text-[#C5A059]" />
+                  <span>{locale === 'zh-TW' ? '分享預約連結' : 'Share Booking Link'}</span>
+                </>
+              )}
+            </button>
+
+            {!isPro && (
+              <button
+                type="button"
+                onClick={() => handlePublishOrShareStudioLink('PUBLISH_SCHEDULE')}
+                className="px-5 py-2 rounded-full bg-[#C5A059] hover:bg-[#D4AF37] text-[#161412] text-xs font-semibold flex items-center space-x-1.5 shadow-md transition-all"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>
+                  {locale === 'zh-TW'
+                    ? '發布課表開始接單 (Publish & Go Live)'
+                    : 'Publish & Go Live (14-Day Free Trial)'}
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Top Payout & 0% Fee Banner matching Screenshot 3 */}
         <div className="mb-8 rounded-3xl bg-linear-to-r from-[#24201C] via-[#2A241E] to-[#1E1B18] p-6 border border-[#3A332B] shadow-xl relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
@@ -1477,6 +1587,72 @@ export const AdminPortal: React.FC = () => {
                     {tAdmin('waitlistOfferTimeoutDesc')}
                   </p>
                 </div>
+
+                {/* Top Announcement Banner & Public Marketplace Opt-In */}
+                <div className="pt-4 border-t border-[#302B24] space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[#E0D8CE] mb-1">
+                      {locale === 'zh-TW'
+                        ? '教室最新公告橫幅 (顯示於您的專屬預約頁頂部)'
+                        : 'Studio Top Announcement Banner (Displayed on your private /studio page)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={announcementBanner}
+                      onChange={(e) => setAnnouncementBanner(e.target.value)}
+                      placeholder={
+                        locale === 'zh-TW'
+                          ? '例如：新學員首堂體驗現折 NT$ 200'
+                          : 'e.g. New students get $10 off their first Reformer class!'
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#181614] border border-[#3A332B] text-xs text-[#F5F2EB] focus:outline-none focus:border-[#C5A059]"
+                    />
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-[#181614] border border-[#352E26] flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-[#F5F2EB]">
+                        {locale === 'zh-TW'
+                          ? '加入「探索精選課程 (Explore Studios)」城市公開名錄'
+                          : 'Opt-in to Public "Explore Studios" City Directory'}
+                      </div>
+                      <div className="text-[11px] text-[#8C8274] mt-0.5">
+                        {locale === 'zh-TW'
+                          ? '開啟後，附近學員可於探索頁找到您的課程；您的專屬連結 (/studio/' + studio.slug + ') 仍保持 100% 私密無競品廣告。'
+                          : 'Let local students discover your classes in the Explore tab while keeping your direct /studio link 100% private.'}
+                      </div>
+                    </div>
+
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-3">
+                      <input
+                        type="checkbox"
+                        checked={discoverable}
+                        onChange={(e) => setDiscoverable(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-[#352E26] peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#C5A059]"></div>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-[#A89F91] mb-1">
+                      {locale === 'zh-TW' ? '所在城市與行政區 (City / District)' : 'Studio City / Neighborhood'}
+                    </label>
+                    <input
+                      type="text"
+                      value={studioCity}
+                      onChange={(e) => setStudioCity(e.target.value)}
+                      placeholder="e.g. Taipei • Da-an District (台北大安)"
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-xs text-[#F5F2EB] focus:outline-none focus:border-[#C5A059]"
+                    />
+                  </div>
+                </div>
+
+                {policiesSavedToast && (
+                  <div className="p-2.5 rounded-xl bg-emerald-950 border border-emerald-600 text-emerald-300 text-xs">
+                    {locale === 'zh-TW' ? '✓ 已儲存教室規則與最新公告設定！' : '✓ Studio rules & announcement saved!'}
+                  </div>
+                )}
 
                 <div className="p-4 rounded-xl bg-[#1A1714] border border-[#352E26] text-xs text-[#A89F91]">
                   {tAdmin('flatSubscriptionBanner')}

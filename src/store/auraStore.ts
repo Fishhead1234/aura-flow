@@ -34,6 +34,13 @@ function parseInitialRoute(): AppRoute {
   if (pathname === '/onboarding' || pathname.startsWith('/onboarding')) {
     return { path: 'onboarding' };
   }
+  if (pathname === '/explore' || pathname.startsWith('/explore')) {
+    return { path: 'explore' };
+  }
+  if (pathname.startsWith('/studio/')) {
+    const slug = pathname.replace('/studio/', '').split('/')[0] || 'sol-sanctuary';
+    return { path: 'public_studio', slug };
+  }
   if (pathname.startsWith('/s/')) {
     const slug = pathname.replace('/s/', '').split('/')[0] || 'sol-sanctuary';
     return { path: 'public_studio', slug };
@@ -118,7 +125,7 @@ const DEFAULT_PAYMENTS: StudioPaymentConfig = {
   },
 };
 
-// 1 Studio ("Sol Sanctuary", slug: "sol-sanctuary")
+// Curated Boutique Studios for Public Marketplace Discovery
 const INITIAL_STUDIOS: Studio[] = [
   {
     id: 'studio-sol-01',
@@ -136,6 +143,59 @@ const INITIAL_STUDIOS: Studio[] = [
     platformTakeRate: 0.0,
     logoMark: '🌿',
     createdAt: '2026-11-01T00:00:00.000Z',
+    announcementBanner: '🎉 教室最新公告：新學員首堂器械皮拉提體驗現折 NT$ 200 • 歡迎直接預約！',
+    discoverable: true,
+    city: 'Taipei • Da-an District (台北大安)',
+    isPro: true,
+    isLive: true,
+    communication: DEFAULT_COMMUNICATION,
+    paymentMethods: DEFAULT_PAYMENTS,
+  },
+  {
+    id: 'studio-lumina-02',
+    ownerId: 'usr-lumina-owner',
+    slug: 'lumina-pilates',
+    name: 'Lumina Reformer Loft',
+    tagline: 'Precision Clinical Reformer & Core Sculpting',
+    currency: 'TWD',
+    stripeAccountId: 'acct_lumina_tw_9102',
+    stripeAccountName: 'Lumina Reformer TW',
+    cancelWindowHrs: 24,
+    waitlistMins: 30,
+    roomsCount: 1,
+    monthlySubscriptionPrice: 29.0,
+    platformTakeRate: 0.0,
+    logoMark: '✨',
+    createdAt: '2026-11-01T00:00:00.000Z',
+    announcementBanner: '✨ 本月主打：1對1 體態評估與核心器械體驗課開放預約中',
+    discoverable: true,
+    city: 'Taipei • Xinyi District (台北信義)',
+    isPro: true,
+    isLive: true,
+    communication: DEFAULT_COMMUNICATION,
+    paymentMethods: DEFAULT_PAYMENTS,
+  },
+  {
+    id: 'studio-kora-03',
+    ownerId: 'usr-kora-owner',
+    slug: 'kora-sound-yoga',
+    name: 'Kōra Sound & Yin Sanctuary',
+    tagline: 'Himalayan Singing Bowls, Breathwork & Restorative Yin',
+    currency: 'TWD',
+    stripeAccountId: 'acct_kora_tw_3319',
+    stripeAccountName: 'Kora Sanctuary TW',
+    cancelWindowHrs: 12,
+    waitlistMins: 20,
+    roomsCount: 1,
+    monthlySubscriptionPrice: 29.0,
+    platformTakeRate: 0.0,
+    logoMark: '🧘',
+    createdAt: '2026-11-01T00:00:00.000Z',
+    announcementBanner: '🌙 週五晚間滿月頌缽音療專場 • 僅剩最後 2 席名額',
+    discoverable: true,
+    city: 'Taichung • West District (台中西區)',
+    isPro: true,
+    isLive: true,
     communication: DEFAULT_COMMUNICATION,
     paymentMethods: DEFAULT_PAYMENTS,
   },
@@ -592,6 +652,9 @@ interface AuraState {
   isBookingDrawerOpen: boolean;
   selectedWaitlistSession: ClassSession | null;
   isWaitlistModalOpen: boolean;
+  isWelcomeModalOpen: boolean;
+  isPaywallModalOpen: boolean;
+  paywallTriggerReason: 'PUBLISH_SCHEDULE' | 'SHARE_LINK' | 'DISCOVERY_FEED' | null;
 
   // Waterfall Timer
   activeWaterfallSessionId: string | null;
@@ -604,6 +667,12 @@ interface AuraState {
   setActiveCategory: (cat: string) => void;
   setActiveAdminTab: (tab: AdminTabType) => void;
   setMobileDrawerOpen: (open: boolean) => void;
+  setWelcomeModalOpen: (open: boolean) => void;
+  openPaywallModal: (reason?: 'PUBLISH_SCHEDULE' | 'SHARE_LINK' | 'DISCOVERY_FEED') => void;
+  closePaywallModal: () => void;
+  activateProSubscription: () => void;
+  updateStudioSettings: (updates: Partial<Studio>) => void;
+  resetToCleanGuestState: () => void;
 
   // Messaging Actions
   setActiveConversationId: (id: string | null) => void;
@@ -727,6 +796,9 @@ export const useAuraStore = create<AuraState>()(
   isBookingDrawerOpen: false,
   selectedWaitlistSession: null,
   isWaitlistModalOpen: false,
+  isWelcomeModalOpen: false,
+  isPaywallModalOpen: false,
+  paywallTriggerReason: null,
 
   activeWaterfallSessionId: null,
   activeWaterfallSecondsRemaining: 1800,
@@ -791,10 +863,17 @@ export const useAuraStore = create<AuraState>()(
   },
 
   navigateTo: (route) => {
-    let url = '/s/sol-sanctuary';
+    let url = '/studio/sol-sanctuary';
     if (route.path === 'admin') url = '/admin';
     else if (route.path === 'onboarding') url = '/onboarding';
-    else if (route.path === 'public_studio') url = `/s/${route.slug}`;
+    else if (route.path === 'explore') url = '/explore';
+    else if (route.path === 'public_studio') {
+      url = `/studio/${route.slug}`;
+      const matched = get().studios.find((s) => s.slug === route.slug);
+      if (matched) {
+        set({ studio: matched, activeStudioId: matched.id });
+      }
+    }
 
     if (typeof window !== 'undefined') {
       window.history.pushState({}, '', url);
@@ -803,11 +882,17 @@ export const useAuraStore = create<AuraState>()(
   },
 
   switchPersona: (persona) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraflow_has_launched', 'true');
+    }
     if (persona === 'elena_owner') {
+      const proElenaStudio = { ...INITIAL_STUDIOS[0], isPro: true, isLive: true };
       set({
         activePersona: 'elena_owner',
         currentUser: PERSONA_ELENA,
-        studio: INITIAL_STUDIOS[0],
+        studio: proElenaStudio,
+        studios: get().studios.map((s) => (s.id === proElenaStudio.id ? proElenaStudio : s)),
+        isWelcomeModalOpen: false,
       });
       get().navigateTo({ path: 'admin' });
     } else if (persona === 'maya_student') {
@@ -818,24 +903,33 @@ export const useAuraStore = create<AuraState>()(
           ...INITIAL_MAYA_PASS,
           creditsLeft: 2, // 2 Credits remaining
         },
+        isWelcomeModalOpen: false,
       });
       get().navigateTo({ path: 'public_studio', slug: 'sol-sanctuary' });
     } else if (persona === 'new_student') {
       set({
         activePersona: 'new_student',
         currentUser: PERSONA_NEW_STUDENT,
+        bookings: [],
         userPass: {
           ...INITIAL_MAYA_PASS,
           id: 'pass-guest-0',
           userId: PERSONA_NEW_STUDENT.id,
           creditsLeft: 0, // 0 Credits to test Stripe/Apple Pay checkout!
         },
+        isWelcomeModalOpen: false,
       });
-      get().navigateTo({ path: 'public_studio', slug: 'sol-sanctuary' });
+      get().navigateTo({ path: 'explore' });
     } else if (persona === 'new_owner') {
       set({
         activePersona: 'new_owner',
         currentUser: PERSONA_NEW_OWNER,
+        studio: {
+          ...INITIAL_STUDIOS[0],
+          isPro: false,
+          isLive: false,
+        },
+        isWelcomeModalOpen: false,
       });
       get().navigateTo({ path: 'onboarding' });
     }
@@ -883,6 +977,67 @@ export const useAuraStore = create<AuraState>()(
   setActiveCategory: (activeCategory) => set({ activeCategory }),
   setActiveAdminTab: (activeAdminTab) => set({ activeAdminTab }),
   setMobileDrawerOpen: (isMobileDrawerOpen) => set({ isMobileDrawerOpen }),
+  setWelcomeModalOpen: (isWelcomeModalOpen) => set({ isWelcomeModalOpen }),
+  openPaywallModal: (reason = 'PUBLISH_SCHEDULE') =>
+    set({ isPaywallModalOpen: true, paywallTriggerReason: reason }),
+  closePaywallModal: () =>
+    set({ isPaywallModalOpen: false, paywallTriggerReason: null }),
+
+  activateProSubscription: () => {
+    const { studio, studios } = get();
+    const updatedStudio: Studio = { ...studio, isPro: true, isLive: true, discoverable: true };
+    set({
+      studio: updatedStudio,
+      studios: studios.map((s) => (s.id === studio.id ? updatedStudio : s)),
+      isPaywallModalOpen: false,
+      paywallTriggerReason: null,
+    });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraflow_is_pro', 'true');
+    }
+    get().syncToCloud();
+  },
+
+  updateStudioSettings: (updates) => {
+    const { studio, studios } = get();
+    const updatedStudio: Studio = { ...studio, ...updates };
+    set({
+      studio: updatedStudio,
+      studios: studios.map((s) => (s.id === studio.id ? updatedStudio : s)),
+    });
+    get().syncToCloud();
+  },
+
+  resetToCleanGuestState: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auraflow_has_launched');
+      localStorage.removeItem('auraflow_is_pro');
+      localStorage.removeItem('aura-flow-db-v1');
+    }
+    set({
+      activePersona: 'new_student',
+      currentUser: PERSONA_NEW_STUDENT,
+      studios: INITIAL_STUDIOS,
+      studio: INITIAL_STUDIOS[0],
+      activeStudioId: 'studio-sol-01',
+      sessions: INITIAL_SESSIONS,
+      classPacks: INITIAL_PACKS,
+      bookings: [],
+      userPass: {
+        ...INITIAL_MAYA_PASS,
+        id: 'pass-guest-0',
+        userId: PERSONA_NEW_STUDENT.id,
+        creditsLeft: 0,
+      },
+      isWelcomeModalOpen: true,
+      isPaywallModalOpen: false,
+      isBookingDrawerOpen: false,
+      currentRoute: { path: 'explore' },
+    });
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/explore');
+    }
+  },
 
   setActiveConversationId: (activeConversationId) => {
     set({ activeConversationId });
@@ -1189,7 +1344,6 @@ export const useAuraStore = create<AuraState>()(
         creditLedger: [newLedgerEntry, ...creditLedger],
         bookings: [newBooking, ...bookings],
         sessions: sessions.map((s) => (s.id === sessionId ? { ...s, bookedCount: s.bookedCount + 1 } : s)),
-        isBookingDrawerOpen: false,
       });
 
       get().syncToCloud();
@@ -1221,7 +1375,6 @@ export const useAuraStore = create<AuraState>()(
         grossVolume: stripeOverview.grossVolume + session.price,
         pendingPayouts: stripeOverview.pendingPayouts + session.price,
       },
-      isBookingDrawerOpen: false,
     });
 
     get().syncToCloud();
@@ -1546,6 +1699,11 @@ export const useAuraStore = create<AuraState>()(
       platformTakeRate: 0.0,
       logoMark: '✨',
       createdAt: new Date().toISOString(),
+      announcementBanner: '🎉 教室最新公告：新學員首堂體驗現折 NT$ 200 • 歡迎線上預約！',
+      discoverable: true,
+      city: 'Taipei • Taiwan (台北市)',
+      isPro: false,
+      isLive: false,
       communication: DEFAULT_COMMUNICATION,
       paymentMethods: DEFAULT_PAYMENTS,
     };

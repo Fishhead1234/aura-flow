@@ -40,10 +40,14 @@ export const ClientScheduleView: React.FC = () => {
     { dayName: 'Sun', dayNumber: 8, dateStr: '2026-11-08' },
   ];
 
-  const categories = ['All', ...Array.from(new Set(sessions.map((s) => s.category)))];
+  // Filter sessions for the active studio (fallback to all sessions if a studio has none yet)
+  const studioSessions = sessions.filter((s) => s.studioId === studio.id);
+  const baseSessions = studioSessions.length > 0 ? studioSessions : sessions;
 
-  // Filter sessions
-  const filteredSessions = sessions.filter((s) => {
+  const categories = ['All', ...Array.from(new Set(baseSessions.map((s) => s.category)))];
+
+  // Filter sessions by category
+  const filteredSessions = baseSessions.filter((s) => {
     if (activeCategory !== 'All' && s.category !== activeCategory) return false;
     return true;
   });
@@ -86,6 +90,14 @@ export const ClientScheduleView: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Studio Top Announcement Banner (Strictly Private to this Studio) */}
+        {studio.announcementBanner && (
+          <div className="mb-5 p-3.5 rounded-2xl bg-amber-50/95 border border-amber-200/90 text-xs text-amber-950 flex items-center space-x-2 shadow-2xs">
+            <Sparkles className="w-4 h-4 text-aura-clay shrink-0" />
+            <span className="font-medium leading-snug">{studio.announcementBanner}</span>
+          </div>
+        )}
 
         {/* Active Pass Wallet Card with Contact Instructor CTA */}
         {userPass && userPass.creditsLeft > 0 && (
@@ -302,6 +314,24 @@ export const ClientScheduleView: React.FC = () => {
               ? '0% 平台抽成保證 • 款項直入 Stripe 直連帳戶'
               : '0% Platform Fee Guarantee • Direct payouts via Stripe Connect'}
           </p>
+
+          {/* Discreet Powered by Aura Flow Acquisition Badge */}
+          <div className="mt-5 pt-4 border-t border-stone-200/80">
+            <button
+              type="button"
+              onClick={() => useAuraStore.getState().switchPersona('new_owner')}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-stone-200/70 hover:bg-stone-300/70 text-[11px] text-stone-600 hover:text-stone-900 transition-colors"
+            >
+              <span>
+                {locale === 'zh-TW'
+                  ? 'Powered by Aura Flow • 獨立教練與精品工作室預約系統'
+                  : 'Powered by Aura Flow • Boutique Studio Booking Engine'}
+              </span>
+              <span className="font-semibold text-aura-clay">
+                {locale === 'zh-TW' ? '[免費開通 ↗]' : '[Launch Free ↗]'}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 

@@ -12,6 +12,7 @@ import {
   QrCode,
   Smartphone,
   Building,
+  Share2,
 } from 'lucide-react';
 import { PaymentMethodType } from '../types/aura';
 import confetti from 'canvas-confetti';
@@ -43,6 +44,7 @@ export const BookingDrawer: React.FC = () => {
   const [remittanceLast5, setRemittanceLast5] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [copiedShareText, setCopiedShareText] = useState(false);
 
   const payments = studio.paymentMethods;
 
@@ -150,11 +152,33 @@ export const BookingDrawer: React.FC = () => {
           origin: { y: 0.6 },
           colors: ['#B86B53', '#7D8D7B', '#C5A059'],
         });
-        setTimeout(() => {
-          handleClose();
-        }, 1600);
       }
     }, 600);
+  };
+
+  const handleShareWithFriends = async () => {
+    if (!selectedSessionForBooking) return;
+    const studioLink = `${typeof window !== 'undefined' ? window.location.origin : 'https://auraflow-bay.vercel.app'}/studio/${studio.slug}`;
+    const shareText =
+      locale === 'zh-TW'
+        ? `✨ 我剛預約了【${studio.name}】的「${selectedSessionForBooking.title}」(${selectedSessionForBooking.startTime.substring(11, 16)} - ${selectedSessionForBooking.endTime.substring(11, 16)})！一起來上課吧 👉 ${studioLink}`
+        : `✨ I just booked "${selectedSessionForBooking.title}" at ${studio.name}! Come join me 👉 ${studioLink}`;
+
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `${studio.name} • ${selectedSessionForBooking.title}`,
+          text: shareText,
+          url: studioLink,
+        });
+        return;
+      } catch {
+        // Fallback to clipboard copy
+      }
+    }
+    navigator.clipboard?.writeText(shareText);
+    setCopiedShareText(true);
+    setTimeout(() => setCopiedShareText(false), 3000);
   };
 
   if (!selectedSessionForBooking) return null;
@@ -181,16 +205,76 @@ export const BookingDrawer: React.FC = () => {
         </div>
 
         {bookingSuccess ? (
-          <div className="py-12 text-center space-y-3">
+          <div className="py-6 text-center space-y-4">
             <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
               <Check className="w-8 h-8 stroke-[2.5]" />
             </div>
-            <h3 className="font-serif text-xl font-medium text-stone-900">
-              {tBooking('bookingSuccess')}
-            </h3>
-            <p className="text-xs text-stone-600 max-w-xs mx-auto">
-              {tBooking('bookingSuccessSub')}
-            </p>
+            <div>
+              <h3 className="font-serif text-xl font-medium text-stone-900">
+                {tBooking('bookingSuccess')}
+              </h3>
+              <p className="text-xs text-stone-600 max-w-xs mx-auto mt-1">
+                {tBooking('bookingSuccessSub')}
+              </p>
+            </div>
+
+            {/* Pre-formatted LINE & IG Story Share Preview */}
+            <div className="p-3.5 rounded-2xl bg-white border border-stone-200 text-left text-xs space-y-2 shadow-2xs">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
+                {locale === 'zh-TW' ? 'LINE / IG 限時動態分享文案' : 'LINE & IG Story Invite Preview'}
+              </div>
+              <p className="text-stone-700 leading-relaxed text-[11px] bg-stone-50 p-2.5 rounded-xl border border-stone-200/70">
+                {locale === 'zh-TW'
+                  ? `✨ 我剛預約了【${studio.name}】的「${selectedSessionForBooking.title}」(${selectedSessionForBooking.startTime.substring(11, 16)} - ${selectedSessionForBooking.endTime.substring(11, 16)})！一起來上課吧 👉 /studio/${studio.slug}`
+                  : `✨ I just booked "${selectedSessionForBooking.title}" at ${studio.name}! Join me 👉 /studio/${studio.slug}`}
+              </p>
+
+              <button
+                type="button"
+                onClick={handleShareWithFriends}
+                className="w-full py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs flex items-center justify-center space-x-2 transition-all shadow-xs"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>
+                  {copiedShareText
+                    ? locale === 'zh-TW'
+                      ? '✓ 已複製 LINE / IG 邀請文案！'
+                      : '✓ Invite Text Copied for LINE / IG!'
+                    : locale === 'zh-TW'
+                    ? '邀請好友一起上課 (Share with Friends)'
+                    : 'Share with Friends (LINE / IG Story)'}
+                </span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleClose}
+              className="w-full py-3 rounded-2xl bg-stone-900 text-white text-xs font-semibold hover:bg-stone-800 transition-colors"
+            >
+              {locale === 'zh-TW' ? '完成並返回課表' : 'Done & Return to Schedule'}
+            </button>
+
+            {/* Discreet Powered by Aura Flow Acquisition Footer */}
+            <div className="pt-3 border-t border-stone-200/80">
+              <button
+                type="button"
+                onClick={() => {
+                  handleClose();
+                  useAuraStore.getState().switchPersona('new_owner');
+                }}
+                className="text-[11px] text-stone-500 hover:text-stone-900 transition-colors"
+              >
+                <span>
+                  {locale === 'zh-TW'
+                    ? 'Powered by Aura Flow • 獨立教練與精品工作室預約系統 '
+                    : 'Powered by Aura Flow • Boutique Studio Booking System '}
+                </span>
+                <span className="font-semibold text-aura-clay underline">
+                  {locale === 'zh-TW' ? '[免費開通 ↗]' : '[Launch Free ↗]'}
+                </span>
+              </button>
+            </div>
           </div>
         ) : (
           <>

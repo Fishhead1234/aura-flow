@@ -4,14 +4,10 @@ import { PersonaType } from '../types/aura';
 import {
   Wrench,
   UserCheck,
-  Zap,
   RotateCcw,
-  ChevronDown,
   ChevronUp,
   CreditCard,
-  Shield,
-  Sparkles,
-  Check,
+  RefreshCw,
 } from 'lucide-react';
 
 export const DevSandboxToolbar: React.FC = () => {
@@ -19,21 +15,51 @@ export const DevSandboxToolbar: React.FC = () => {
   const [resetToast, setResetToast] = useState(false);
 
   const {
+    locale,
     activePersona,
     switchPersona,
     simulateStripePayment,
     setSimulateStripePayment,
     resetDatabaseToSeedState,
+    resetToCleanGuestState,
     currentRoute,
-    userPass,
     currentUser,
   } = useAuraStore();
 
-  const handleReset = () => {
+  const isZh = locale === 'zh-TW' || locale === 'zh-CN';
+
+  const handleSeedReset = () => {
     resetDatabaseToSeedState();
     setResetToast(true);
     setTimeout(() => setResetToast(false), 2000);
   };
+
+  const handleCleanReset = () => {
+    resetToCleanGuestState();
+    setIsExpanded(false);
+  };
+
+  const quickRolePills: {
+    id: PersonaType;
+    labelZh: string;
+    labelEn: string;
+  }[] = [
+    {
+      id: 'new_student',
+      labelZh: '👤 新學員 (New Student)',
+      labelEn: '👤 New Student',
+    },
+    {
+      id: 'new_owner',
+      labelZh: '🧘 新教練 (Unonboarded Instructor)',
+      labelEn: '🧘 Unonboarded Instructor',
+    },
+    {
+      id: 'elena_owner',
+      labelZh: '👑 現有教練 (Elena Rostova - Pro)',
+      labelEn: '👑 Elena Rostova - Pro',
+    },
+  ];
 
   const personas: {
     id: PersonaType;
@@ -43,26 +69,34 @@ export const DevSandboxToolbar: React.FC = () => {
   }[] = [
     {
       id: 'elena_owner',
-      label: 'Elena Rostova - Studio Owner',
-      roleDesc: 'Navigates to /admin to test schedule management & Stripe payouts',
+      label: isZh ? '👑 現有教練 (Elena Rostova - Pro)' : 'Elena Rostova - Studio Owner (Pro)',
+      roleDesc: isZh
+        ? '進入 /admin 完整管理後台（含課表、撥款與 LINE 訊息收件匣）'
+        : 'Navigates to /admin to test schedule management & Stripe payouts',
       targetRoute: '/admin',
     },
     {
       id: 'maya_student',
-      label: 'Maya Lin - Enrolled Student (2 Passes)',
-      roleDesc: 'Navigates to /s/sol-sanctuary to test 1-click pass booking',
-      targetRoute: '/s/sol-sanctuary',
+      label: isZh ? '🎫 既有學員 Maya Lin (剩餘 2 堂課包點數)' : 'Maya Lin - Enrolled Student (2 Passes)',
+      roleDesc: isZh
+        ? '進入 /studio/sol-sanctuary 測試一鍵點數扣抵預約'
+        : 'Navigates to /studio/sol-sanctuary to test 1-click pass booking',
+      targetRoute: '/studio/sol-sanctuary',
     },
     {
       id: 'new_student',
-      label: 'New Student (0 Passes)',
-      roleDesc: 'Navigates to /s/sol-sanctuary to test Stripe card / Apple Pay checkout',
-      targetRoute: '/s/sol-sanctuary',
+      label: isZh ? '👤 新學員 (New Student - 0 預約紀錄)' : 'New Student (0 Passes / Clean Feed)',
+      roleDesc: isZh
+        ? '進入公開探索與課表頁，測試 Apple Pay / LINE Pay / 轉帳結帳'
+        : 'Displays public explore & booking feed with zero prior bookings',
+      targetRoute: '/explore',
     },
     {
       id: 'new_owner',
-      label: 'New Studio Owner',
-      roleDesc: 'Navigates to /onboarding to test the 3-step studio creation flow',
+      label: isZh ? '🧘 新教練 (Unonboarded Instructor)' : 'Unonboarded Instructor (Step 1 Wizard)',
+      roleDesc: isZh
+        ? '重設教練狀態並啟動步驟 1 免費開通精靈與發布前 Paywall'
+        : 'Resets instructor state and launches Step 1 of Onboarding Wizard',
       targetRoute: '/onboarding',
     },
   ];
@@ -82,15 +116,17 @@ export const DevSandboxToolbar: React.FC = () => {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
           </span>
           <Wrench className="w-3.5 h-3.5 text-amber-400" />
-          <span className="font-semibold text-white">Dev Sandbox Mode</span>
+          <span className="font-semibold text-white">
+            {isZh ? '開發測試沙盒 (Dev Sandbox)' : 'Dev Sandbox Mode'}
+          </span>
           <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-[#2A241E] text-[#E0D8CE] border border-[#3E342A] text-[10px]">
-            {currentPersonaConfig.label.split(' - ')[0]}
+            {currentPersonaConfig.label.split(' (')[0]}
           </span>
           <ChevronUp className="w-3.5 h-3.5 text-amber-400" />
         </button>
       ) : (
         /* Expanded Floating Sandbox Card */
-        <div className="pointer-events-auto bg-[#1C1815] text-[#F5F2EB] border border-[#3E372F] shadow-2xl rounded-3xl p-5 max-w-lg w-full backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="pointer-events-auto bg-[#1C1815] text-[#F5F2EB] border border-[#3E372F] shadow-2xl rounded-3xl p-5 max-w-xl w-full backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-200">
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-[#302B24] mb-4">
             <div className="flex items-center space-x-2">
@@ -99,10 +135,12 @@ export const DevSandboxToolbar: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                  Developer Sandbox Toolbar
+                  {isZh ? '開發者沙盒與角色模擬器' : 'Developer Sandbox & Role Simulator'}
                 </h3>
                 <p className="text-[10px] text-[#8C8274]">
-                  SQLite dev.db active • Local multi-role environment
+                  {isZh
+                    ? '一鍵切換新學員、新教練開通流程或重設為全新首次安裝狀態'
+                    : 'Instant multi-role switcher & clean first-run state simulator'}
                 </p>
               </div>
             </div>
@@ -111,22 +149,61 @@ export const DevSandboxToolbar: React.FC = () => {
               onClick={() => setIsExpanded(false)}
               className="px-2.5 py-1 rounded-full bg-[#2A241E] hover:bg-[#383028] text-xs text-[#A89F91] transition-colors"
             >
-              Minimize ▾
+              {isZh ? '收合 ▾' : 'Minimize ▾'}
             </button>
           </div>
 
-          {/* Persona Switcher Dropdown */}
-          <div className="space-y-1.5 mb-4">
-            <label className="block text-[11px] font-semibold text-[#C5A059] uppercase tracking-wider flex items-center space-x-1.5">
+          {/* 1. Primary Reset Action: Red Clean State Button */}
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={handleCleanReset}
+              className="w-full py-2.5 px-4 rounded-2xl bg-red-950/90 hover:bg-red-900 text-red-200 border border-red-700/80 text-xs font-semibold flex items-center justify-center space-x-2 shadow-md transition-all active:scale-[0.99]"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-red-300" />
+              <span>
+                {isZh
+                  ? '🔄 重設為全新訪客 (Reset to Clean State)'
+                  : '🔄 Reset to Clean State (重設為全新訪客)'}
+              </span>
+            </button>
+          </div>
+
+          {/* 2. Quick Role Switcher Pills */}
+          <div className="mb-4">
+            <label className="block text-[11px] font-semibold text-[#C5A059] uppercase tracking-wider mb-2 flex items-center space-x-1.5">
               <UserCheck className="w-3.5 h-3.5" />
-              <span>Switch Persona</span>
+              <span>{isZh ? '快速角色切換 (Quick Role Switcher)' : 'Quick Role Switcher Pills'}</span>
             </label>
 
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {quickRolePills.map((pill) => {
+                const isSelected = activePersona === pill.id;
+                return (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => switchPersona(pill.id)}
+                    className={`px-3 py-2 rounded-xl border text-[11px] font-semibold transition-all text-center ${
+                      isSelected
+                        ? 'bg-[#C5A059] text-[#161412] border-[#C5A059] shadow-sm'
+                        : 'bg-[#26211C] text-[#E0D8CE] border-[#3E342A] hover:border-[#C5A059]/60'
+                    }`}
+                  >
+                    {isZh ? pill.labelZh : pill.labelEn}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Full Persona Dropdown (includes Maya Lin 2-Pass Student) */}
+          <div className="space-y-1.5 mb-4">
             <select
               aria-label="Switch Persona"
               value={activePersona}
               onChange={(e) => switchPersona(e.target.value as PersonaType)}
-              className="w-full bg-[#26211C] border border-[#443A30] text-[#F5F2EB] text-xs rounded-xl px-3 py-2.5 font-medium focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer"
+              className="w-full bg-[#26211C] border border-[#443A30] text-[#F5F2EB] text-xs rounded-xl px-3 py-2 font-medium focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer"
             >
               {personas.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -147,8 +224,12 @@ export const DevSandboxToolbar: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <CreditCard className="w-4 h-4 text-emerald-400" />
                 <div>
-                  <div className="text-xs font-semibold text-white">Simulate Stripe</div>
-                  <div className="text-[10px] text-[#8C8274]">Auto-approve test cards</div>
+                  <div className="text-xs font-semibold text-white">
+                    {isZh ? '模擬免刷卡測試結帳' : 'Simulate Stripe'}
+                  </div>
+                  <div className="text-[10px] text-[#8C8274]">
+                    {isZh ? '自動核准 $0 測試交易' : 'Auto-approve test cards'}
+                  </div>
                 </div>
               </div>
 
@@ -167,33 +248,38 @@ export const DevSandboxToolbar: React.FC = () => {
               </button>
             </div>
 
-            {/* Reset Database Button */}
+            {/* Restore Seed Database Button */}
             <button
-              onClick={handleReset}
+              type="button"
+              onClick={handleSeedReset}
               className="flex items-center justify-center space-x-2 p-3 rounded-2xl bg-[#26211C] border border-[#3E342A] hover:border-amber-400/50 hover:bg-[#302A24] text-xs font-semibold text-amber-200 transition-all shadow-xs"
             >
               <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-              <span>Reset Database to Seed State</span>
+              <span>{isZh ? '還原預設示範資料庫' : 'Restore Demo Seed Data'}</span>
             </button>
           </div>
 
           {/* Reset Toast Feedback */}
           {resetToast && (
             <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-600/50 text-emerald-300 text-xs text-center font-medium animate-in fade-in">
-              ✓ Database reset to seed state! 5 classes, Elena (Owner), and Maya (2 passes) restored.
+              {isZh
+                ? '✓ 已還原預設示範課表（5 堂課、Elena 教練與 Maya 學員點數）！'
+                : '✓ Database restored to seed state!'}
             </div>
           )}
 
           {/* Footer Info */}
           <div className="pt-2 text-[10px] text-[#8C8274] flex items-center justify-between">
             <span>
-              Current Route:{' '}
+              Route:{' '}
               <span className="font-mono text-[#C5A059]">
-                {currentRoute.path === 'public_studio' ? `/s/${currentRoute.slug}` : `/${currentRoute.path}`}
+                {currentRoute.path === 'public_studio'
+                  ? `/studio/${currentRoute.slug}`
+                  : `/${currentRoute.path}`}
               </span>
             </span>
             <span>
-              Logged In: <span className="text-[#E0D8CE]">{currentUser.name}</span>
+              User: <span className="text-[#E0D8CE]">{currentUser.name}</span>
             </span>
           </div>
         </div>
@@ -201,4 +287,3 @@ export const DevSandboxToolbar: React.FC = () => {
     </div>
   );
 };
-

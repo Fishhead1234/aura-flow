@@ -93,6 +93,11 @@ export interface Studio {
   platformTakeRate: number; // 0%
   logoMark: string;
   createdAt: string;
+  announcementBanner?: string;
+  discoverable?: boolean;
+  city?: string;
+  isPro?: boolean;
+  isLive?: boolean;
   communication?: StudioCommunicationSettings;
   paymentMethods?: StudioPaymentConfig;
 }
@@ -276,5 +281,6 @@ export interface StripeConnectOverview {
 // App Routing Types
 export type AppRoute =
   | { path: 'public_studio'; slug: string }
+  | { path: 'explore' }
   | { path: 'admin' }
   | { path: 'onboarding' };

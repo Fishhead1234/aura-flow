@@ -14,6 +14,7 @@ import {
   Ticket,
   Download,
   Smartphone,
+  Compass,
 } from 'lucide-react';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { AuraLeafBadge } from './AuraLeafLogo';
@@ -139,6 +140,22 @@ export const Navbar: React.FC = () => {
               <span className="absolute right-2.5 pointer-events-none text-[10px] text-stone-500">▼</span>
             </div>
 
+            {/* Public Explore Studios Directory Pill */}
+            {!isAdminRoute && (
+              <button
+                type="button"
+                onClick={() => navigateTo({ path: 'explore' })}
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  currentRoute.path === 'explore'
+                    ? 'bg-aura-charcoal text-white shadow-xs'
+                    : 'bg-stone-200/80 text-stone-700 hover:bg-stone-300/80'
+                }`}
+              >
+                <Compass className="w-3.5 h-3.5 text-aura-clay" />
+                <span>{locale === 'zh-TW' ? '探索精選課程' : 'Explore Studios'}</span>
+              </button>
+            )}
+
             {/* Context-aware Route Link */}
             {isAdminRoute ? (
               <button
@@ -154,7 +171,11 @@ export const Navbar: React.FC = () => {
                 className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-stone-700 bg-stone-200/80 hover:bg-stone-300/80 transition-colors"
               >
                 <Shield className="w-3.5 h-3.5 text-stone-600" />
-                <span>{locale === 'zh-TW' ? '館長管理後台' : 'Instructor Portal'}</span>
+                <span>
+                  {locale === 'zh-TW'
+                    ? '切換至教室管理後台'
+                    : 'Switch to Studio Portal'}
+                </span>
               </button>
             )}
           </div>
@@ -317,10 +338,28 @@ export const Navbar: React.FC = () => {
               </div>
 
               {/* 3. INSTRUCTOR PORTAL / SWITCH VIEW LINK */}
-              <div className="mt-8 pt-6 border-t border-stone-300">
+              <div className="mt-8 pt-6 border-t border-stone-300 space-y-2.5">
                 <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2.5">
-                  Access Portal
+                  {locale === 'zh-TW' ? '身分與探索切換' : 'Navigation & Portal'}
                 </div>
+
+                {/* Explore Studios Directory Button */}
+                <button
+                  onClick={() => {
+                    navigateTo({ path: 'explore' });
+                  }}
+                  className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-amber-100/80 border border-amber-300 text-stone-900 font-medium text-xs hover:bg-amber-200/70 transition-all"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <Compass className="w-4 h-4 text-aura-clay" />
+                    <span>
+                      {locale === 'zh-TW'
+                        ? '探索精選課程 (Explore Studios)'
+                        : 'Explore Studios & Classes'}
+                    </span>
+                  </div>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
 
                 {isAdminRoute ? (
                   <button
@@ -331,7 +370,11 @@ export const Navbar: React.FC = () => {
                   >
                     <div className="flex items-center space-x-2.5">
                       <Sparkles className="w-4 h-4" />
-                      <span>Switch to Student Booking View</span>
+                      <span>
+                        {locale === 'zh-TW'
+                          ? '切換至學員預約前台'
+                          : 'Switch to Student Booking View'}
+                      </span>
                     </div>
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -344,7 +387,11 @@ export const Navbar: React.FC = () => {
                   >
                     <div className="flex items-center space-x-2.5">
                       <Shield className="w-4 h-4" />
-                      <span>Instructor Portal / Admin Dashboard</span>
+                      <span>
+                        {locale === 'zh-TW'
+                          ? '切換至教室管理後台 (Switch to Studio Portal)'
+                          : 'Switch to Studio Portal (切換至教室管理後台)'}
+                      </span>
                     </div>
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -355,9 +402,13 @@ export const Navbar: React.FC = () => {
                   onClick={() => {
                     navigateTo({ path: 'onboarding' });
                   }}
-                  className="w-full mt-2.5 flex items-center justify-between p-3 rounded-2xl bg-stone-200/80 text-stone-700 text-xs font-medium hover:bg-stone-300 transition-colors"
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-stone-200/80 text-stone-700 text-xs font-medium hover:bg-stone-300 transition-colors"
                 >
-                  <span>New Studio Onboarding (3-Step Wizard)</span>
+                  <span>
+                    {locale === 'zh-TW'
+                      ? '我是新教練 • 免費建立專屬工作室 (3 步驟)'
+                      : 'New Studio Onboarding (Free 3-Step Setup)'}
+                  </span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
