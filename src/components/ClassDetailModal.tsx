@@ -250,3 +250,4 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ session, onC
     </div>
   );
 };
+

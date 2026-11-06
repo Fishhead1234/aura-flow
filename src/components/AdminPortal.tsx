@@ -41,12 +41,20 @@ import {
   MessageCircle,
   Link2,
   KeyRound,
+  HeartHandshake,
+  Award,
 } from 'lucide-react';
 import { ClassCategory, CURRENCY_CONFIGS, ClassPack, ClassSession, AdminTabType } from '../types/aura';
 import { AuraLogoBadge } from './AuraLeafLogo';
 import { useSubscription } from '../hooks/useSubscription';
 import { ClassFormModal } from './ClassFormModal';
 import { ClassDetailModal, buildVipInviteText } from './ClassDetailModal';
+import { AdminClassDetailModal } from './AdminClassDetailModal';
+import { CoachStudioFeed } from './CoachStudioFeed';
+import {
+  DEFAULT_RETENTION_CARE_CONFIG,
+  evaluateActiveRetentionTriggers,
+} from '../services/retentionService';
 
 export const AdminPortal: React.FC = () => {
   const { isPro, openPaywall } = useSubscription();
@@ -87,6 +95,8 @@ export const AdminPortal: React.FC = () => {
     broadcastHistory,
     updateStudioCommunication,
     updateStudioPayments,
+    updateRetentionCareConfig,
+    dispatchRetentionCareMessage,
     cloudConnected,
     lastCloudSyncAt,
     syncFromCloud,
@@ -113,11 +123,27 @@ export const AdminPortal: React.FC = () => {
   const [packPopularInput, setPackPopularInput] = useState(false);
   const [packDescInput, setPackDescInput] = useState('');
 
-  // 1-Click Roster Broadcast Modal State
+  // 1-Click Roster Broadcast & Vacancy Filler Modal State
   const [broadcastingSession, setBroadcastingSession] = useState<ClassSession | null>(null);
   const [selectedVipSession, setSelectedVipSession] = useState<ClassSession | null>(null);
+  const [selectedVacancySession, setSelectedVacancySession] = useState<ClassSession | null>(null);
   const [copiedVipSessionId, setCopiedVipSessionId] = useState<string | null>(null);
   const [broadcastText, setBroadcastText] = useState('');
+
+  // Automated Milestone & Retention Care Triggers State
+  const careConfig = studio.retentionCare || DEFAULT_RETENTION_CARE_CONFIG;
+  const [milestoneCheerEnabled, setMilestoneCheerEnabled] = useState(
+    careConfig.milestoneCheerEnabled
+  );
+  const [milestoneTemplate, setMilestoneTemplate] = useState(careConfig.milestoneTemplate);
+  const [gentleCheckInEnabled, setGentleCheckInEnabled] = useState(
+    careConfig.gentleCheckInEnabled
+  );
+  const [gentleCheckInTemplate, setGentleCheckInTemplate] = useState(
+    careConfig.gentleCheckInTemplate
+  );
+  const [retentionDispatchedId, setRetentionDispatchedId] = useState<string | null>(null);
+  const [retentionSavedToast, setRetentionSavedToast] = useState(false);
   const [broadcastInApp, setBroadcastInApp] = useState(true);
   const [broadcastLine, setBroadcastLine] = useState(true);
   const [broadcastSentToast, setBroadcastSentToast] = useState(false);
@@ -624,6 +650,9 @@ export const AdminPortal: React.FC = () => {
         {/* SUB-TAB 1: SCHEDULE BUILDER */}
         {activeAdminTab === 'schedule' && (
           <div>
+            {/* Pinned Weekly Form Tip & Post-Class Stretches Editor */}
+            <CoachStudioFeed isCoachMode={true} />
+
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-medium text-[#F5F2EB] tracking-wide">
@@ -832,14 +861,32 @@ export const AdminPortal: React.FC = () => {
                           </div>
                         </div>
                       ) : (
-                        /* 1-Click Class Roster Broadcast CTA */
-                        <button
-                          onClick={() => handleOpenBroadcastModal(session)}
-                          className="w-full py-2 px-3 rounded-xl bg-[#2C2620] hover:bg-[#383028] border border-[#443B30] text-xs font-medium text-[#EAD8B1] flex items-center justify-center space-x-1.5 transition-colors group-hover:border-[#C5A059]/60"
-                        >
-                          <Megaphone className="w-3.5 h-3.5 text-[#C5A059]" />
-                          <span>{tAdmin('broadcastToRoster')}</span>
-                        </button>
+                        <div className="space-y-1.5">
+                          {/* Last-Minute Vacancy Filler CTA when spots are open within 24h */}
+                          {!isFull && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedVacancySession(session)}
+                              className="w-full py-2 px-3 rounded-xl bg-amber-950/60 hover:bg-amber-900/70 border border-[#C5A059]/60 text-[11px] font-semibold text-amber-200 flex items-center justify-center space-x-1.5 transition-all"
+                            >
+                              <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                              <span className="truncate">
+                                {isZh
+                                  ? '⚡ 釋出即時空缺 (Notify Waitlist / Active Students)'
+                                  : '⚡ Notify Waitlist / Active Students'}
+                              </span>
+                            </button>
+                          )}
+
+                          {/* 1-Click Class Roster Broadcast CTA */}
+                          <button
+                            onClick={() => handleOpenBroadcastModal(session)}
+                            className="w-full py-2 px-3 rounded-xl bg-[#2C2620] hover:bg-[#383028] border border-[#443B30] text-xs font-medium text-[#EAD8B1] flex items-center justify-center space-x-1.5 transition-colors group-hover:border-[#C5A059]/60"
+                          >
+                            <Megaphone className="w-3.5 h-3.5 text-[#C5A059]" />
+                            <span>{tAdmin('broadcastToRoster')}</span>
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -2044,6 +2091,221 @@ export const AdminPortal: React.FC = () => {
                 </div>
               </form>
             </div>
+
+            {/* Part 3: Automated Milestone & Retention Care Triggers (retentionService.ts) */}
+            <div className="bg-[#221E1A] rounded-2xl p-6 border border-[#C5A059]/50 shadow-xl space-y-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-950/70 border border-[#C5A059]/50 flex items-center justify-center text-[#C5A059]">
+                    <HeartHandshake className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-lg font-medium text-[#F5F2EB]">
+                      {locale === 'zh-TW'
+                        ? '學員里程碑與續約留存自動化關懷 (Automated Milestone & Retention Care)'
+                        : 'Automated Milestone & Retention Care Triggers'}
+                    </h3>
+                    <p className="text-xs text-[#8C8274]">
+                      {locale === 'zh-TW'
+                        ? '當學員完成第 5 / 10 堂課或超過 14 天未預約時，自動發送溫暖不推銷的關懷訊息'
+                        : 'Automatically send warm, non-pushy care messages at 5th/10th class milestones or after 14 days inactive'}
+                    </p>
+                  </div>
+                </div>
+                {retentionSavedToast && (
+                  <span className="text-xs text-emerald-400 font-semibold shrink-0">
+                    {locale === 'zh-TW' ? '✓ 已儲存關懷範本' : '✓ Saved'}
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                {/* Trigger 1: Milestone Cheer (5th / 10th Class) */}
+                <div className="p-4 rounded-2xl bg-[#181614] border border-[#352E26] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="toggle-milestone-cheer"
+                      className="text-xs font-semibold text-[#F5F2EB] flex items-center space-x-2 cursor-pointer"
+                    >
+                      <Award className="w-4 h-4 text-[#C5A059]" />
+                      <span>
+                        {locale === 'zh-TW'
+                          ? '🎉 里程碑喝采通知 (Milestone Cheer: 完成第 5 / 10 堂課自動發送)'
+                          : '🎉 Milestone Cheer (Sent at 5th / 10th completed class)'}
+                      </span>
+                    </label>
+                    <input
+                      id="toggle-milestone-cheer"
+                      type="checkbox"
+                      {...({ switch: '' } as any)}
+                      checked={milestoneCheerEnabled}
+                      onChange={(e) => {
+                        setMilestoneCheerEnabled(e.target.checked);
+                        updateRetentionCareConfig({
+                          milestoneCheerEnabled: e.target.checked,
+                        });
+                      }}
+                      className="w-4 h-4 accent-[#C5A059] cursor-pointer"
+                    />
+                  </div>
+
+                  {milestoneCheerEnabled && (
+                    <div>
+                      <label
+                        htmlFor="milestone-template-input"
+                        className="block text-[11px] text-[#A89F91] mb-1"
+                      >
+                        {locale === 'zh-TW'
+                          ? '預設里程碑祝賀文案（支援 {{studentName}}、{{count}}、{{coachName}} 變數）'
+                          : 'Pre-written Milestone Cheer Template'}
+                      </label>
+                      <textarea
+                        id="milestone-template-input"
+                        rows={2}
+                        value={milestoneTemplate}
+                        onChange={(e) => setMilestoneTemplate(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#221E1A] border border-[#3A332B] text-xs text-[#F5F2EB] focus:outline-none focus:border-[#C5A059]"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Trigger 2: Gentle 14-Day Check-In */}
+                <div className="p-4 rounded-2xl bg-[#181614] border border-[#352E26] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="toggle-gentle-checkin"
+                      className="text-xs font-semibold text-[#F5F2EB] flex items-center space-x-2 cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4 text-[#C5A059]" />
+                      <span>
+                        {locale === 'zh-TW'
+                          ? '🌿 14 天未上課暖心關懷 (Gentle Check-In: 超過 14 天未預約自動關心)'
+                          : '🌿 14-Day Gentle Check-In (For regular students inactive 14+ days)'}
+                      </span>
+                    </label>
+                    <input
+                      id="toggle-gentle-checkin"
+                      type="checkbox"
+                      {...({ switch: '' } as any)}
+                      checked={gentleCheckInEnabled}
+                      onChange={(e) => {
+                        setGentleCheckInEnabled(e.target.checked);
+                        updateRetentionCareConfig({
+                          gentleCheckInEnabled: e.target.checked,
+                        });
+                      }}
+                      className="w-4 h-4 accent-[#C5A059] cursor-pointer"
+                    />
+                  </div>
+
+                  {gentleCheckInEnabled && (
+                    <div>
+                      <label
+                        htmlFor="checkin-template-input"
+                        className="block text-[11px] text-[#A89F91] mb-1"
+                      >
+                        {locale === 'zh-TW'
+                          ? '預設 14 天暖心問候文案（例如：「最近忙碌嗎？Elena 老師為您留了專屬伸展時光」）'
+                          : 'Pre-written 14-Day Gentle Check-In Template'}
+                      </label>
+                      <textarea
+                        id="checkin-template-input"
+                        rows={2}
+                        value={gentleCheckInTemplate}
+                        onChange={(e) => setGentleCheckInTemplate(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#221E1A] border border-[#3A332B] text-xs text-[#F5F2EB] focus:outline-none focus:border-[#C5A059]"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateRetentionCareConfig({
+                        milestoneCheerEnabled,
+                        milestoneTemplate,
+                        gentleCheckInEnabled,
+                        gentleCheckInTemplate,
+                      });
+                      setRetentionSavedToast(true);
+                      setTimeout(() => setRetentionSavedToast(false), 2500);
+                    }}
+                    className="px-5 py-2 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37]"
+                  >
+                    {locale === 'zh-TW' ? '儲存自動關懷設定' : 'Save Care Templates'}
+                  </button>
+                </div>
+
+                {/* Live Trigger Queue Preview */}
+                <div className="pt-3 border-t border-[#302B24] space-y-2.5">
+                  <div className="text-[11px] font-semibold text-[#EAD8B1] uppercase tracking-wider">
+                    {locale === 'zh-TW'
+                      ? '本週符合自動關懷條件之學員名單 (Ready to Trigger)'
+                      : 'Students Matching Active Care Triggers'}
+                  </div>
+
+                  {evaluateActiveRetentionTriggers(
+                    {
+                      milestoneCheerEnabled,
+                      milestoneTargets: [5, 10],
+                      milestoneTemplate,
+                      gentleCheckInEnabled,
+                      inactiveDaysThreshold: 14,
+                      gentleCheckInTemplate,
+                    },
+                    studio.coachName || 'Elena',
+                    studio.name
+                  ).map((item) => {
+                    const isSent = retentionDispatchedId === item.candidate.studentId;
+                    return (
+                      <div
+                        key={item.candidate.studentId}
+                        className="p-3.5 rounded-2xl bg-[#181614] border border-[#352E26] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs font-semibold text-[#F5F2EB]">
+                              {item.candidate.studentName}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-950/90 border border-[#C5A059]/50 text-[#EAD8B1]">
+                              {locale === 'zh-TW' ? item.badgeLabelZh : item.badgeLabelEn}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#A89F91] leading-relaxed">
+                            "{item.formattedMessage}"
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            dispatchRetentionCareMessage(
+                              item.candidate.studentName,
+                              item.candidate.studentEmail,
+                              item.formattedMessage
+                            );
+                            setRetentionDispatchedId(item.candidate.studentId);
+                            setTimeout(() => setRetentionDispatchedId(null), 2500);
+                          }}
+                          className="px-3.5 py-1.5 rounded-full bg-[#2E271E] hover:bg-[#3A3126] border border-[#C5A059]/60 text-[#EAD8B1] text-[11px] font-semibold shrink-0 self-start sm:self-center"
+                        >
+                          {isSent
+                            ? locale === 'zh-TW'
+                              ? '✓ 已發送至學員收件匣'
+                              : '✓ Sent to Inbox'
+                            : locale === 'zh-TW'
+                            ? '⚡ 一鍵發送關懷'
+                            : '⚡ Send Care Note'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -2183,6 +2445,12 @@ export const AdminPortal: React.FC = () => {
       <ClassDetailModal
         session={selectedVipSession}
         onClose={() => setSelectedVipSession(null)}
+      />
+
+      {/* Coach Schedule Maximizer: Last-Minute Vacancy Filler Modal */}
+      <AdminClassDetailModal
+        session={selectedVacancySession}
+        onClose={() => setSelectedVacancySession(null)}
       />
 
       {/* Class Pack Modal (Edit & Create) */}

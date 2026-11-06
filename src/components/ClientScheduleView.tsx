@@ -5,6 +5,8 @@ import { Clock, SlidersHorizontal, Sparkles, AlertCircle, CheckCircle2, Ticket, 
 import { ClassSession } from '../types/aura';
 import { AuraLeafBadge } from './AuraLeafLogo';
 import { StudentChatModal } from './StudentChatModal';
+import { StudentDashboard } from './StudentDashboard';
+import { CoachStudioFeed } from './CoachStudioFeed';
 
 export const ClientScheduleView: React.FC = () => {
   const {
@@ -124,6 +126,12 @@ export const ClientScheduleView: React.FC = () => {
             <span className="font-medium leading-snug">{studio.announcementBanner}</span>
           </div>
         )}
+
+        {/* Student Movement Tracker & Body Journal ("我的運動歷程") */}
+        <StudentDashboard />
+
+        {/* Coach Value Broadcast & Pinned Weekly Form Tip ("本週動作指引 / 課後提醒") */}
+        <CoachStudioFeed isCoachMode={false} />
 
         {/* Active Pass Wallet Card with Contact Instructor CTA */}
         {userPass && userPass.creditsLeft > 0 && (

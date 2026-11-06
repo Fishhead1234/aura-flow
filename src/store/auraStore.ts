@@ -23,7 +23,12 @@ import {
   StudioCommunicationSettings,
   StudioPaymentConfig,
   AdminTabType,
+  CoachWeeklyTip,
+  BodyJournalEntry,
+  RetentionCareConfig,
+  VacancyAlertLog,
 } from '../types/aura';
+import { DEFAULT_RETENTION_CARE_CONFIG } from '../services/retentionService';
 
 function parseInitialRoute(): AppRoute {
   if (typeof window === 'undefined') return { path: 'public_studio', slug: 'sol-sanctuary' };
@@ -133,6 +138,46 @@ const DEFAULT_PAYMENTS: StudioPaymentConfig = {
   },
 };
 
+const DEFAULT_WEEKLY_TIP: CoachWeeklyTip = {
+  id: 'tip-sol-01',
+  studioId: 'studio-sol-01',
+  coachName: 'Elena Rostova',
+  coachAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+  title: '本週動作指引：器械核心骨盆中立位與課後胸椎延展',
+  content:
+    '練習 Reformer 腿部推蹬 (Footwork) 時，請專注將肋骨下緣輕柔收回、維持骨盆水平中立，避免下背拱起代償。課後建議搭配 3 分鐘貓牛式呼吸與胸椎旋轉伸展，能有效釋放整週久坐的肩頸緊繃！',
+  mediaUrl:
+    'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=700&auto=format&fit=crop&q=80',
+  mediaType: 'IMAGE',
+  focusTag: '核心控制 & 課後伸展',
+  pinnedAt: '2026-11-02T08:00:00.000Z',
+};
+
+const INITIAL_BODY_JOURNAL: BodyJournalEntry[] = [
+  {
+    id: 'bj-01',
+    userId: 'usr-maya-student',
+    studioId: 'studio-sol-01',
+    sessionTitle: 'Dynamic Pilates',
+    instructorName: 'Elena Rostova',
+    feelingTag: '🌿 核心穩定有力',
+    note: '今天調整了呼吸節奏，百次拍擊 (Hundred) 時下腹更有力量，課後腰背非常輕鬆！',
+    energyLevel: 5,
+    createdAt: '2026-11-02T09:15:00.000Z',
+  },
+  {
+    id: 'bj-02',
+    userId: 'usr-maya-student',
+    studioId: 'studio-sol-01',
+    sessionTitle: 'Gentle Yin Yoga',
+    instructorName: 'Chloe M.',
+    feelingTag: '✨ 肩頸徹底釋放',
+    note: '深層髖關節伸展搭配頌缽尾韻，睡眠品質明顯提升。',
+    energyLevel: 4,
+    createdAt: '2026-10-29T19:30:00.000Z',
+  },
+];
+
 // Curated Boutique Studios for Public Marketplace Discovery
 const INITIAL_STUDIOS: Studio[] = [
   {
@@ -160,6 +205,8 @@ const INITIAL_STUDIOS: Studio[] = [
     isLive: true,
     communication: DEFAULT_COMMUNICATION,
     paymentMethods: DEFAULT_PAYMENTS,
+    weeklyTip: DEFAULT_WEEKLY_TIP,
+    retentionCare: DEFAULT_RETENTION_CARE_CONFIG,
   },
   {
     id: 'studio-core-pulse-02',
@@ -186,6 +233,8 @@ const INITIAL_STUDIOS: Studio[] = [
     isLive: true,
     communication: DEFAULT_COMMUNICATION,
     paymentMethods: DEFAULT_PAYMENTS,
+    weeklyTip: DEFAULT_WEEKLY_TIP,
+    retentionCare: DEFAULT_RETENTION_CARE_CONFIG,
   },
   {
     id: 'studio-kora-03',
@@ -212,6 +261,8 @@ const INITIAL_STUDIOS: Studio[] = [
     isLive: true,
     communication: DEFAULT_COMMUNICATION,
     paymentMethods: DEFAULT_PAYMENTS,
+    weeklyTip: DEFAULT_WEEKLY_TIP,
+    retentionCare: DEFAULT_RETENTION_CARE_CONFIG,
   },
 ];
 
@@ -690,6 +741,8 @@ interface AuraState {
   waitlist: WaitlistEntry[];
   creditLedger: CreditLedgerEntry[];
   stripeOverview: StripeConnectOverview;
+  bodyJournalEntries: BodyJournalEntry[];
+  vacancyAlerts: VacancyAlertLog[];
 
   // Modals
   selectedSessionForBooking: ClassSession | null;
@@ -745,6 +798,21 @@ interface AuraState {
   ) => void;
   updateStudioCommunication: (settings: Partial<StudioCommunicationSettings>) => void;
   updateStudioPayments: (config: Partial<StudioPaymentConfig>) => void;
+  updateWeeklyTip: (tip: Partial<CoachWeeklyTip>) => void;
+  updateRetentionCareConfig: (config: Partial<RetentionCareConfig>) => void;
+  dispatchRetentionCareMessage: (
+    studentName: string,
+    studentEmail: string,
+    message: string
+  ) => void;
+  addBodyJournalEntry: (
+    entry: Omit<BodyJournalEntry, 'id' | 'userId' | 'studioId' | 'createdAt'>
+  ) => void;
+  notifyLastMinuteVacancy: (
+    sessionId: string,
+    targetAudience: 'WAITLIST_AND_FAVORITES' | 'FAVORITES_ONLY' | 'WAITLIST_ONLY',
+    message: string
+  ) => void;
 
   openBookingDrawer: (session: ClassSession) => void;
   closeBookingDrawer: () => void;
@@ -840,6 +908,8 @@ export const useAuraStore = create<AuraState>()(
   waitlist: INITIAL_WAITLIST,
   creditLedger: INITIAL_LEDGER,
   stripeOverview: INITIAL_STRIPE,
+  bodyJournalEntries: INITIAL_BODY_JOURNAL,
+  vacancyAlerts: [],
 
   selectedSessionForBooking: null,
   isBookingDrawerOpen: false,
@@ -1347,6 +1417,145 @@ export const useAuraStore = create<AuraState>()(
       studios: studios.map((s) => (s.id === studio.id ? updatedStudio : s)),
     });
     get().syncToCloud();
+  },
+
+  updateWeeklyTip: (tipUpdates) => {
+    const { studio, studios } = get();
+    const currentTip = studio.weeklyTip || DEFAULT_WEEKLY_TIP;
+    const updatedTip: CoachWeeklyTip = {
+      ...currentTip,
+      ...tipUpdates,
+      pinnedAt: new Date().toISOString(),
+    };
+    const updatedStudio: Studio = { ...studio, weeklyTip: updatedTip };
+    set({
+      studio: updatedStudio,
+      studios: studios.map((s) => (s.id === studio.id ? updatedStudio : s)),
+    });
+    get().syncToCloud();
+  },
+
+  updateRetentionCareConfig: (configUpdates) => {
+    const { studio, studios } = get();
+    const currentCare = studio.retentionCare || DEFAULT_RETENTION_CARE_CONFIG;
+    const updatedCare: RetentionCareConfig = {
+      ...currentCare,
+      ...configUpdates,
+    };
+    const updatedStudio: Studio = { ...studio, retentionCare: updatedCare };
+    set({
+      studio: updatedStudio,
+      studios: studios.map((s) => (s.id === studio.id ? updatedStudio : s)),
+    });
+    get().syncToCloud();
+  },
+
+  dispatchRetentionCareMessage: (studentName, studentEmail, message) => {
+    const { conversations, messages, studio } = get();
+    let conv = conversations.find(
+      (c) =>
+        c.studentEmail.toLowerCase() === studentEmail.toLowerCase() ||
+        c.studentName === studentName
+    );
+    const convId = conv ? conv.id : `conv-care-${Date.now()}`;
+    const updatedConversations = [...conversations];
+
+    if (!conv) {
+      conv = {
+        id: convId,
+        studioId: studio.id,
+        studentId: studentEmail,
+        studentName,
+        studentEmail,
+        sessionTitle: '智能關懷與里程碑通知',
+        sessionTime: 'Automated Care',
+        lastMessage: message,
+        lastMessageTime: '剛剛',
+        unreadCount: 0,
+        channel: studio.communication?.lineOaEnabled ? 'LINE_OA' : 'IN_APP',
+      };
+      updatedConversations.unshift(conv);
+    } else {
+      const idx = updatedConversations.findIndex((c) => c.id === convId);
+      if (idx !== -1) {
+        updatedConversations[idx] = {
+          ...updatedConversations[idx],
+          lastMessage: message,
+          lastMessageTime: '剛剛',
+        };
+      }
+    }
+
+    const existingMsgs = messages[convId] || [];
+    const newMsg: ChatMessage = {
+      id: `msg-care-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      conversationId: convId,
+      senderRole: 'INSTRUCTOR',
+      senderName: studio.coachName || 'Elena Rostova',
+      content: message,
+      channel: studio.communication?.lineOaEnabled ? 'LINE_OA' : 'IN_APP',
+      createdAt: new Date().toISOString(),
+      isRead: true,
+    };
+
+    set({
+      conversations: updatedConversations,
+      messages: {
+        ...messages,
+        [convId]: [...existingMsgs, newMsg],
+      },
+    });
+    get().syncToCloud();
+  },
+
+  addBodyJournalEntry: (entryData) => {
+    const { bodyJournalEntries, currentUser, studio } = get();
+    const newEntry: BodyJournalEntry = {
+      ...entryData,
+      id: `bj-${Date.now()}`,
+      userId: currentUser.id,
+      studioId: studio.id,
+      createdAt: new Date().toISOString(),
+    };
+    set({ bodyJournalEntries: [newEntry, ...bodyJournalEntries] });
+    get().syncToCloud();
+  },
+
+  notifyLastMinuteVacancy: (sessionId, targetAudience, message) => {
+    const { sessions, waitlist, vacancyAlerts, studio } = get();
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return;
+
+    const spotsAvailable = Math.max(1, session.capacity - session.bookedCount);
+    const waitlistCount = waitlist.filter((w) => w.sessionId === sessionId).length;
+    const notifiedCount =
+      targetAudience === 'WAITLIST_ONLY'
+        ? Math.max(2, waitlistCount)
+        : targetAudience === 'FAVORITES_ONLY'
+        ? 6
+        : Math.max(2, waitlistCount) + 6;
+
+    const newAlert: VacancyAlertLog = {
+      id: `vac-${Date.now()}`,
+      sessionId,
+      sessionTitle: session.title,
+      spotsAvailable,
+      notifiedCount,
+      targetAudience,
+      message,
+      sentAt: new Date().toISOString(),
+    };
+
+    set({
+      vacancyAlerts: [newAlert, ...vacancyAlerts],
+    });
+
+    // Also broadcast to roster/conversations so students see the non-spam vacancy alert in Inbox
+    get().broadcastToRoster(
+      sessionId,
+      `⚡【即時空缺釋出 • 剩餘 ${spotsAvailable} 席】${message}`,
+      studio.communication?.lineOaEnabled ? ['IN_APP', 'LINE_OA'] : ['IN_APP']
+    );
   },
 
   openBookingDrawer: (session) => set({ selectedSessionForBooking: session, isBookingDrawerOpen: true }),

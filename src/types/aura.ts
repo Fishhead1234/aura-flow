@@ -47,6 +47,52 @@ export interface StudioCommunicationSettings {
   resendApiKey?: string;
 }
 
+export interface CoachWeeklyTip {
+  id: string;
+  studioId: string;
+  coachName: string;
+  coachAvatar: string;
+  title: string;
+  content: string;
+  mediaUrl?: string;
+  mediaType?: 'IMAGE' | 'VIDEO';
+  focusTag: string;
+  pinnedAt: string;
+}
+
+export interface BodyJournalEntry {
+  id: string;
+  userId: string;
+  studioId: string;
+  sessionTitle: string;
+  instructorName: string;
+  feelingTag: string;
+  note: string;
+  energyLevel: number; // 1 to 5
+  createdAt: string;
+}
+
+export interface RetentionCareConfig {
+  milestoneCheerEnabled: boolean;
+  milestoneTargets: number[]; // e.g. [5, 10]
+  milestoneTemplate: string;
+  gentleCheckInEnabled: boolean;
+  inactiveDaysThreshold: number; // e.g. 14
+  gentleCheckInTemplate: string;
+  lastTriggeredAt?: string;
+}
+
+export interface VacancyAlertLog {
+  id: string;
+  sessionId: string;
+  sessionTitle: string;
+  spotsAvailable: number;
+  notifiedCount: number;
+  targetAudience: 'WAITLIST_AND_FAVORITES' | 'FAVORITES_ONLY' | 'WAITLIST_ONLY';
+  message: string;
+  sentAt: string;
+}
+
 export interface StudioPaymentConfig {
   stripe: {
     enabled: boolean;
@@ -102,6 +148,8 @@ export interface Studio {
   isLive?: boolean;
   communication?: StudioCommunicationSettings;
   paymentMethods?: StudioPaymentConfig;
+  weeklyTip?: CoachWeeklyTip;
+  retentionCare?: RetentionCareConfig;
 }
 
 export type ClassCategory = 

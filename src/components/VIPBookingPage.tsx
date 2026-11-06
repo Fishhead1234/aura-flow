@@ -579,3 +579,4 @@ export const VIPBookingPage: React.FC<VIPBookingPageProps> = ({ inviteToken }) =
     </div>
   );
 };
+
