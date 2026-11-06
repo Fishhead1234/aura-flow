@@ -11,7 +11,9 @@ import {
   Clock,
   CheckCircle2,
   Sparkles,
+  QrCode,
 } from 'lucide-react';
+import { QRShareModal, QRSharePayload } from './QRShareModal';
 
 interface ClassDetailModalProps {
   session: ClassSession | null;
@@ -52,6 +54,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ session, onC
   const { locale, currency, studio, navigateTo } = useAuraStore();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedFullMsg, setCopiedFullMsg] = useState(false);
+  const [qrPayload, setQrPayload] = useState<QRSharePayload | null>(null);
 
   if (!session) return null;
 
@@ -232,20 +235,47 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ session, onC
           </button>
         </div>
 
-        {/* Preview Student VIP Booking Page Button */}
-        <button
-          type="button"
-          onClick={handlePreviewVipPage}
-          className="w-full py-2.5 px-4 rounded-xl bg-[#2A241E] hover:bg-[#362E26] border border-[#4A4035] text-xs font-medium text-[#EAD8B1] flex items-center justify-center space-x-1.5 transition-all"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
-          <span>
-            {isZh
-              ? '預覽學員端 VIP 專屬預約頁面 (/vip/' + token + ')'
-              : 'Preview Student VIP Booking Page (/vip/' + token + ')'}
-          </span>
-          <ExternalLink className="w-3.5 h-3.5 text-[#C5A059]" />
-        </button>
+        {/* Generate VIP QR Code + Preview Student VIP Booking Page Buttons */}
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() =>
+              setQrPayload({
+                title: session.title,
+                subtitle: `${studio.name} • ${session.roomName}`,
+                dateTimeText: `${session.startTime.substring(0, 10)} • ${session.startTime.substring(11, 16)} - ${session.endTime.substring(11, 16)}`,
+                coachName: session.instructor,
+                url,
+                badgeText: isZh ? '👑 VIP 受邀私教專屬 QR Code' : '👑 VIP Private Session QR',
+                fileNamePrefix: `vip-${token}-qr`,
+              })
+            }
+            className="w-full py-2.5 px-4 rounded-xl bg-[#1C1917] hover:bg-[#2A241E] border border-[#C5A059] text-xs font-semibold text-[#C5A059] flex items-center justify-center space-x-1.5 transition-all"
+          >
+            <QrCode className="w-4 h-4" />
+            <span>
+              {isZh
+                ? '[ 📷 產生課程 QR Code (256×256 PNG) ]'
+                : '[ 📷 Generate VIP Session QR Code ]'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePreviewVipPage}
+            className="w-full py-2.5 px-4 rounded-xl bg-[#2A241E] hover:bg-[#362E26] border border-[#4A4035] text-xs font-medium text-[#EAD8B1] flex items-center justify-center space-x-1.5 transition-all"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
+            <span>
+              {isZh
+                ? '預覽學員端 VIP 專屬預約頁面 (/vip/' + token + ')'
+                : 'Preview Student VIP Booking Page (/vip/' + token + ')'}
+            </span>
+            <ExternalLink className="w-3.5 h-3.5 text-[#C5A059]" />
+          </button>
+        </div>
+
+        <QRShareModal payload={qrPayload} onClose={() => setQrPayload(null)} />
       </div>
     </div>
   );

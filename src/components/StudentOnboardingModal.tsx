@@ -17,6 +17,7 @@ export const StudentOnboardingModal: React.FC = () => {
   const {
     isStudentOnboardingOpen,
     setStudentOnboardingOpen,
+    setQrScannerOpen,
     studios,
     bindStudentToCoach,
     switchPersona,
@@ -25,7 +26,6 @@ export const StudentOnboardingModal: React.FC = () => {
   } = useAuraStore();
 
   const [query, setQuery] = useState('');
-  const [isScanningQr, setIsScanningQr] = useState(false);
 
   if (!isStudentOnboardingOpen) return null;
 
@@ -75,12 +75,8 @@ export const StudentOnboardingModal: React.FC = () => {
     bindStudentToCoach(slug);
   };
 
-  const handleSimulateQrScan = () => {
-    setIsScanningQr(true);
-    setTimeout(() => {
-      setIsScanningQr(false);
-      handleSelectCoach('sol-sanctuary');
-    }, 900);
+  const handleOpenQrScanner = () => {
+    setQrScannerOpen(true);
   };
 
   const handleExplorePublicFeed = () => {
@@ -214,29 +210,15 @@ export const StudentOnboardingModal: React.FC = () => {
           <div className="pt-1">
             <button
               type="button"
-              onClick={handleSimulateQrScan}
-              disabled={isScanningQr}
+              onClick={handleOpenQrScanner}
               className="w-full py-2.5 px-4 rounded-xl bg-[#2E2822] hover:bg-[#383028] border border-[#4A4035] text-xs font-medium text-[#EAD8B1] flex items-center justify-center space-x-2 transition-all"
             >
-              {isScanningQr ? (
-                <>
-                  <Camera className="w-4 h-4 text-emerald-400 animate-pulse" />
-                  <span>
-                    {isZh
-                      ? '正在辨識教練 QR Code... 已配對 Elena Rostova (Sol Sanctuary)'
-                      : 'Scanning Coach QR Code... Matched Elena Rostova!'}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <QrCode className="w-4 h-4 text-[#C5A059]" />
-                  <span>
-                    {isZh
-                      ? '📷 掃描教練專屬 QR Code (Scan Coach QR Code)'
-                      : '📷 Scan Coach Exclusive QR Code (掃描教練專屬 QR Code)'}
-                  </span>
-                </>
-              )}
+              <QrCode className="w-4 h-4 text-[#C5A059]" />
+              <span>
+                {isZh
+                  ? '📷 掃描教練專屬 QR Code (Scan Coach QR Code)'
+                  : '📷 Scan Coach Exclusive QR Code (掃描教練專屬 QR Code)'}
+              </span>
             </button>
           </div>
         </div>

@@ -9,7 +9,9 @@ import {
   Sparkles,
   Megaphone,
   ClipboardList,
+  QrCode,
 } from 'lucide-react';
+import { QRShareModal, QRSharePayload } from './QRShareModal';
 
 interface AdminClassDetailModalProps {
   session: ClassSession | null;
@@ -44,6 +46,7 @@ export const AdminClassDetailModal: React.FC<AdminClassDetailModalProps> = ({
   const [postClassHomeworkEdit, setPostClassHomeworkEdit] = useState('');
   const [adHocSupplementNote, setAdHocSupplementNote] = useState('');
   const [overrideSentSuccess, setOverrideSentSuccess] = useState(false);
+  const [qrPayload, setQrPayload] = useState<QRSharePayload | null>(null);
 
   const spotsOpen = session ? Math.max(1, session.capacity - session.bookedCount) : 1;
   const waitlistForSession = session
@@ -154,6 +157,35 @@ export const AdminClassDetailModal: React.FC<AdminClassDetailModalProps> = ({
                 <Zap className="w-3 h-3" />
                 <span>
                   {isZh ? '⚡ 釋出即時空缺' : '⚡ Last-Minute Vacancy'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const originUrl =
+                    typeof window !== 'undefined'
+                      ? window.location.origin
+                      : 'https://auraflow-bay.vercel.app';
+                  const directUrl =
+                    session.visibility === 'PRIVATE'
+                      ? `${originUrl}/vip/${session.inviteToken || `vip-${session.id}`}`
+                      : `${originUrl}/studio/${studio.slug}?class=${session.id}`;
+                  setQrPayload({
+                    title: session.title,
+                    subtitle: `${studio.name} • ${session.roomName}`,
+                    dateTimeText: `${session.startTime.substring(0, 10)} • ${session.startTime.substring(11, 16)} - ${session.endTime.substring(11, 16)}`,
+                    coachName: session.instructor,
+                    url: directUrl,
+                    badgeText: isZh ? '📷 單堂課程預約 QR Code' : '📷 Class Booking QR Code',
+                    fileNamePrefix: `class-${session.id}-qr`,
+                  });
+                }}
+                className="px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center space-x-1 transition-all border bg-[#181614] text-[#C5A059] border-[#C5A059]/60 hover:bg-[#2A231B]"
+              >
+                <QrCode className="w-3 h-3" />
+                <span>
+                  {isZh ? '[ 📷 產生課程 QR Code ]' : '[ 📷 Generate Class QR ]'}
                 </span>
               </button>
             </div>
@@ -457,6 +489,8 @@ export const AdminClassDetailModal: React.FC<AdminClassDetailModalProps> = ({
             </div>
           </form>
         )}
+
+        <QRShareModal payload={qrPayload} onClose={() => setQrPayload(null)} />
       </div>
     </div>
   );

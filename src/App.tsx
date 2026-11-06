@@ -12,6 +12,7 @@ import { WelcomeModal } from './components/WelcomeModal';
 import { StudentOnboardingModal } from './components/StudentOnboardingModal';
 import { PaywallModal } from './components/PaywallModal';
 import { VIPBookingPage } from './components/VIPBookingPage';
+import { QRScannerModal } from './components/QRScannerModal';
 
 export const App: React.FC = () => {
   const {
@@ -33,6 +34,16 @@ export const App: React.FC = () => {
     if (isResetParam) {
       resetToCleanGuestState();
       return;
+    }
+
+    const classParamId = params.get('class');
+    if (classParamId) {
+      const targetSession = useAuraStore
+        .getState()
+        .sessions.find((s) => s.id === classParamId);
+      if (targetSession) {
+        useAuraStore.getState().openBookingDrawer(targetSession);
+      }
     }
 
     if (!hasLaunched) {
@@ -115,6 +126,9 @@ export const App: React.FC = () => {
 
       {/* Student 2-Choice Coach Referral vs. Explore Onboarding Modal */}
       <StudentOnboardingModal />
+
+      {/* 2-Way Live Camera & Gallery QR Code Scanner Modal */}
+      <QRScannerModal />
 
       {/* Value-First RevenueCat 14-Day Free Trial Paywall Modal */}
       <PaywallModal />

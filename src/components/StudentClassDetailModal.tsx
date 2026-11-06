@@ -287,3 +287,4 @@ export const StudentClassDetailModal: React.FC<StudentClassDetailModalProps> = (
     </div>
   );
 };
+

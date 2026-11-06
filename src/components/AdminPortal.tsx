@@ -51,6 +51,7 @@ import { ClassFormModal } from './ClassFormModal';
 import { ClassDetailModal, buildVipInviteText } from './ClassDetailModal';
 import { AdminClassDetailModal } from './AdminClassDetailModal';
 import { CoachStudioFeed } from './CoachStudioFeed';
+import { QRShareModal, QRSharePayload } from './QRShareModal';
 import {
   DEFAULT_RETENTION_CARE_CONFIG,
   evaluateActiveRetentionTriggers,
@@ -128,6 +129,7 @@ export const AdminPortal: React.FC = () => {
   const [selectedVipSession, setSelectedVipSession] = useState<ClassSession | null>(null);
   const [selectedVacancySession, setSelectedVacancySession] = useState<ClassSession | null>(null);
   const [adminClassModalMode, setAdminClassModalMode] = useState<'VACANCY' | 'ROSTER_OVERRIDE'>('VACANCY');
+  const [qrSharePayload, setQrSharePayload] = useState<QRSharePayload | null>(null);
   const [copiedVipSessionId, setCopiedVipSessionId] = useState<string | null>(null);
   const [broadcastText, setBroadcastText] = useState('');
 
@@ -268,6 +270,47 @@ export const AdminPortal: React.FC = () => {
     navigator.clipboard?.writeText(shareUrl);
     setCopiedStudioLink(true);
     setTimeout(() => setCopiedStudioLink(false), 2500);
+  };
+
+  const handleOpenStudioQr = () => {
+    const originUrl =
+      typeof window !== 'undefined' ? window.location.origin : 'https://auraflow-bay.vercel.app';
+    const isZh = locale === 'zh-TW' || locale === 'zh-CN';
+    setQrSharePayload({
+      title: studio.name,
+      subtitle: studio.city || 'Boutique Movement Sanctuary',
+      dateTimeText: isZh ? '專屬獨立預約課表' : 'Private Studio Schedule',
+      coachName: studio.coachName || 'Elena Rostova',
+      url: `${originUrl}/studio/${studio.slug}`,
+      badgeText: isZh ? '工作室專屬預約 QR Code' : 'Studio Direct Booking QR',
+      fileNamePrefix: `studio-${studio.slug}-qr`,
+    });
+  };
+
+  const handleOpenSessionQr = (session: ClassSession) => {
+    const originUrl =
+      typeof window !== 'undefined' ? window.location.origin : 'https://auraflow-bay.vercel.app';
+    const isZh = locale === 'zh-TW' || locale === 'zh-CN';
+    const isPrivate = session.visibility === 'PRIVATE';
+    const token = session.inviteToken || `vip-${session.id}`;
+    const directUrl = isPrivate
+      ? `${originUrl}/vip/${token}`
+      : `${originUrl}/studio/${studio.slug}?class=${session.id}`;
+    setQrSharePayload({
+      title: session.title,
+      subtitle: `${studio.name} • ${session.roomName}`,
+      dateTimeText: `${session.startTime.substring(0, 10)} • ${session.startTime.substring(11, 16)} - ${session.endTime.substring(11, 16)}`,
+      coachName: session.instructor,
+      url: directUrl,
+      badgeText: isPrivate
+        ? isZh
+          ? '👑 VIP 受邀私教專屬 QR Code'
+          : '👑 VIP Private Session QR Code'
+        : isZh
+        ? '📷 單堂課程預約 QR Code'
+        : '📷 Class Session Booking QR Code',
+      fileNamePrefix: `class-${session.id}-qr`,
+    });
   };
 
   const handleSaveCommunication = (e: React.FormEvent) => {
@@ -577,7 +620,18 @@ export const AdminPortal: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleOpenStudioQr}
+              className="px-4 py-2 rounded-full bg-[#1C1917] hover:bg-[#2A241E] border border-[#C5A059]/60 text-xs font-semibold text-[#EAD8B1] flex items-center space-x-1.5 transition-all"
+            >
+              <QrCode className="w-3.5 h-3.5 text-[#C5A059]" />
+              <span>
+                {locale === 'zh-TW' ? '[ 📷 產生課程 QR Code ]' : '[ 📷 Generate Studio QR ]'}
+              </span>
+            </button>
+
             <button
               type="button"
               onClick={() => handlePublishOrShareStudioLink('SHARE_LINK')}
@@ -851,12 +905,23 @@ export const AdminPortal: React.FC = () => {
                           <div className="flex items-center gap-1.5">
                             <button
                               type="button"
+                              onClick={() => handleOpenSessionQr(session)}
+                              className="py-1.5 px-3 rounded-xl bg-[#1C1917] hover:bg-[#2A231B] border border-[#C5A059]/60 text-[11px] font-semibold text-[#C5A059] flex items-center justify-center space-x-1 transition-colors shrink-0"
+                            >
+                              <QrCode className="w-3.5 h-3.5" />
+                              <span>
+                                {isZh ? '[ 📷 產生課程 QR Code ]' : '[ 📷 Generate QR ]'}
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
                               onClick={() => setSelectedVipSession(session)}
                               className="flex-1 py-1.5 px-3 rounded-xl bg-[#2A231B] hover:bg-[#362D23] border border-[#C5A059]/40 text-[11px] font-medium text-[#EAD8B1] flex items-center justify-center space-x-1 transition-colors"
                             >
                               <Sparkles className="w-3 h-3 text-[#C5A059]" />
-                              <span>
-                                {isZh ? '開啟 VIP 邀請函產生器 & 預覽' : 'VIP Invite Generator & Preview'}
+                              <span className="truncate">
+                                {isZh ? 'VIP 邀請產生器' : 'VIP Invite'}
                               </span>
                             </button>
                           </div>
@@ -899,14 +964,28 @@ export const AdminPortal: React.FC = () => {
                             </span>
                           </button>
 
-                          {/* 1-Click Class Roster Broadcast CTA */}
-                          <button
-                            onClick={() => handleOpenBroadcastModal(session)}
-                            className="w-full py-2 px-3 rounded-xl bg-[#2C2620] hover:bg-[#383028] border border-[#443B30] text-xs font-medium text-[#EAD8B1] flex items-center justify-center space-x-1.5 transition-colors group-hover:border-[#C5A059]/60"
-                          >
-                            <Megaphone className="w-3.5 h-3.5 text-[#C5A059]" />
-                            <span>{tAdmin('broadcastToRoster')}</span>
-                          </button>
+                          {/* Generate Class QR Code + 1-Click Class Roster Broadcast CTAs */}
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenSessionQr(session)}
+                              className="py-2 px-2.5 rounded-xl bg-[#1C1917] hover:bg-[#2A241E] border border-[#C5A059]/50 text-[11px] font-semibold text-[#C5A059] flex items-center justify-center space-x-1 transition-colors"
+                            >
+                              <QrCode className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">
+                                {isZh ? '[ 📷 產生課程 QR Code ]' : '[ 📷 Class QR ]'}
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenBroadcastModal(session)}
+                              className="py-2 px-2.5 rounded-xl bg-[#2C2620] hover:bg-[#383028] border border-[#443B30] text-[11px] font-medium text-[#EAD8B1] flex items-center justify-center space-x-1 transition-colors group-hover:border-[#C5A059]/60"
+                            >
+                              <Megaphone className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                              <span className="truncate">{tAdmin('broadcastToRoster')}</span>
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1789,6 +1868,37 @@ export const AdminPortal: React.FC = () => {
         {/* SUB-TAB 6: STUDIO POLICIES & COMMUNICATION */}
         {activeAdminTab === 'policies' && (
           <div className="space-y-6 max-w-3xl">
+            {/* Part 0: Studio Booking Link QR Code Generator Card */}
+            <div className="bg-[#1C1917] rounded-2xl p-5 border border-[#C5A059]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md">
+              <div>
+                <div className="inline-flex items-center space-x-1.5 text-xs font-semibold text-[#C5A059] mb-1">
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>
+                    {locale === 'zh-TW'
+                      ? '工作室專屬預約 QR Code (Studio Direct Booking QR)'
+                      : 'Studio Direct Booking QR Code'}
+                  </span>
+                </div>
+                <p className="text-xs text-[#A89F91] leading-relaxed">
+                  {locale === 'zh-TW'
+                    ? `列印張貼於教室櫃檯或分享至 LINE / IG，學員掃描即可直接綁定您的專屬課表 (/studio/${studio.slug})。`
+                    : `Print for your studio desk or share on LINE / IG so students can scan & bind directly to /studio/${studio.slug}.`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenStudioQr}
+                className="px-4 py-2.5 rounded-xl bg-[#C5A059] hover:bg-[#D4AF37] text-[#161412] text-xs font-bold flex items-center justify-center space-x-1.5 shrink-0 transition-all shadow-xs"
+              >
+                <QrCode className="w-4 h-4" />
+                <span>
+                  {locale === 'zh-TW'
+                    ? '[ 📷 產生課程 QR Code ]'
+                    : '[ 📷 Generate Studio QR Code ]'}
+                </span>
+              </button>
+            </div>
+
             {/* Part 1: Automated Waitlist & Cancellation Policies */}
             <div className="bg-[#221E1A] rounded-2xl p-6 border border-[#3A332B]">
               <h3 className="font-serif text-lg font-medium text-[#F5F2EB] mb-2">
@@ -2473,6 +2583,12 @@ export const AdminPortal: React.FC = () => {
         session={selectedVacancySession}
         initialMode={adminClassModalMode}
         onClose={() => setSelectedVacancySession(null)}
+      />
+
+      {/* Coach QR Code Generator Modal (256x256 PNG Download & Copy Link) */}
+      <QRShareModal
+        payload={qrSharePayload}
+        onClose={() => setQrSharePayload(null)}
       />
 
       {/* Class Pack Modal (Edit & Create) */}

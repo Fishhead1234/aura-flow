@@ -775,6 +775,7 @@ interface AuraState {
   isWaitlistModalOpen: boolean;
   isWelcomeModalOpen: boolean;
   isStudentOnboardingOpen: boolean;
+  isQrScannerOpen: boolean;
   boundStudioSlug: string | null;
   favoriteStudioSlugs: string[];
   isPaywallModalOpen: boolean;
@@ -793,6 +794,7 @@ interface AuraState {
   setMobileDrawerOpen: (open: boolean) => void;
   setWelcomeModalOpen: (open: boolean) => void;
   setStudentOnboardingOpen: (open: boolean) => void;
+  setQrScannerOpen: (open: boolean) => void;
   bindStudentToCoach: (slug: string) => void;
   openPaywallModal: (reason?: 'PUBLISH_SCHEDULE' | 'SHARE_LINK' | 'DISCOVERY_FEED') => void;
   closePaywallModal: () => void;
@@ -947,6 +949,7 @@ export const useAuraStore = create<AuraState>()(
   isWaitlistModalOpen: false,
   isWelcomeModalOpen: false,
   isStudentOnboardingOpen: false,
+  isQrScannerOpen: false,
   boundStudioSlug: (typeof window !== 'undefined' && localStorage.getItem('auraflow_bound_studio_slug')) || null,
   favoriteStudioSlugs: ['sol-sanctuary'],
   isPaywallModalOpen: false,
@@ -1133,6 +1136,7 @@ export const useAuraStore = create<AuraState>()(
   setMobileDrawerOpen: (isMobileDrawerOpen) => set({ isMobileDrawerOpen }),
   setWelcomeModalOpen: (isWelcomeModalOpen) => set({ isWelcomeModalOpen }),
   setStudentOnboardingOpen: (isStudentOnboardingOpen) => set({ isStudentOnboardingOpen }),
+  setQrScannerOpen: (isQrScannerOpen) => set({ isQrScannerOpen }),
 
   bindStudentToCoach: (slug) => {
     const matched = get().studios.find((s) => s.slug === slug) || INITIAL_STUDIOS[0];

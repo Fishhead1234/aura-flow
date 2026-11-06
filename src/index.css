@@ -35,3 +35,20 @@
   }
 }
 
+/* Animated laser scan line for live 2-way QR scanner */
+@keyframes qr-laser-scan {
+  0%,
+  100% {
+    top: 8%;
+    opacity: 0.9;
+  }
+  50% {
+    top: 88%;
+    opacity: 1;
+  }
+}
+
+.animate-qr-laser {
+  animation: qr-laser-scan 2.2s ease-in-out infinite;
+}
+

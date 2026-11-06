@@ -15,8 +15,10 @@ import {
   Sparkles,
   ArrowLeft,
   Users,
+  QrCode,
 } from 'lucide-react';
 import { AuraLogoBadge } from './AuraLeafLogo';
+import { QRShareModal, QRSharePayload } from './QRShareModal';
 
 interface VIPBookingPageProps {
   inviteToken: string;
@@ -65,6 +67,7 @@ export const VIPBookingPage: React.FC<VIPBookingPageProps> = ({ inviteToken }) =
   );
   const [bookingCompleted, setBookingCompleted] = useState(false);
   const [bookingMessage, setBookingMessage] = useState<string | null>(null);
+  const [qrPayload, setQrPayload] = useState<QRSharePayload | null>(null);
 
   if (!session) {
     return (
@@ -164,9 +167,36 @@ export const VIPBookingPage: React.FC<VIPBookingPageProps> = ({ inviteToken }) =
             </span>
           </button>
 
-          <span className="text-[11px] font-mono text-[#C5A059]/90 px-2.5 py-0.5 rounded-full bg-[#241E18] border border-[#3E3328]">
-            /vip/{inviteToken}
-          </span>
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => {
+                const originUrl =
+                  typeof window !== 'undefined'
+                    ? window.location.origin
+                    : 'https://auraflow-bay.vercel.app';
+                setQrPayload({
+                  title: session.title,
+                  subtitle: `${targetStudio.name} • ${session.roomName}`,
+                  dateTimeText: `${datePart} • ${timePart}`,
+                  coachName: session.instructor,
+                  url: `${originUrl}/vip/${inviteToken}`,
+                  badgeText: isZh
+                    ? '👑 VIP 專屬私教 QR Code'
+                    : '👑 VIP Private Session QR Code',
+                  fileNamePrefix: `vip-${inviteToken}-qr`,
+                });
+              }}
+              className="text-[11px] font-semibold text-[#C5A059] hover:text-[#EAD8B1] px-2.5 py-1 rounded-full bg-[#1C1917] border border-[#C5A059]/60 flex items-center space-x-1 transition-colors"
+            >
+              <QrCode className="w-3 h-3" />
+              <span>{isZh ? '[ 📷 產生課程 QR Code ]' : '[ 📷 Generate VIP QR ]'}</span>
+            </button>
+
+            <span className="text-[11px] font-mono text-[#C5A059]/90 px-2.5 py-0.5 rounded-full bg-[#241E18] border border-[#3E3328]">
+              /vip/{inviteToken}
+            </span>
+          </div>
         </div>
 
         {/* Main Dark-and-Gold VIP Invitation Card */}
@@ -575,6 +605,8 @@ export const VIPBookingPage: React.FC<VIPBookingPageProps> = ({ inviteToken }) =
             </div>
           </div>
         </div>
+
+        <QRShareModal payload={qrPayload} onClose={() => setQrPayload(null)} />
       </div>
     </div>
   );

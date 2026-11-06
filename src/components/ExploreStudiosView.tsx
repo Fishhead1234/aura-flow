@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Calendar,
   Users,
+  QrCode,
 } from 'lucide-react';
 import { AuraLeafBadge } from './AuraLeafLogo';
 
@@ -24,6 +25,7 @@ export const ExploreStudiosView: React.FC = () => {
     boundStudioSlug,
     studio,
     setStudentOnboardingOpen,
+    setQrScannerOpen,
   } = useAuraStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,19 +73,30 @@ export const ExploreStudiosView: React.FC = () => {
 
         {/* Search & City Filter Bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-7">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={
-                isZh
-                  ? '搜尋教室名稱、皮拉提、頌缽音療...'
-                  : 'Search studios, Reformer Pilates, Sound Bath...'
-              }
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-stone-200 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-aura-clay shadow-2xs"
-            />
+          <div className="flex items-center gap-2 flex-1">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={
+                  isZh
+                    ? '搜尋教室名稱、皮拉提、頌缽音療...'
+                    : 'Search studios, Reformer Pilates, Sound Bath...'
+                }
+                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-stone-200 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-aura-clay shadow-2xs"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setQrScannerOpen(true)}
+              className="px-3.5 py-2.5 rounded-2xl bg-[#1c1917] hover:bg-stone-800 text-[#c5a059] border border-[#c5a059]/50 text-xs font-semibold flex items-center space-x-1.5 shrink-0 shadow-xs transition-all"
+            >
+              <QrCode className="w-4 h-4" />
+              <span>{isZh ? '📷 掃描教練專屬 QR Code' : '📷 Scan Coach QR'}</span>
+            </button>
           </div>
 
           <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar">

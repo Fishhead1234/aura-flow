@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { getTranslation, formatCurrency, formatTimeRange } from '../i18n/auraI18n';
-import { Clock, SlidersHorizontal, Sparkles, AlertCircle, CheckCircle2, Ticket, MessageCircle, Heart, Compass, Calendar, ClipboardList } from 'lucide-react';
+import { Clock, SlidersHorizontal, Sparkles, AlertCircle, CheckCircle2, Ticket, MessageCircle, Heart, Compass, Calendar, ClipboardList, QrCode } from 'lucide-react';
 import { ClassSession } from '../types/aura';
 import { AuraLeafBadge } from './AuraLeafLogo';
 import { StudentChatModal } from './StudentChatModal';
@@ -28,6 +28,7 @@ export const ClientScheduleView: React.FC = () => {
     openStudentChat,
     boundStudioSlug,
     setStudentOnboardingOpen,
+    setQrScannerOpen,
     navigateTo,
   } = useAuraStore();
 
@@ -67,10 +68,14 @@ export const ClientScheduleView: React.FC = () => {
         {/* Top Header matching Screenshot 1 */}
         <div className="flex items-center justify-between mb-6">
           <button
-            aria-label="Clock History"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-aura-charcoal/80 hover:bg-stone-200/50 transition-colors"
+            type="button"
+            onClick={() => setQrScannerOpen(true)}
+            aria-label={locale === 'zh-TW' ? '掃描教練專屬 QR Code' : 'Scan Coach QR Code'}
+            title={locale === 'zh-TW' ? '📷 掃描教練專屬 QR Code' : '📷 Scan Coach QR Code'}
+            className="px-2.5 h-9 rounded-full bg-stone-200/70 hover:bg-stone-300/80 flex items-center space-x-1 text-stone-700 text-[11px] font-semibold transition-colors"
           >
-            <Clock className="w-5 h-5 stroke-[1.5]" />
+            <QrCode className="w-4 h-4 text-aura-clay" />
+            <span>{locale === 'zh-TW' ? '掃描 QR' : 'Scan QR'}</span>
           </button>
 
           <div className="flex flex-col items-center">
