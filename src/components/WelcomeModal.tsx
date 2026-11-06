@@ -8,6 +8,7 @@ export const WelcomeModal: React.FC = () => {
   const {
     isWelcomeModalOpen,
     setWelcomeModalOpen,
+    setStudentOnboardingOpen,
     switchPersona,
     locale,
     setLocale,
@@ -18,11 +19,8 @@ export const WelcomeModal: React.FC = () => {
   const isZh = locale === 'zh-TW' || locale === 'zh-CN';
 
   const handleStartAsStudent = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('auraflow_has_launched', 'true');
-    }
-    switchPersona('new_student');
     setWelcomeModalOpen(false);
+    setStudentOnboardingOpen(true);
   };
 
   const handleStartAsInstructor = () => {
@@ -105,9 +103,9 @@ export const WelcomeModal: React.FC = () => {
             className="w-full py-3.5 px-5 rounded-2xl bg-[#C5A059] hover:bg-[#D4AF37] text-[#161412] font-semibold text-sm flex items-center justify-between shadow-lg transition-all active:scale-[0.99]"
           >
             <div className="text-left">
-              <div>{isZh ? '開始預約課程 (Explore & Book Classes)' : 'Explore & Book Classes'}</div>
+              <div>{isZh ? '我是學員 • 開始預約課程 (I\'m a Student)' : 'I\'m a Student • Explore & Book Classes'}</div>
               <div className="text-[11px] font-normal text-[#161412]/80">
-                {isZh ? '以學員身分瀏覽公開課表與精選教室' : 'Enter as Student to browse studios & book sessions'}
+                {isZh ? '綁定您的專屬配合教練，或探索城市推薦課程' : 'Connect with your coach or discover studios nearby'}
               </div>
             </div>
             <ArrowRight className="w-4 h-4 shrink-0" />
@@ -134,3 +132,4 @@ export const WelcomeModal: React.FC = () => {
     </div>
   );
 };
+

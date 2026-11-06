@@ -9,6 +9,7 @@ import { AdminPortal } from './components/AdminPortal';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { DevSandboxToolbar } from './components/DevSandboxToolbar';
 import { WelcomeModal } from './components/WelcomeModal';
+import { StudentOnboardingModal } from './components/StudentOnboardingModal';
 import { PaywallModal } from './components/PaywallModal';
 
 export const App: React.FC = () => {
@@ -104,6 +105,9 @@ export const App: React.FC = () => {
 
       {/* Initial First-Run Welcome & Role Selection Modal */}
       <WelcomeModal />
+
+      {/* Student 2-Choice Coach Referral vs. Explore Onboarding Modal */}
+      <StudentOnboardingModal />
 
       {/* Value-First RevenueCat 14-Day Free Trial Paywall Modal */}
       <PaywallModal />

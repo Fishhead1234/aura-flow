@@ -45,6 +45,10 @@ function parseInitialRoute(): AppRoute {
     const slug = pathname.replace('/s/', '').split('/')[0] || 'sol-sanctuary';
     return { path: 'public_studio', slug };
   }
+  const boundSlug = localStorage.getItem('auraflow_bound_studio_slug');
+  if (boundSlug) {
+    return { path: 'public_studio', slug: boundSlug };
+  }
   return { path: 'public_studio', slug: 'sol-sanctuary' };
 }
 
@@ -132,6 +136,8 @@ const INITIAL_STUDIOS: Studio[] = [
     ownerId: 'usr-elena-owner',
     slug: 'sol-sanctuary',
     name: 'Sol Sanctuary',
+    coachName: 'Elena Rostova',
+    studioCode: 'SOL88',
     tagline: 'Mindful Reformer & Dynamic Movement Sanctuary',
     currency: 'USD',
     stripeAccountId: 'acct_sol_sanctuary_8829',
@@ -152,22 +158,24 @@ const INITIAL_STUDIOS: Studio[] = [
     paymentMethods: DEFAULT_PAYMENTS,
   },
   {
-    id: 'studio-lumina-02',
-    ownerId: 'usr-lumina-owner',
-    slug: 'lumina-pilates',
-    name: 'Lumina Reformer Loft',
-    tagline: 'Precision Clinical Reformer & Core Sculpting',
+    id: 'studio-core-pulse-02',
+    ownerId: 'usr-marcus-owner',
+    slug: 'core-pulse',
+    name: 'Core Pulse',
+    coachName: 'Marcus K.',
+    studioCode: 'CORE99',
+    tagline: 'Athletic Reformer, Functional Strength & Precision Mobility',
     currency: 'TWD',
-    stripeAccountId: 'acct_lumina_tw_9102',
-    stripeAccountName: 'Lumina Reformer TW',
+    stripeAccountId: 'acct_core_pulse_tw_9102',
+    stripeAccountName: 'Core Pulse TW',
     cancelWindowHrs: 24,
     waitlistMins: 30,
     roomsCount: 1,
     monthlySubscriptionPrice: 29.0,
     platformTakeRate: 0.0,
-    logoMark: '✨',
+    logoMark: '⚡',
     createdAt: '2026-11-01T00:00:00.000Z',
-    announcementBanner: '✨ 本月主打：1對1 體態評估與核心器械體驗課開放預約中',
+    announcementBanner: '✨ 本月主打：1對1 體態評估與運動表現核心訓練開放預約中',
     discoverable: true,
     city: 'Taipei • Xinyi District (台北信義)',
     isPro: true,
@@ -180,6 +188,8 @@ const INITIAL_STUDIOS: Studio[] = [
     ownerId: 'usr-kora-owner',
     slug: 'kora-sound-yoga',
     name: 'Kōra Sound & Yin Sanctuary',
+    coachName: 'Chloe M.',
+    studioCode: 'KORA77',
     tagline: 'Himalayan Singing Bowls, Breathwork & Restorative Yin',
     currency: 'TWD',
     stripeAccountId: 'acct_kora_tw_3319',
@@ -653,6 +663,9 @@ interface AuraState {
   selectedWaitlistSession: ClassSession | null;
   isWaitlistModalOpen: boolean;
   isWelcomeModalOpen: boolean;
+  isStudentOnboardingOpen: boolean;
+  boundStudioSlug: string | null;
+  favoriteStudioSlugs: string[];
   isPaywallModalOpen: boolean;
   paywallTriggerReason: 'PUBLISH_SCHEDULE' | 'SHARE_LINK' | 'DISCOVERY_FEED' | null;
 
@@ -668,6 +681,8 @@ interface AuraState {
   setActiveAdminTab: (tab: AdminTabType) => void;
   setMobileDrawerOpen: (open: boolean) => void;
   setWelcomeModalOpen: (open: boolean) => void;
+  setStudentOnboardingOpen: (open: boolean) => void;
+  bindStudentToCoach: (slug: string) => void;
   openPaywallModal: (reason?: 'PUBLISH_SCHEDULE' | 'SHARE_LINK' | 'DISCOVERY_FEED') => void;
   closePaywallModal: () => void;
   activateProSubscription: () => void;
@@ -797,6 +812,9 @@ export const useAuraStore = create<AuraState>()(
   selectedWaitlistSession: null,
   isWaitlistModalOpen: false,
   isWelcomeModalOpen: false,
+  isStudentOnboardingOpen: false,
+  boundStudioSlug: (typeof window !== 'undefined' && localStorage.getItem('auraflow_bound_studio_slug')) || null,
+  favoriteStudioSlugs: ['sol-sanctuary'],
   isPaywallModalOpen: false,
   paywallTriggerReason: null,
 
@@ -978,6 +996,30 @@ export const useAuraStore = create<AuraState>()(
   setActiveAdminTab: (activeAdminTab) => set({ activeAdminTab }),
   setMobileDrawerOpen: (isMobileDrawerOpen) => set({ isMobileDrawerOpen }),
   setWelcomeModalOpen: (isWelcomeModalOpen) => set({ isWelcomeModalOpen }),
+  setStudentOnboardingOpen: (isStudentOnboardingOpen) => set({ isStudentOnboardingOpen }),
+
+  bindStudentToCoach: (slug) => {
+    const matched = get().studios.find((s) => s.slug === slug) || INITIAL_STUDIOS[0];
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraflow_has_launched', 'true');
+      localStorage.setItem('auraflow_bound_studio_slug', matched.slug);
+    }
+    const existingFavs = get().favoriteStudioSlugs || [];
+    const updatedFavs = existingFavs.includes(matched.slug)
+      ? existingFavs
+      : [matched.slug, ...existingFavs];
+
+    set({
+      boundStudioSlug: matched.slug,
+      favoriteStudioSlugs: updatedFavs,
+      studio: matched,
+      activeStudioId: matched.id,
+      isWelcomeModalOpen: false,
+      isStudentOnboardingOpen: false,
+    });
+    get().navigateTo({ path: 'public_studio', slug: matched.slug });
+  },
+
   openPaywallModal: (reason = 'PUBLISH_SCHEDULE') =>
     set({ isPaywallModalOpen: true, paywallTriggerReason: reason }),
   closePaywallModal: () =>
@@ -1011,6 +1053,7 @@ export const useAuraStore = create<AuraState>()(
   resetToCleanGuestState: () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auraflow_has_launched');
+      localStorage.removeItem('auraflow_bound_studio_slug');
       localStorage.removeItem('auraflow_is_pro');
       localStorage.removeItem('aura-flow-db-v1');
     }
@@ -1023,6 +1066,8 @@ export const useAuraStore = create<AuraState>()(
       sessions: INITIAL_SESSIONS,
       classPacks: INITIAL_PACKS,
       bookings: [],
+      boundStudioSlug: null,
+      favoriteStudioSlugs: [],
       userPass: {
         ...INITIAL_MAYA_PASS,
         id: 'pass-guest-0',
@@ -1030,6 +1075,7 @@ export const useAuraStore = create<AuraState>()(
         creditsLeft: 0,
       },
       isWelcomeModalOpen: true,
+      isStudentOnboardingOpen: false,
       isPaywallModalOpen: false,
       isBookingDrawerOpen: false,
       currentRoute: { path: 'explore' },
@@ -1759,6 +1805,8 @@ export const useAuraStore = create<AuraState>()(
         conversations: state.conversations,
         messages: state.messages,
         broadcastHistory: state.broadcastHistory,
+        boundStudioSlug: state.boundStudioSlug,
+        favoriteStudioSlugs: state.favoriteStudioSlugs,
       }),
     }
   )

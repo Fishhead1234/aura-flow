@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { getTranslation, formatCurrency, formatTimeRange } from '../i18n/auraI18n';
-import { Clock, SlidersHorizontal, Sparkles, AlertCircle, CheckCircle2, Ticket, MessageCircle } from 'lucide-react';
+import { Clock, SlidersHorizontal, Sparkles, AlertCircle, CheckCircle2, Ticket, MessageCircle, Heart, Compass, Calendar } from 'lucide-react';
 import { ClassSession } from '../types/aura';
 import { AuraLeafBadge } from './AuraLeafLogo';
 import { StudentChatModal } from './StudentChatModal';
@@ -22,6 +22,9 @@ export const ClientScheduleView: React.FC = () => {
     purchaseClassPack,
     classPacks,
     openStudentChat,
+    boundStudioSlug,
+    setStudentOnboardingOpen,
+    navigateTo,
   } = useAuraStore();
 
   const tCommon = (key: string, params?: Record<string, string | number>) =>
@@ -70,6 +73,28 @@ export const ClientScheduleView: React.FC = () => {
             <h1 className="font-serif text-2xl font-normal tracking-wide text-aura-charcoal">
               {studio.name}
             </h1>
+            {boundStudioSlug === studio.slug ? (
+              <button
+                type="button"
+                onClick={() => setStudentOnboardingOpen(true)}
+                className="mt-1 inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-medium text-emerald-800 hover:bg-emerald-100 transition-colors"
+              >
+                <Heart className="w-2.5 h-2.5 fill-emerald-600 text-emerald-600" />
+                <span>
+                  {locale === 'zh-TW'
+                    ? `已綁定專屬教練 (${studio.coachName || '主理教練'})`
+                    : `My Bound Studio (${studio.coachName || 'Primary Coach'})`}
+                </span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setStudentOnboardingOpen(true)}
+                className="mt-1 inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-stone-200/70 hover:bg-stone-300/70 text-[10px] font-medium text-stone-600 transition-colors"
+              >
+                <span>{locale === 'zh-TW' ? '🧘 綁定為預設教練' : '🧘 Set as My Primary Coach'}</span>
+              </button>
+            )}
           </div>
 
           <div className="flex items-center space-x-2">
@@ -334,6 +359,41 @@ export const ClientScheduleView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile Student Bottom Navigation Bar (My Bound Coach vs. Explore) */}
+      <nav className="fixed bottom-0 inset-x-0 z-30 md:hidden bg-[#F7F4EE]/95 backdrop-blur-md border-t border-stone-200 px-6 py-2 flex items-center justify-around">
+        <button
+          type="button"
+          onClick={() =>
+            navigateTo({
+              path: 'public_studio',
+              slug: boundStudioSlug || studio.slug || 'sol-sanctuary',
+            })
+          }
+          className="flex flex-col items-center space-y-0.5 text-aura-clay font-semibold text-[11px]"
+        >
+          <Calendar className="w-4 h-4" />
+          <span>{locale === 'zh-TW' ? '專屬課表' : 'My Studio'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigateTo({ path: 'explore' })}
+          className="flex flex-col items-center space-y-0.5 text-stone-500 hover:text-stone-900 font-medium text-[11px]"
+        >
+          <Compass className="w-4 h-4" />
+          <span>{locale === 'zh-TW' ? '探索 (Explore)' : 'Explore'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => openStudentChat()}
+          className="flex flex-col items-center space-y-0.5 text-stone-500 hover:text-stone-900 font-medium text-[11px]"
+        >
+          <MessageCircle className="w-4 h-4" />
+          <span>{locale === 'zh-TW' ? '聯絡教練' : 'Message Coach'}</span>
+        </button>
+      </nav>
 
       {/* In-App Direct Student Chat Modal */}
       <StudentChatModal />

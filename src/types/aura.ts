@@ -93,6 +93,8 @@ export interface Studio {
   platformTakeRate: number; // 0%
   logoMark: string;
   createdAt: string;
+  coachName?: string;
+  studioCode?: string;
   announcementBanner?: string;
   discoverable?: boolean;
   city?: string;

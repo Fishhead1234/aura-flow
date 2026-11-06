@@ -21,6 +21,9 @@ export const ExploreStudiosView: React.FC = () => {
     currency,
     navigateTo,
     switchPersona,
+    boundStudioSlug,
+    studio,
+    setStudentOnboardingOpen,
   } = useAuraStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -215,6 +218,42 @@ export const ExploreStudiosView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Mobile Student Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 inset-x-0 z-30 md:hidden bg-[#F7F4EE]/95 backdrop-blur-md border-t border-stone-200 px-6 py-2 flex items-center justify-around">
+        <button
+          type="button"
+          onClick={() =>
+            navigateTo({
+              path: 'public_studio',
+              slug: boundStudioSlug || studio.slug || 'sol-sanctuary',
+            })
+          }
+          className="flex flex-col items-center space-y-0.5 text-stone-500 hover:text-stone-900 font-medium text-[11px]"
+        >
+          <Calendar className="w-4 h-4" />
+          <span>{isZh ? '專屬課表' : 'My Studio'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigateTo({ path: 'explore' })}
+          className="flex flex-col items-center space-y-0.5 text-aura-clay font-semibold text-[11px]"
+        >
+          <Compass className="w-4 h-4" />
+          <span>{isZh ? '探索 (Explore)' : 'Explore'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStudentOnboardingOpen(true)}
+          className="flex flex-col items-center space-y-0.5 text-stone-500 hover:text-stone-900 font-medium text-[11px]"
+        >
+          <Users className="w-4 h-4" />
+          <span>{isZh ? '綁定教練' : 'Bind Coach'}</span>
+        </button>
+      </nav>
     </div>
   );
 };
+
