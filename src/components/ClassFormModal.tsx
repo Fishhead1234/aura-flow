@@ -8,12 +8,67 @@ import {
   InvitedStudentEntry,
   CURRENCY_CONFIGS,
 } from '../types/aura';
-import { Globe, Lock, Users, KeyRound, UserPlus, Check } from 'lucide-react';
+import { Globe, Lock, Users, KeyRound, UserPlus, Check, ChevronDown, ClipboardList } from 'lucide-react';
 
 interface ClassFormModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const CLASS_NOTES_PRESETS = [
+  {
+    id: 'pilates_core',
+    chipZh: '[ 🧘 皮拉提斯防滑襪與核心 ]',
+    chipEn: '[ 🧘 Pilates Grip Socks & Core ]',
+    preZh:
+      '請自備乾淨防滑五趾襪與溫水壺，建議提早 10 分鐘抵達暖身。今日將加強深層核心橫膈膜呼吸與骨盆穩定控制！',
+    preEn:
+      'Please bring clean grip socks and a water bottle. Arrive 10 mins early to warm up; today we focus on deep core breathwork and pelvic stability.',
+    postZh:
+      '課後請補充 300ml 溫水，並於睡前進行 3 分鐘「貓牛式呼吸」與「鴿式臀部拉伸」，釋放下背與髖關節張力。',
+    postEn:
+      'Drink 300ml of warm water after class and practice 3 minutes of Cat-Cow breathwork & Pigeon hip stretch before bed.',
+  },
+  {
+    id: 'yoga_sound',
+    chipZh: '[ 🌿 瑜珈音療與心靈放鬆 ]',
+    chipEn: '[ 🌿 Yoga Sound Bath & Mindfulness ]',
+    preZh:
+      '教室已備妥高磅數瑜珈墊、抱枕與精油眼枕，請穿著寬鬆保暖衣物，並於入場後將手機調至靜音模式。',
+    preEn:
+      'Heavyweight mats, bolsters, and aromatherapy eye pillows are provided. Wear cozy layered clothing and silence your phone upon entry.',
+    postZh:
+      '音療與深層伸展後請多飲用溫開水幫助代謝循環，今晚減少螢幕藍光刺激，延續課堂平靜的睡眠品質。',
+    postEn:
+      'Sip warm water to support lymphatic circulation and minimize screen time tonight to preserve deep restorative sleep.',
+  },
+  {
+    id: 'strength_protein',
+    chipZh: '[ 🔥 肌力體能與高蛋白補充 ]',
+    chipEn: '[ 🔥 Strength & Protein Recovery ]',
+    preZh:
+      '請穿著包覆性佳之運動服裝與攜帶擦汗毛巾，課前 1 小時可補充適量碳水化合物以維持高強度肌力表現。',
+    preEn:
+      'Wear supportive athletic attire and bring a sweat towel. Have a light carb snack 1 hour prior for optimal strength output.',
+    postZh:
+      '課後黃金 30 分鐘內建議補充 20g 優質蛋白質（如無糖豆漿或乳清蛋白），並針對臀腿肌群進行滾筒筋膜放鬆。',
+    postEn:
+      'Refuel with 20g of clean protein within 30 minutes after class and foam-roll your glutes and hamstrings for 90 seconds.',
+  },
+  {
+    id: 'vip_bespoke',
+    chipZh: '[ 👑 私教專屬體態關懷 ]',
+    chipEn: '[ 👑 Bespoke VIP Posture Care ]',
+    preZh:
+      '專屬私教課前叮嚀：請穿著貼身舒適運動服以便進行精準骨盆與脊柱體態評估，若有近期緊繃部位請於課前告知教練。',
+    preEn:
+      'VIP Private Prep: Wear form-fitting activewear for precision posture & spinal alignment assessment. Let your coach know of any tight areas.',
+    postZh:
+      '私教課後專屬作業：每日早晚練習「靠牆天使 (Wall Angels)」10 次與「死蟲式 (Deadbug)」核心啟動 2 組，維持體態正位記憶。',
+    postEn:
+      'VIP Post-Class Homework: Complete 10 Wall Angels and 2 sets of Deadbug core activation morning and evening to lock in postural alignment.',
+  },
+];
 
 const ROSTER_CANDIDATES = [
   {
@@ -74,8 +129,21 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose 
   const [customStudents, setCustomStudents] = useState<
     { id: string; name: string; email: string; phone?: string }[]
   >([]);
+  const [activeNotePresetId, setActiveNotePresetId] = useState<string>('pilates_core');
+  const [preClassNote, setPreClassNote] = useState<string>(
+    isZh ? CLASS_NOTES_PRESETS[0].preZh : CLASS_NOTES_PRESETS[0].preEn
+  );
+  const [postClassHomework, setPostClassHomework] = useState<string>(
+    isZh ? CLASS_NOTES_PRESETS[0].postZh : CLASS_NOTES_PRESETS[0].postEn
+  );
 
   if (!isOpen) return null;
+
+  const handleApplyNotePreset = (preset: (typeof CLASS_NOTES_PRESETS)[number]) => {
+    setActiveNotePresetId(preset.id);
+    setPreClassNote(isZh ? preset.preZh : preset.preEn);
+    setPostClassHomework(isZh ? preset.postZh : preset.postEn);
+  };
 
   const handleVisibilityChange = (nextVis: ClassVisibility) => {
     setVisibility(nextVis);
@@ -158,6 +226,8 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose 
       privatePreset: visibility === 'PRIVATE' ? privatePreset : undefined,
       pinCode: visibility === 'PRIVATE' && cleanPin.length === 4 ? cleanPin : undefined,
       invitedStudents: visibility === 'PRIVATE' ? invitedStudents : undefined,
+      preClassNote: preClassNote.trim() || undefined,
+      postClassHomework: postClassHomework.trim() || undefined,
     });
 
     onClose();
@@ -571,6 +641,129 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose 
               />
             </div>
           </div>
+
+          {/* Collapsible Section: 課堂叮嚀與課後作業 (Class Notes & Homework) using native <details> per search-hidden-content */}
+          <details
+            open
+            className="group rounded-2xl bg-[#1A1714] border border-[#3A332B] overflow-hidden transition-all"
+          >
+            <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none list-none hover:bg-[#24201B] transition-colors">
+              <div className="flex items-center space-x-2">
+                <ClipboardList className="w-4 h-4 text-[#C5A059]" />
+                <span className="text-xs font-semibold text-[#EAD8B1]">
+                  {isZh
+                    ? '課堂叮嚀與課後作業 (Class Notes & Homework)'
+                    : 'Class Notes & Homework (Automated Care)'}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-700/50 text-emerald-300 font-medium">
+                  {isZh ? '自動推播關懷' : 'Auto-Push'}
+                </span>
+              </div>
+              <ChevronDown className="w-4 h-4 text-[#A89F91] transition-transform duration-200 group-open:rotate-180" />
+            </summary>
+
+            <div className="p-4 pt-3 border-t border-[#2E2822] space-y-3.5">
+              {/* 1-Tap Preset Chips */}
+              <div>
+                <span className="block text-[10px] text-[#8C8274] mb-1.5 font-medium">
+                  {isZh
+                    ? '⚡ 一鍵帶入專業叮嚀範本 (1-Tap Preset Templates)：'
+                    : '⚡ 1-Tap Preset Care Templates:'}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {CLASS_NOTES_PRESETS.map((preset) => {
+                    const isSelected = activeNotePresetId === preset.id;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => handleApplyNotePreset(preset)}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-medium border transition-all ${
+                          isSelected
+                            ? 'bg-[#C5A059] text-[#161412] border-[#C5A059] font-semibold shadow-2xs'
+                            : 'bg-[#24201C] text-[#E0C99E] border-[#3E352B] hover:border-[#C5A059]/60'
+                        }`}
+                      >
+                        {isZh ? preset.chipZh : preset.chipEn}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Field A: 課前叮嚀 (Pre-Class Note) */}
+              <div>
+                <label
+                  htmlFor="pre-class-note-textarea"
+                  className="block text-xs font-semibold text-[#F5F2EB] mb-0.5"
+                >
+                  {isZh ? '📋 課前叮嚀 (Pre-Class Note)' : '📋 Pre-Class Note'}
+                </label>
+                <p className="text-[10px] text-[#8C8274] mb-1.5">
+                  {isZh
+                    ? '將於開課前 2 小時自動推播提醒學員（如著裝須知、當日訓練重點）'
+                    : 'Automatically pushed to booked students 2 hours before class (attire, focus points)'}
+                </p>
+                <textarea
+                  id="pre-class-note-textarea"
+                  name="preClassNote"
+                  rows={2}
+                  value={preClassNote}
+                  onChange={(e) => setPreClassNote(e.target.value)}
+                  placeholder={
+                    isZh
+                      ? '例如：請自備防滑襪與水壺，今日將針對核心穩定與肩胛控制進行深度練習...'
+                      : 'e.g. Please wear grip socks and bring water; today focuses on core stability...'
+                  }
+                  style={
+                    {
+                      fieldSizing: 'content',
+                      minBlockSize: '2.75lh',
+                      maxBlockSize: '8lh',
+                    } as React.CSSProperties
+                  }
+                  className="w-full h-auto px-3 py-2 rounded-xl bg-[#141210] border border-[#3A332B] text-[#F5F2EB] text-xs leading-relaxed focus:outline-none focus:border-[#C5A059]"
+                />
+              </div>
+
+              {/* Field B: 課後伸展與作業 (Post-Class Homework) */}
+              <div>
+                <label
+                  htmlFor="post-class-homework-textarea"
+                  className="block text-xs font-semibold text-[#F5F2EB] mb-0.5"
+                >
+                  {isZh
+                    ? '🌿 課後伸展與作業 (Post-Class Homework)'
+                    : '🌿 Post-Class Homework & Stretches'}
+                </label>
+                <p className="text-[10px] text-[#8C8274] mb-1.5">
+                  {isZh
+                    ? '將於下課後 1 小時自動發送給出席學員（如居家伸展建議、水分補充）'
+                    : 'Automatically sent to attending students 1 hour after class (home stretches, hydration)'}
+                </p>
+                <textarea
+                  id="post-class-homework-textarea"
+                  name="postClassHomework"
+                  rows={2}
+                  value={postClassHomework}
+                  onChange={(e) => setPostClassHomework(e.target.value)}
+                  placeholder={
+                    isZh
+                      ? '例如：課後請補充 300ml 溫水，睡前進行 3 分鐘貓牛式與鴿式伸展...'
+                      : 'e.g. Drink 300ml warm water and do 3 mins of Cat-Cow & Pigeon stretch before sleep...'
+                  }
+                  style={
+                    {
+                      fieldSizing: 'content',
+                      minBlockSize: '2.75lh',
+                      maxBlockSize: '8lh',
+                    } as React.CSSProperties
+                  }
+                  className="w-full h-auto px-3 py-2 rounded-xl bg-[#141210] border border-[#3A332B] text-[#F5F2EB] text-xs leading-relaxed focus:outline-none focus:border-[#C5A059]"
+                />
+              </div>
+            </div>
+          </details>
 
           <div className="flex items-center justify-end space-x-2 pt-4 border-t border-[#3A332B]">
             <button

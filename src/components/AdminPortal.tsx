@@ -127,6 +127,7 @@ export const AdminPortal: React.FC = () => {
   const [broadcastingSession, setBroadcastingSession] = useState<ClassSession | null>(null);
   const [selectedVipSession, setSelectedVipSession] = useState<ClassSession | null>(null);
   const [selectedVacancySession, setSelectedVacancySession] = useState<ClassSession | null>(null);
+  const [adminClassModalMode, setAdminClassModalMode] = useState<'VACANCY' | 'ROSTER_OVERRIDE'>('VACANCY');
   const [copiedVipSessionId, setCopiedVipSessionId] = useState<string | null>(null);
   const [broadcastText, setBroadcastText] = useState('');
 
@@ -866,7 +867,10 @@ export const AdminPortal: React.FC = () => {
                           {!isFull && (
                             <button
                               type="button"
-                              onClick={() => setSelectedVacancySession(session)}
+                              onClick={() => {
+                                setAdminClassModalMode('VACANCY');
+                                setSelectedVacancySession(session);
+                              }}
                               className="w-full py-2 px-3 rounded-xl bg-amber-950/60 hover:bg-amber-900/70 border border-[#C5A059]/60 text-[11px] font-semibold text-amber-200 flex items-center justify-center space-x-1.5 transition-all"
                             >
                               <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -877,6 +881,23 @@ export const AdminPortal: React.FC = () => {
                               </span>
                             </button>
                           )}
+
+                          {/* 1-Click Class Roster Broadcast Override CTA */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAdminClassModalMode('ROSTER_OVERRIDE');
+                              setSelectedVacancySession(session);
+                            }}
+                            className="w-full py-2 px-3 rounded-xl bg-[#25201A] hover:bg-[#322B23] border border-[#C5A059]/40 text-[11px] font-semibold text-[#EAD8B1] flex items-center justify-center space-x-1.5 transition-all"
+                          >
+                            <Megaphone className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                            <span className="truncate">
+                              {isZh
+                                ? '[ 📢 臨時補充課堂提醒 ]'
+                                : '[ 📢 Ad-Hoc Class Note Override ]'}
+                            </span>
+                          </button>
 
                           {/* 1-Click Class Roster Broadcast CTA */}
                           <button
@@ -2447,9 +2468,10 @@ export const AdminPortal: React.FC = () => {
         onClose={() => setSelectedVipSession(null)}
       />
 
-      {/* Coach Schedule Maximizer: Last-Minute Vacancy Filler Modal */}
+      {/* Coach Schedule Maximizer & 1-Click Roster Broadcast Override Modal */}
       <AdminClassDetailModal
         session={selectedVacancySession}
+        initialMode={adminClassModalMode}
         onClose={() => setSelectedVacancySession(null)}
       />
 

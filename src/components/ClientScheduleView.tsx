@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { getTranslation, formatCurrency, formatTimeRange } from '../i18n/auraI18n';
-import { Clock, SlidersHorizontal, Sparkles, AlertCircle, CheckCircle2, Ticket, MessageCircle, Heart, Compass, Calendar } from 'lucide-react';
+import { Clock, SlidersHorizontal, Sparkles, AlertCircle, CheckCircle2, Ticket, MessageCircle, Heart, Compass, Calendar, ClipboardList } from 'lucide-react';
 import { ClassSession } from '../types/aura';
 import { AuraLeafBadge } from './AuraLeafLogo';
 import { StudentChatModal } from './StudentChatModal';
 import { StudentDashboard } from './StudentDashboard';
 import { CoachStudioFeed } from './CoachStudioFeed';
+import { StudentClassDetailModal, SessionCareCard } from './StudentClassDetailModal';
 
 export const ClientScheduleView: React.FC = () => {
+  const [selectedDetailSession, setSelectedDetailSession] = useState<ClassSession | null>(null);
   const {
     locale,
     currency,
@@ -166,6 +168,13 @@ export const ClientScheduleView: React.FC = () => {
                 <span>{tBooking('messageInstructor')}</span>
               </button>
             </div>
+
+            {/* Upcoming Booked Session Pre-Class Note & Post-Class Homework inside Booking Pass */}
+            {baseSessions[0] && (
+              <div className="mt-3.5 pt-3 border-t border-[#443D36]">
+                <SessionCareCard session={baseSessions[0]} defaultPhase="PRE_CLASS" />
+              </div>
+            )}
           </div>
         )}
 
@@ -292,6 +301,15 @@ export const ClientScheduleView: React.FC = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDetailSession(session)}
+                      className="px-3 py-1.5 rounded-full text-[11px] font-medium bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center space-x-1 transition-colors"
+                    >
+                      <ClipboardList className="w-3 h-3 text-aura-clay" />
+                      <span>{locale === 'zh-TW' ? '課前叮嚀 / 作業' : 'Notes & Care'}</span>
+                    </button>
+
                     {isFull ? (
                       <button
                         onClick={() => openWaitlistModal(session)}
@@ -406,6 +424,12 @@ export const ClientScheduleView: React.FC = () => {
 
       {/* In-App Direct Student Chat Modal */}
       <StudentChatModal />
+
+      {/* Student Class Detail & Pre-Class / Post-Class Care Modal */}
+      <StudentClassDetailModal
+        session={selectedDetailSession}
+        onClose={() => setSelectedDetailSession(null)}
+      />
     </div>
   );
 };

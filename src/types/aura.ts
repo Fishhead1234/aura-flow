@@ -197,6 +197,10 @@ export interface ClassSession {
   pinCode?: string; // Optional 4-digit PIN
   inviteToken?: string; // Unique token for /vip/:inviteToken
   invitedStudents?: InvitedStudentEntry[];
+  // Automated Pre-Class Prep & Post-Class Care/Homework
+  preClassNote?: string;
+  postClassHomework?: string;
+  homeworkCompleted?: boolean;
 }
 
 export interface ClassPack {

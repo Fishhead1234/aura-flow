@@ -410,6 +410,10 @@ const INITIAL_SESSIONS: ClassSession[] = [
     price: 28.0,
     roomName: 'Reformer Studio A',
     level: 'Intermediate',
+    preClassNote:
+      '請自備乾淨防滑五趾襪與溫水壺，建議提早 10 分鐘抵達暖身。今日將加強深層核心橫膈膜呼吸與骨盆穩定控制！',
+    postClassHomework:
+      '課後請補充 300ml 溫水，並於睡前進行 3 分鐘「貓牛式呼吸」與「鴿式臀部拉伸」，釋放下背與髖關節張力。',
   },
   {
     id: 'sess-02',
@@ -426,6 +430,10 @@ const INITIAL_SESSIONS: ClassSession[] = [
     price: 26.0,
     roomName: 'Zen Bamboo Hall',
     level: 'All Levels',
+    preClassNote:
+      '請穿著延展性佳的吸汗運動服裝，課前 1 小時避免過飽飲食。今日流動著重肩胛穩定與後彎開胸練習。',
+    postClassHomework:
+      '下課後建議進行 5 分鐘嬰兒式 (Child’s Pose) 與仰臥脊椎扭轉，並補充優質蛋白質幫助肌群修復。',
   },
   {
     id: 'sess-03',
@@ -442,6 +450,10 @@ const INITIAL_SESSIONS: ClassSession[] = [
     price: 28.0,
     roomName: 'Warm Cedar Room',
     level: 'Beginner',
+    preClassNote:
+      '教室已備妥高磅數瑜珈墊、抱枕與精油眼枕，請穿著寬鬆保暖的長袖外罩，讓身心準備進入深層陰瑜珈停留。',
+    postClassHomework:
+      '今晚請避免冰冷飲品，睡前可搭配 5 次 4-7-8 深呼吸，延續課堂筋膜釋放後的平靜睡眠品質。',
   },
   {
     id: 'sess-04',
@@ -458,6 +470,10 @@ const INITIAL_SESSIONS: ClassSession[] = [
     price: 28.0,
     roomName: 'Reformer Studio A',
     level: 'All Levels',
+    preClassNote:
+      '請著防滑襪並攜帶毛巾，今日將使用 Reformer 搭配彈力圈 (Magic Circle) 強化大腿內側與臀中肌線條。',
+    postClassHomework:
+      '課後 30 分鐘內建議補充無糖豆漿或乳清蛋白，並針對臀腿進行滾筒放鬆各 90 秒。',
   },
   {
     id: 'sess-05',
@@ -475,6 +491,10 @@ const INITIAL_SESSIONS: ClassSession[] = [
     roomName: 'Sound Sanctuary',
     level: 'All Levels',
     visibility: 'PUBLIC',
+    preClassNote:
+      '頌缽音療期間體溫會微幅下降，請攜帶舒適薄毯或保暖襪，並於入場後將手機調至飛航靜音模式。',
+    postClassHomework:
+      '音療後請多飲用溫開水幫助代謝循環，今晚減少滑手機時間，讓大腦維持 Alpha 波放鬆狀態。',
   },
   {
     id: 'sess-vip-01',
@@ -495,6 +515,10 @@ const INITIAL_SESSIONS: ClassSession[] = [
     privatePreset: '1_ON_1',
     pinCode: '8829',
     inviteToken: 'vip-elena-reformer-88',
+    preClassNote:
+      '專屬私教課前叮嚀：請穿著貼身運動服以便進行精準骨盆與脊柱體態評估，若有近期舊傷部位請於開場前告知教練。',
+    postClassHomework:
+      '私教課後專屬作業：每日早晚練習「靠牆天使 (Wall Angels)」10 次與「死蟲式 (Deadbug)」核心啟動 2 組。',
     invitedStudents: [
       {
         id: 'usr-maya-student',
@@ -851,6 +875,12 @@ interface AuraState {
   updateStudioPolicies: (cancelWindowHrs: number, waitlistMins: number) => void;
   addSession: (session: Omit<ClassSession, 'id' | 'studioId' | 'bookedCount'>) => void;
   updateSessionCapacity: (sessionId: string, newCapacity: number) => void;
+  updateSessionNotes: (
+    sessionId: string,
+    preClassNote: string,
+    postClassHomework: string
+  ) => void;
+  markSessionHomeworkDone: (sessionId: string) => void;
   deleteSession: (sessionId: string) => void;
   purchaseClassPack: (packId: string) => void;
   addClassPack: (pack: Omit<ClassPack, 'id' | 'studioId'>) => void;
@@ -1953,6 +1983,42 @@ export const useAuraStore = create<AuraState>()(
   updateSessionCapacity: (sessionId, newCapacity) => {
     set((state) => ({
       sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, capacity: newCapacity } : s)),
+    }));
+    get().syncToCloud();
+  },
+
+  updateSessionNotes: (sessionId, preClassNote, postClassHomework) => {
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId
+          ? {
+              ...s,
+              preClassNote: preClassNote.trim(),
+              postClassHomework: postClassHomework.trim(),
+            }
+          : s
+      ),
+      selectedSessionForBooking:
+        state.selectedSessionForBooking?.id === sessionId
+          ? {
+              ...state.selectedSessionForBooking,
+              preClassNote: preClassNote.trim(),
+              postClassHomework: postClassHomework.trim(),
+            }
+          : state.selectedSessionForBooking,
+    }));
+    get().syncToCloud();
+  },
+
+  markSessionHomeworkDone: (sessionId) => {
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId ? { ...s, homeworkCompleted: true } : s
+      ),
+      selectedSessionForBooking:
+        state.selectedSessionForBooking?.id === sessionId
+          ? { ...state.selectedSessionForBooking, homeworkCompleted: true }
+          : state.selectedSessionForBooking,
     }));
     get().syncToCloud();
   },

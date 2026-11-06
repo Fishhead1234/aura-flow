@@ -330,3 +330,4 @@ export const CoachStudioFeed: React.FC<CoachStudioFeedProps> = ({
     </div>
   );
 };
+

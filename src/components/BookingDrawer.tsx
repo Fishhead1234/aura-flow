@@ -15,6 +15,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { PaymentMethodType } from '../types/aura';
+import { SessionCareCard } from './StudentClassDetailModal';
 import confetti from 'canvas-confetti';
 
 export const BookingDrawer: React.FC = () => {
@@ -218,6 +219,9 @@ export const BookingDrawer: React.FC = () => {
               </p>
             </div>
 
+            {/* Automated Pre-Class Reminder & Post-Class Homework Card on Booking Pass */}
+            <SessionCareCard session={selectedSessionForBooking} defaultPhase="PRE_CLASS" />
+
             {/* Pre-formatted LINE & IG Story Share Preview */}
             <div className="p-3.5 rounded-2xl bg-white border border-stone-200 text-left text-xs space-y-2 shadow-2xs">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
@@ -279,13 +283,18 @@ export const BookingDrawer: React.FC = () => {
         ) : (
           <>
             {/* Session Summary Card matching Screenshot 2 */}
-            <div className="bg-white rounded-2xl p-4 shadow-2xs border border-stone-200/70 mb-5">
+            <div className="bg-white rounded-2xl p-4 shadow-2xs border border-stone-200/70 mb-3">
               <h4 className="font-serif text-base font-medium text-stone-900">
                 {selectedSessionForBooking.title} - {formatCurrency(selectedSessionForBooking.price, currency, locale)}
               </h4>
               <p className="text-xs text-stone-500 mt-1">
                 {selectedSessionForBooking.startTime.substring(0, 10)} • {selectedSessionForBooking.startTime.substring(11, 16)} - {selectedSessionForBooking.endTime.substring(11, 16)}
               </p>
+            </div>
+
+            {/* Pre-Class Reminder / Post-Class Homework Card */}
+            <div className="mb-5">
+              <SessionCareCard session={selectedSessionForBooking} defaultPhase="PRE_CLASS" />
             </div>
 
             {/* Payment Method Section */}
