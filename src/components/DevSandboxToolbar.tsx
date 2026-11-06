@@ -275,6 +275,8 @@ export const DevSandboxToolbar: React.FC = () => {
               <span className="font-mono text-[#C5A059]">
                 {currentRoute.path === 'public_studio'
                   ? `/studio/${currentRoute.slug}`
+                  : currentRoute.path === 'vip_booking'
+                  ? `/vip/${currentRoute.inviteToken}`
                   : `/${currentRoute.path}`}
               </span>
             </span>

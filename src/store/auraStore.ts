@@ -37,6 +37,10 @@ function parseInitialRoute(): AppRoute {
   if (pathname === '/explore' || pathname.startsWith('/explore')) {
     return { path: 'explore' };
   }
+  if (pathname.startsWith('/vip/')) {
+    const inviteToken = pathname.replace('/vip/', '').split('/')[0] || 'vip-elena-reformer-88';
+    return { path: 'vip_booking', inviteToken };
+  }
   if (pathname.startsWith('/studio/')) {
     const slug = pathname.replace('/studio/', '').split('/')[0] || 'sol-sanctuary';
     return { path: 'public_studio', slug };
@@ -419,6 +423,36 @@ const INITIAL_SESSIONS: ClassSession[] = [
     price: 35.0,
     roomName: 'Sound Sanctuary',
     level: 'All Levels',
+    visibility: 'PUBLIC',
+  },
+  {
+    id: 'sess-vip-01',
+    studioId: 'studio-sol-01',
+    title: '1-on-1 Bespoke Reformer Assessment',
+    category: '私人教練',
+    instructor: 'Elena Rostova',
+    instructorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+    startTime: '2026-11-04T14:00:00.000Z',
+    endTime: '2026-11-04T15:00:00.000Z',
+    durationMins: 60,
+    capacity: 1,
+    bookedCount: 0,
+    price: 85.0,
+    roomName: 'VIP Private Suite',
+    level: 'All Levels',
+    visibility: 'PRIVATE',
+    privatePreset: '1_ON_1',
+    pinCode: '8829',
+    inviteToken: 'vip-elena-reformer-88',
+    invitedStudents: [
+      {
+        id: 'usr-maya-student',
+        name: 'Maya Lin',
+        email: 'maya@example.com',
+        phone: '+886 912-345-678',
+        status: 'AWAITING',
+      },
+    ],
   },
 ];
 
@@ -885,7 +919,9 @@ export const useAuraStore = create<AuraState>()(
     if (route.path === 'admin') url = '/admin';
     else if (route.path === 'onboarding') url = '/onboarding';
     else if (route.path === 'explore') url = '/explore';
-    else if (route.path === 'public_studio') {
+    else if (route.path === 'vip_booking') {
+      url = `/vip/${route.inviteToken}`;
+    } else if (route.path === 'public_studio') {
       url = `/studio/${route.slug}`;
       const matched = get().studios.find((s) => s.slug === route.slug);
       if (matched) {
@@ -1331,6 +1367,53 @@ export const useAuraStore = create<AuraState>()(
     const targetEmail = clientEmail || currentUser.email;
     const targetName = clientName || currentUser.name;
 
+    // Helper to mark invited student as BOOKED on private sessions
+    const updateSessionAfterBooking = (s: ClassSession): ClassSession => {
+      if (s.id !== sessionId) return s;
+      let updatedInvites = s.invitedStudents;
+      if (s.visibility === 'PRIVATE') {
+        const list = s.invitedStudents ? [...s.invitedStudents] : [];
+        const matchIdx = list.findIndex(
+          (inv) =>
+            inv.status === 'AWAITING' &&
+            (inv.email.toLowerCase() === targetEmail.toLowerCase() ||
+              inv.name.toLowerCase() === targetName.toLowerCase())
+        );
+        if (matchIdx !== -1) {
+          list[matchIdx] = {
+            ...list[matchIdx],
+            status: 'BOOKED',
+            bookedAt: new Date().toISOString(),
+          };
+        } else {
+          const firstAwaitingIdx = list.findIndex((inv) => inv.status === 'AWAITING');
+          if (firstAwaitingIdx !== -1) {
+            list[firstAwaitingIdx] = {
+              ...list[firstAwaitingIdx],
+              name: targetName || list[firstAwaitingIdx].name,
+              email: targetEmail || list[firstAwaitingIdx].email,
+              status: 'BOOKED',
+              bookedAt: new Date().toISOString(),
+            };
+          } else {
+            list.push({
+              id: `inv-${Date.now()}`,
+              name: targetName,
+              email: targetEmail,
+              status: 'BOOKED',
+              bookedAt: new Date().toISOString(),
+            });
+          }
+        }
+        updatedInvites = list;
+      }
+      return {
+        ...s,
+        bookedCount: s.bookedCount + 1,
+        invitedStudents: updatedInvites,
+      };
+    };
+
     if (typeof window !== 'undefined' && targetEmail) {
       fetch('/api/send-email', {
         method: 'POST',
@@ -1389,7 +1472,7 @@ export const useAuraStore = create<AuraState>()(
         userPass: { ...userPass, creditsLeft: updatedCredits },
         creditLedger: [newLedgerEntry, ...creditLedger],
         bookings: [newBooking, ...bookings],
-        sessions: sessions.map((s) => (s.id === sessionId ? { ...s, bookedCount: s.bookedCount + 1 } : s)),
+        sessions: sessions.map(updateSessionAfterBooking),
       });
 
       get().syncToCloud();
@@ -1415,7 +1498,7 @@ export const useAuraStore = create<AuraState>()(
 
     set({
       bookings: [newBooking, ...bookings],
-      sessions: sessions.map((s) => (s.id === sessionId ? { ...s, bookedCount: s.bookedCount + 1 } : s)),
+      sessions: sessions.map(updateSessionAfterBooking),
       stripeOverview: {
         ...stripeOverview,
         grossVolume: stripeOverview.grossVolume + session.price,
@@ -1640,11 +1723,19 @@ export const useAuraStore = create<AuraState>()(
   },
 
   addSession: (sessionData) => {
+    const isPrivate = sessionData.visibility === 'PRIVATE';
+    const generatedToken =
+      sessionData.inviteToken ||
+      (isPrivate
+        ? `vip-${Math.random().toString(36).substring(2, 7)}-${Date.now().toString(36).slice(-4)}`
+        : undefined);
     const newSession: ClassSession = {
       ...sessionData,
       id: `sess-${Date.now()}`,
       studioId: get().studio.id,
       bookedCount: 0,
+      visibility: sessionData.visibility || 'PUBLIC',
+      inviteToken: generatedToken,
     };
     set((state) => ({ sessions: [...state.sessions, newSession] }));
     get().syncToCloud();

@@ -107,8 +107,9 @@ export const ExploreStudiosView: React.FC = () => {
         {/* Studio Directory Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {filteredStudios.map((st) => {
-            const studioSessions = sessions.filter((s) => s.studioId === st.id);
-            const previewSessions = studioSessions.length > 0 ? studioSessions.slice(0, 2) : sessions.slice(0, 2);
+            const publicSessions = sessions.filter((s) => s.visibility !== 'PRIVATE');
+            const studioSessions = publicSessions.filter((s) => s.studioId === st.id);
+            const previewSessions = studioSessions.length > 0 ? studioSessions.slice(0, 2) : publicSessions.slice(0, 2);
 
             return (
               <div

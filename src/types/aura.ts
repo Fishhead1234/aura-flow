@@ -114,6 +114,19 @@ export type ClassCategory =
   | 'Workshop'
   | (string & {});
 
+export type ClassVisibility = 'PUBLIC' | 'PRIVATE';
+
+export type PrivateCapacityPreset = '1_ON_1' | '1_ON_2' | 'SMALL_GROUP';
+
+export interface InvitedStudentEntry {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  status: 'AWAITING' | 'BOOKED';
+  bookedAt?: string;
+}
+
 export interface ClassSession {
   id: string;
   studioId: string; // Decoupled by studio_id
@@ -130,6 +143,12 @@ export interface ClassSession {
   price: number; // Drop-in pricing in baseline currency
   roomName: string;
   level: 'All Levels' | 'Beginner' | 'Intermediate' | 'Advanced';
+  // Private / Invite-Only Session Fields
+  visibility?: ClassVisibility;
+  privatePreset?: PrivateCapacityPreset;
+  pinCode?: string; // Optional 4-digit PIN
+  inviteToken?: string; // Unique token for /vip/:inviteToken
+  invitedStudents?: InvitedStudentEntry[];
 }
 
 export interface ClassPack {
@@ -160,6 +179,7 @@ export type PaymentMethodType =
   | 'PASS_CREDIT'
   | 'STRIPE_CARD'
   | 'APPLE_PAY'
+  | 'GOOGLE_PAY'
   | 'LINE_PAY'
   | 'JKOPAY'
   | 'BANK_TRANSFER';
@@ -285,4 +305,5 @@ export type AppRoute =
   | { path: 'public_studio'; slug: string }
   | { path: 'explore' }
   | { path: 'admin' }
-  | { path: 'onboarding' };
+  | { path: 'onboarding' }
+  | { path: 'vip_booking'; inviteToken: string };

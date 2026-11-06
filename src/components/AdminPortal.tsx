@@ -39,10 +39,14 @@ import {
   Share2,
   Megaphone,
   MessageCircle,
+  Link2,
+  KeyRound,
 } from 'lucide-react';
 import { ClassCategory, CURRENCY_CONFIGS, ClassPack, ClassSession, AdminTabType } from '../types/aura';
 import { AuraLogoBadge } from './AuraLeafLogo';
 import { useSubscription } from '../hooks/useSubscription';
+import { ClassFormModal } from './ClassFormModal';
+import { ClassDetailModal, buildVipInviteText } from './ClassDetailModal';
 
 export const AdminPortal: React.FC = () => {
   const { isPro, openPaywall } = useSubscription();
@@ -99,14 +103,6 @@ export const AdminPortal: React.FC = () => {
   const [policiesSavedToast, setPoliciesSavedToast] = useState(false);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
 
-  // New Class Form State
-  const [newTitle, setNewTitle] = useState('');
-  const [newCategory, setNewCategory] = useState<ClassCategory>('Reformer');
-  const [newInstructor, setNewInstructor] = useState('Lena S.');
-  const [newCapacity, setNewCapacity] = useState(8);
-  const [newPrice, setNewPrice] = useState(28);
-  const [newRoom, setNewRoom] = useState('Reformer Studio A');
-
   // Class Pack Form State (Edit & Create)
   const [showPackModal, setShowPackModal] = useState(false);
   const [editingPackId, setEditingPackId] = useState<string | null>(null);
@@ -119,6 +115,8 @@ export const AdminPortal: React.FC = () => {
 
   // 1-Click Roster Broadcast Modal State
   const [broadcastingSession, setBroadcastingSession] = useState<ClassSession | null>(null);
+  const [selectedVipSession, setSelectedVipSession] = useState<ClassSession | null>(null);
+  const [copiedVipSessionId, setCopiedVipSessionId] = useState<string | null>(null);
   const [broadcastText, setBroadcastText] = useState('');
   const [broadcastInApp, setBroadcastInApp] = useState(true);
   const [broadcastLine, setBroadcastLine] = useState(true);
@@ -171,12 +169,6 @@ export const AdminPortal: React.FC = () => {
   const currentConvMessages = currentConv ? messages[currentConv.id] || [] : [];
 
   const handleOpenNewClassModal = () => {
-    setNewTitle('');
-    setNewCategory('Reformer');
-    setNewInstructor(studio.name ? `${studio.name.split(' ')[0]} Coach` : 'Elena Rostova');
-    setNewCapacity(8);
-    setNewPrice(currency === 'TWD' ? 800 : 28);
-    setNewRoom('Reformer Studio A');
     setShowNewClassModal(true);
   };
 
@@ -226,27 +218,6 @@ export const AdminPortal: React.FC = () => {
       });
     }
     setShowPackModal(false);
-  };
-
-  const handleCreateClass = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-
-    addSession({
-      title: newTitle.trim(),
-      category: newCategory,
-      instructor: newInstructor.trim(),
-      instructorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80',
-      startTime: '2026-11-06T09:00:00.000Z',
-      endTime: '2026-11-06T09:50:00.000Z',
-      durationMins: 50,
-      capacity: newCapacity,
-      price: newPrice,
-      roomName: newRoom.trim(),
-      level: 'All Levels',
-    });
-
-    setShowNewClassModal(false);
   };
 
   const handleSavePolicies = (e: React.FormEvent) => {
@@ -672,18 +643,53 @@ export const AdminPortal: React.FC = () => {
               </button>
             </div>
 
-            {/* Grid of Sessions with Roster Broadcast Button */}
+            {/* Grid of Sessions with Roster Broadcast & VIP Invitation Generator */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sessions.map((session) => {
                 const fillRatio = Math.min(100, Math.round((session.bookedCount / session.capacity) * 100));
                 const isFull = session.bookedCount >= session.capacity;
+                const isPrivate = session.visibility === 'PRIVATE';
+                const isZh = locale === 'zh-TW' || locale === 'zh-CN';
+                const invitedList = session.invitedStudents || [];
+                const isVipBooked =
+                  session.bookedCount > 0 ||
+                  (invitedList.length > 0 && invitedList.every((s) => s.status === 'BOOKED'));
+                const originUrl =
+                  typeof window !== 'undefined'
+                    ? window.location.origin
+                    : 'https://auraflow-bay.vercel.app';
+                const { url: vipLinkUrl, message: vipShareMessage } = buildVipInviteText(
+                  session,
+                  studio.name,
+                  originUrl,
+                  isZh
+                );
 
                 return (
                   <div
                     key={session.id}
-                    className="bg-[#221E1A] rounded-2xl p-5 border border-[#3A332B] hover:border-[#574B3E] transition-all relative overflow-hidden group shadow-md flex flex-col justify-between"
+                    className={`rounded-2xl p-5 border transition-all relative overflow-hidden group shadow-md flex flex-col justify-between ${
+                      isPrivate
+                        ? 'bg-linear-to-b from-[#2A2219] to-[#1D1813] border-[#C5A059]/70 hover:border-[#E2C178]'
+                        : 'bg-[#221E1A] border-[#3A332B] hover:border-[#574B3E]'
+                    }`}
                   >
                     <div>
+                      {/* Private VIP Badge Row */}
+                      {isPrivate && (
+                        <div className="flex items-center justify-between gap-2 mb-2.5">
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-[#C5A059] text-amber-300 text-[11px] font-bold tracking-wide shadow-2xs">
+                            <span>[ 👑 {isZh ? '專屬受邀制' : 'Private / Invite-Only'} ]</span>
+                          </span>
+                          {session.pinCode && (
+                            <span className="inline-flex items-center space-x-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#161310] text-[#EAD8B1] border border-[#3E3328]">
+                              <KeyRound className="w-3 h-3 text-[#C5A059]" />
+                              <span>PIN: {session.pinCode}</span>
+                            </span>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex items-start justify-between mb-1">
                         <div>
                           <h4 className="font-serif text-base font-medium text-[#F5F2EB] group-hover:text-[#EAD8B1] transition-colors">
@@ -693,14 +699,47 @@ export const AdminPortal: React.FC = () => {
                             {session.startTime.substring(11, 16)} - {session.endTime.substring(11, 16)} • {studio.name}
                           </p>
                         </div>
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#2E2822] text-[#C5A059] border border-[#423930]">
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#2E2822] text-[#C5A059] border border-[#423930] shrink-0">
                           {session.category}
                         </span>
                       </div>
 
-                      <div className="text-xs text-[#A89F91] mb-4">
+                      <div className="text-xs text-[#A89F91] mb-3">
                         Coach: <span className="text-[#E0D8CE] font-medium">{session.instructor}</span>
                       </div>
+
+                      {/* Private Session Invited Student Roster Status Pill */}
+                      {isPrivate && (
+                        <div className="mb-3 p-2.5 rounded-xl bg-[#161310]/90 border border-[#3A3127] space-y-1.5">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-[#A89F91]">
+                              {isZh ? '受邀學員：' : 'Invited:'}{' '}
+                              <span className="text-[#F5F2EB] font-semibold">
+                                {invitedList.length > 0
+                                  ? invitedList.map((s) => s.name).join('、')
+                                  : isZh
+                                  ? '持 VIP 連結貴賓'
+                                  : 'VIP Link Holder'}
+                              </span>
+                            </span>
+                          </div>
+                          <div>
+                            {isVipBooked ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-950/90 border border-emerald-600/60 text-emerald-300 text-[11px] font-semibold">
+                                {isZh
+                                  ? '[ ✓ 已預約確認 (Booked) ]'
+                                  : '[ ✓ Booked (Confirmed) ]'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-950/90 border border-amber-600/60 text-amber-300 text-[11px] font-semibold">
+                                {isZh
+                                  ? '[ ⏳ 待學員確認 (Awaiting Confirmation) ]'
+                                  : '[ ⏳ Awaiting Confirmation ]'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -716,7 +755,7 @@ export const AdminPortal: React.FC = () => {
                             }`}
                           >
                             {tAdmin('bookedCountStatus', { booked: session.bookedCount, capacity: session.capacity })}
-                            {isFull && ` • ${tAdmin('waitlistActive')}`}
+                            {isFull && !isPrivate && ` • ${tAdmin('waitlistActive')}`}
                           </span>
                         </div>
 
@@ -732,14 +771,76 @@ export const AdminPortal: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* 1-Click Class Roster Broadcast CTA */}
-                      <button
-                        onClick={() => handleOpenBroadcastModal(session)}
-                        className="w-full py-2 px-3 rounded-xl bg-[#2C2620] hover:bg-[#383028] border border-[#443B30] text-xs font-medium text-[#EAD8B1] flex items-center justify-center space-x-1.5 transition-colors group-hover:border-[#C5A059]/60"
-                      >
-                        <Megaphone className="w-3.5 h-3.5 text-[#C5A059]" />
-                        <span>{tAdmin('broadcastToRoster')}</span>
-                      </button>
+                      {isPrivate ? (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard?.writeText(vipLinkUrl);
+                                setCopiedVipSessionId(session.id);
+                                setTimeout(() => setCopiedVipSessionId(null), 2500);
+                              }}
+                              className="py-2 px-2.5 rounded-xl bg-[#C5A059] hover:bg-[#D4AF37] text-[#161412] text-[11px] font-semibold flex items-center justify-center space-x-1 transition-all"
+                            >
+                              {copiedVipSessionId === session.id ? (
+                                <>
+                                  <CheckCheck className="w-3.5 h-3.5 shrink-0" />
+                                  <span className="truncate">
+                                    {isZh ? '已複製邀請連結！' : 'VIP Link Copied!'}
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <Link2 className="w-3.5 h-3.5 shrink-0" />
+                                  <span className="truncate">
+                                    {isZh ? '🔗 複製專屬邀請連結' : '🔗 Copy VIP Link'}
+                                  </span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard?.writeText(vipShareMessage);
+                                const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(
+                                  vipShareMessage
+                                )}`;
+                                window.open(lineUrl, '_blank', 'noopener,noreferrer');
+                              }}
+                              className="py-2 px-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white text-[11px] font-semibold flex items-center justify-center space-x-1 transition-all"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">
+                                {isZh ? '💬 一鍵分享至 LINE' : '💬 Share to LINE'}
+                              </span>
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedVipSession(session)}
+                              className="flex-1 py-1.5 px-3 rounded-xl bg-[#2A231B] hover:bg-[#362D23] border border-[#C5A059]/40 text-[11px] font-medium text-[#EAD8B1] flex items-center justify-center space-x-1 transition-colors"
+                            >
+                              <Sparkles className="w-3 h-3 text-[#C5A059]" />
+                              <span>
+                                {isZh ? '開啟 VIP 邀請函產生器 & 預覽' : 'VIP Invite Generator & Preview'}
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* 1-Click Class Roster Broadcast CTA */
+                        <button
+                          onClick={() => handleOpenBroadcastModal(session)}
+                          className="w-full py-2 px-3 rounded-xl bg-[#2C2620] hover:bg-[#383028] border border-[#443B30] text-xs font-medium text-[#EAD8B1] flex items-center justify-center space-x-1.5 transition-colors group-hover:border-[#C5A059]/60"
+                        >
+                          <Megaphone className="w-3.5 h-3.5 text-[#C5A059]" />
+                          <span>{tAdmin('broadcastToRoster')}</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -868,6 +969,84 @@ export const AdminPortal: React.FC = () => {
                         </div>
                       ))}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* VIP Private / Invite-Only Roster Status Card */}
+            {sessions.some((s) => s.visibility === 'PRIVATE') && (
+              <div className="mb-6 bg-linear-to-r from-[#282119] to-[#1E1914] rounded-2xl p-5 border border-[#C5A059]/60 shadow-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm">👑</span>
+                    <h3 className="text-sm font-semibold text-[#EAD8B1]">
+                      {locale === 'zh-TW'
+                        ? '專屬受邀私教包班名冊 (Private / Invite-Only Roster)'
+                        : 'Private / Invite-Only VIP Roster Status'}
+                    </h3>
+                  </div>
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#161310] text-[#C5A059] border border-[#3E3328]">
+                    {locale === 'zh-TW' ? '公開課表隱藏中' : 'Hidden from Public Schedule'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {sessions
+                    .filter((s) => s.visibility === 'PRIVATE')
+                    .map((priv) => {
+                      const invited = priv.invitedStudents || [];
+                      const isBooked =
+                        priv.bookedCount > 0 ||
+                        (invited.length > 0 && invited.every((i) => i.status === 'BOOKED'));
+                      return (
+                        <div
+                          key={priv.id}
+                          className="p-3.5 rounded-xl bg-[#161310] border border-[#3A3127] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                        >
+                          <div>
+                            <div className="text-xs font-semibold text-[#F5F2EB] flex items-center space-x-1.5">
+                              <span>{priv.title}</span>
+                              <span className="text-[10px] font-mono text-[#C5A059]">
+                                ({priv.startTime.substring(11, 16)})
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-[#A89F91] mt-0.5">
+                              {locale === 'zh-TW' ? '受邀學員：' : 'Invited: '}
+                              <span className="text-[#EAD8B1] font-medium">
+                                {invited.length > 0
+                                  ? invited.map((i) => i.name).join('、')
+                                  : locale === 'zh-TW'
+                                  ? 'VIP 貴賓'
+                                  : 'VIP Guest'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2 shrink-0">
+                            {isBooked ? (
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-950 border border-emerald-600/60 text-emerald-300 text-[11px] font-semibold">
+                                {locale === 'zh-TW'
+                                  ? '[ ✓ 已預約確認 (Booked) ]'
+                                  : '[ ✓ Booked ]'}
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-full bg-amber-950 border border-amber-600/60 text-amber-300 text-[11px] font-semibold">
+                                {locale === 'zh-TW'
+                                  ? '[ ⏳ 待學員確認 (Awaiting Confirmation) ]'
+                                  : '[ ⏳ Awaiting Confirmation ]'}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedVipSession(priv)}
+                              className="px-2.5 py-1 rounded-full bg-[#2A231B] hover:bg-[#382F24] border border-[#C5A059]/50 text-[11px] text-[#C5A059] font-medium"
+                            >
+                              {locale === 'zh-TW' ? '邀請連結' : 'VIP Link'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}
@@ -1994,134 +2173,17 @@ export const AdminPortal: React.FC = () => {
         </div>
       )}
 
-      {/* New Class Modal */}
-      {showNewClassModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#221E1A] rounded-3xl p-6 border border-[#3A332B] w-full max-w-lg text-[#F5F2EB] shadow-2xl">
-            <div className="flex items-center justify-between mb-4 border-b border-[#3A332B] pb-3">
-              <h3 className="font-serif text-xl font-medium text-[#C5A059]">
-                {tAdmin('createClass')}
-              </h3>
-              <button
-                onClick={() => setShowNewClassModal(false)}
-                className="text-[#8C8274] hover:text-[#F5F2EB] text-lg font-bold"
-              >
-                ✕
-              </button>
-            </div>
+      {/* New Class Modal with Public vs. Private / Invite-Only Settings */}
+      <ClassFormModal
+        isOpen={showNewClassModal}
+        onClose={() => setShowNewClassModal(false)}
+      />
 
-            <form onSubmit={handleCreateClass} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('className')}</label>
-                <input
-                  type="text"
-                  required
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder={tAdmin('classNamePlaceholder')}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
-                />
-              </div>
-
-              {/* Flexible Class Category with Custom Input & Clickable Quick Tags */}
-              <div>
-                <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('category')}</label>
-                <input
-                  type="text"
-                  required
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  placeholder={tAdmin('categoryCustomPlaceholder')}
-                  className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-xs focus:outline-none focus:border-[#C5A059]"
-                />
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] text-[#706658] mr-1">{tAdmin('suggestedTagsLabel')}</span>
-                  {['皮拉提', '瑜珈', '私人教練', '頌缽音療', '重訓體能', 'Reformer', 'Mat Flow', 'Barre'].map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => setNewCategory(tag)}
-                      className={`text-[10px] px-2.5 py-0.5 rounded-full border transition-colors ${
-                        newCategory === tag
-                          ? 'bg-[#C5A059] text-[#161412] font-semibold border-[#C5A059]'
-                          : 'bg-[#1E1B18] text-[#A89F91] border-[#3A332B] hover:text-[#F5F2EB]'
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('instructor')}</label>
-                  <input
-                    type="text"
-                    required
-                    value={newInstructor}
-                    onChange={(e) => setNewInstructor(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-xs focus:outline-none focus:border-[#C5A059]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('room')}</label>
-                  <input
-                    type="text"
-                    required
-                    value={newRoom}
-                    onChange={(e) => setNewRoom(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-xs focus:outline-none focus:border-[#C5A059]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('hardCapacity')}</label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    required
-                    value={newCapacity}
-                    onChange={(e) => setNewCapacity(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[#A89F91] mb-1 font-medium">{tAdmin('price')} ({CURRENCY_CONFIGS[currency].symbol})</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
-                    required
-                    value={newPrice}
-                    onChange={(e) => setNewPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm focus:outline-none focus:border-[#C5A059]"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end space-x-2 pt-4 border-t border-[#3A332B]">
-                <button
-                  type="button"
-                  onClick={() => setShowNewClassModal(false)}
-                  className="px-4 py-2 rounded-full border border-[#3A332B] text-[#A89F91] hover:text-[#F5F2EB]"
-                >
-                  {tCommon('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-full bg-[#C5A059] text-[#161412] font-semibold hover:bg-[#D4AF37] transition-all"
-                >
-                  {tAdmin('saveSession')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Instructor VIP Invitation Generator & Preview Modal */}
+      <ClassDetailModal
+        session={selectedVipSession}
+        onClose={() => setSelectedVipSession(null)}
+      />
 
       {/* Class Pack Modal (Edit & Create) */}
       {showPackModal && (

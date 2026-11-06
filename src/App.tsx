@@ -11,6 +11,7 @@ import { DevSandboxToolbar } from './components/DevSandboxToolbar';
 import { WelcomeModal } from './components/WelcomeModal';
 import { StudentOnboardingModal } from './components/StudentOnboardingModal';
 import { PaywallModal } from './components/PaywallModal';
+import { VIPBookingPage } from './components/VIPBookingPage';
 
 export const App: React.FC = () => {
   const {
@@ -75,6 +76,9 @@ export const App: React.FC = () => {
         navigateTo({ path: 'onboarding' });
       } else if (pathname === '/explore' || pathname.startsWith('/explore')) {
         navigateTo({ path: 'explore' });
+      } else if (pathname.startsWith('/vip/')) {
+        const inviteToken = pathname.replace('/vip/', '').split('/')[0] || 'vip-elena-reformer-88';
+        navigateTo({ path: 'vip_booking', inviteToken });
       } else if (pathname.startsWith('/studio/')) {
         const slug = pathname.replace('/studio/', '').split('/')[0] || 'sol-sanctuary';
         navigateTo({ path: 'public_studio', slug });
@@ -101,6 +105,9 @@ export const App: React.FC = () => {
         {currentRoute.path === 'onboarding' && <OnboardingWizard />}
         {currentRoute.path === 'explore' && <ExploreStudiosView />}
         {currentRoute.path === 'public_studio' && <ClientScheduleView />}
+        {currentRoute.path === 'vip_booking' && (
+          <VIPBookingPage inviteToken={currentRoute.inviteToken} />
+        )}
       </main>
 
       {/* Initial First-Run Welcome & Role Selection Modal */}

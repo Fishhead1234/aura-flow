@@ -43,9 +43,10 @@ export const ClientScheduleView: React.FC = () => {
     { dayName: 'Sun', dayNumber: 8, dateStr: '2026-11-08' },
   ];
 
-  // Filter sessions for the active studio (fallback to all sessions if a studio has none yet)
-  const studioSessions = sessions.filter((s) => s.studioId === studio.id);
-  const baseSessions = studioSessions.length > 0 ? studioSessions : sessions;
+  // Filter sessions for the active studio (hide PRIVATE / invite-only sessions from public schedule)
+  const publicSessions = sessions.filter((s) => s.visibility !== 'PRIVATE');
+  const studioSessions = publicSessions.filter((s) => s.studioId === studio.id);
+  const baseSessions = studioSessions.length > 0 ? studioSessions : publicSessions;
 
   const categories = ['All', ...Array.from(new Set(baseSessions.map((s) => s.category)))];
 
