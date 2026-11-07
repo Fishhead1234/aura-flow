@@ -43,13 +43,16 @@ import {
   KeyRound,
   HeartHandshake,
   Award,
+  MapPin,
+  Edit3,
+  Calendar,
 } from 'lucide-react';
 import { ClassCategory, CURRENCY_CONFIGS, ClassPack, ClassSession, AdminTabType } from '../types/aura';
 import { AuraLogoBadge } from './AuraLeafLogo';
 import { useSubscription } from '../hooks/useSubscription';
 import { ClassFormModal } from './ClassFormModal';
 import { ClassDetailModal, buildVipInviteText } from './ClassDetailModal';
-import { AdminClassDetailModal } from './AdminClassDetailModal';
+import { AdminClassDetailModal, AdminClassModalMode } from './AdminClassDetailModal';
 import { CoachStudioFeed } from './CoachStudioFeed';
 import { QRShareModal, QRSharePayload } from './QRShareModal';
 import {
@@ -80,6 +83,7 @@ export const AdminPortal: React.FC = () => {
     tickWaterfallTimer,
     updateStudioPolicies,
     updateStudioSettings,
+    updateStudioLogo,
     addSession,
     deleteSession,
     addClassPack,
@@ -102,6 +106,8 @@ export const AdminPortal: React.FC = () => {
     lastCloudSyncAt,
     syncFromCloud,
   } = useAuraStore();
+
+  const isZh = locale === 'zh-TW' || locale === 'zh-CN';
 
   const [cancelCutoff, setCancelCutoff] = useState(studio.cancelWindowHrs);
   const [waitlistMins, setWaitlistMins] = useState(studio.waitlistMins);
@@ -128,7 +134,7 @@ export const AdminPortal: React.FC = () => {
   const [broadcastingSession, setBroadcastingSession] = useState<ClassSession | null>(null);
   const [selectedVipSession, setSelectedVipSession] = useState<ClassSession | null>(null);
   const [selectedVacancySession, setSelectedVacancySession] = useState<ClassSession | null>(null);
-  const [adminClassModalMode, setAdminClassModalMode] = useState<'VACANCY' | 'ROSTER_OVERRIDE'>('VACANCY');
+  const [adminClassModalMode, setAdminClassModalMode] = useState<AdminClassModalMode>('EDIT');
   const [qrSharePayload, setQrSharePayload] = useState<QRSharePayload | null>(null);
   const [copiedVipSessionId, setCopiedVipSessionId] = useState<string | null>(null);
   const [broadcastText, setBroadcastText] = useState('');
@@ -259,6 +265,17 @@ export const AdminPortal: React.FC = () => {
     });
     setPoliciesSavedToast(true);
     setTimeout(() => setPoliciesSavedToast(false), 3000);
+  };
+
+  const handleStudioLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        updateStudioLogo(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handlePublishOrShareStudioLink = (reason: 'PUBLISH_SCHEDULE' | 'SHARE_LINK') => {
@@ -729,68 +746,126 @@ export const AdminPortal: React.FC = () => {
 
             {/* Grid of Sessions with Roster Broadcast & VIP Invitation Generator */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {sessions.map((session) => {
-                const fillRatio = Math.min(100, Math.round((session.bookedCount / session.capacity) * 100));
-                const isFull = session.bookedCount >= session.capacity;
-                const isPrivate = session.visibility === 'PRIVATE';
-                const isZh = locale === 'zh-TW' || locale === 'zh-CN';
-                const invitedList = session.invitedStudents || [];
-                const isVipBooked =
-                  session.bookedCount > 0 ||
-                  (invitedList.length > 0 && invitedList.every((s) => s.status === 'BOOKED'));
-                const originUrl =
-                  typeof window !== 'undefined'
-                    ? window.location.origin
-                    : 'https://auraflow-bay.vercel.app';
-                const { url: vipLinkUrl, message: vipShareMessage } = buildVipInviteText(
-                  session,
-                  studio.name,
-                  originUrl,
-                  isZh
-                );
+              {(() => {
+                const studioSessions = sessions.filter((s) => s.studioId === studio.id);
+                if (studioSessions.length === 0) {
+                  return (
+                    <div className="col-span-full py-12 px-6 rounded-3xl bg-[#221E1A] border border-[#3A332B] text-center">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-[#C5A059] flex items-center justify-center mx-auto mb-3">
+                        <Calendar className="w-6 h-6" />
+                      </div>
+                      <h3 className="font-serif text-base font-semibold text-[#E0D8CE] mb-1">
+                        {isZh ? '目前尚無排定的課程' : 'No Classes Scheduled Yet'}
+                      </h3>
+                      <p className="text-xs text-[#8C8274] max-w-sm mx-auto mb-4">
+                        {isZh
+                          ? '您可以在此建立公開課表或專屬 1對1 私教課程，開始接受學員預約！'
+                          : 'Create your first public class or 1-on-1 private session to start accepting bookings.'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleOpenNewClassModal}
+                        className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-md"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>{isZh ? '＋ 建立第一堂課' : '＋ Create First Class'}</span>
+                      </button>
+                    </div>
+                  );
+                }
 
-                return (
-                  <div
-                    key={session.id}
-                    className={`rounded-2xl p-5 border transition-all relative overflow-hidden group shadow-md flex flex-col justify-between ${
-                      isPrivate
-                        ? 'bg-linear-to-b from-[#2A2219] to-[#1D1813] border-[#C5A059]/70 hover:border-[#E2C178]'
-                        : 'bg-[#221E1A] border-[#3A332B] hover:border-[#574B3E]'
-                    }`}
-                  >
-                    <div>
-                      {/* Private VIP Badge Row */}
-                      {isPrivate && (
-                        <div className="flex items-center justify-between gap-2 mb-2.5">
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-[#C5A059] text-amber-300 text-[11px] font-bold tracking-wide shadow-2xs">
-                            <span>[ 👑 {isZh ? '專屬受邀制' : 'Private / Invite-Only'} ]</span>
-                          </span>
-                          {session.pinCode && (
+                return studioSessions.map((session) => {
+                  const fillRatio = Math.min(100, Math.round((session.bookedCount / session.capacity) * 100));
+                  const isFull = session.bookedCount >= session.capacity;
+                  const isPrivate = session.visibility === 'PRIVATE';
+                  const isZh = locale === 'zh-TW' || locale === 'zh-CN';
+                  const invitedList = session.invitedStudents || [];
+                  const isVipBooked =
+                    session.bookedCount > 0 ||
+                    (invitedList.length > 0 && invitedList.every((s) => s.status === 'BOOKED'));
+                  const originUrl =
+                    typeof window !== 'undefined'
+                      ? window.location.origin
+                      : 'https://auraflow-bay.vercel.app';
+                  const { url: vipLinkUrl, message: vipShareMessage } = buildVipInviteText(
+                    session,
+                    studio.name,
+                    originUrl,
+                    isZh
+                  );
+
+                  return (
+                    <div
+                      key={session.id}
+                      className={`rounded-2xl p-5 border transition-all relative overflow-hidden group shadow-md flex flex-col justify-between ${
+                        isPrivate
+                          ? 'bg-linear-to-b from-[#2A2219] to-[#1D1813] border-[#C5A059]/70 hover:border-[#E2C178]'
+                          : 'bg-[#221E1A] border-[#3A332B] hover:border-[#574B3E]'
+                      }`}
+                    >
+                      <div>
+                        {/* Status Badges & VIP Badge Row */}
+                        <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                          {isPrivate && (
+                            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-[#C5A059] text-amber-300 text-[11px] font-bold tracking-wide shadow-2xs">
+                              <span>[ 👑 {isZh ? '專屬受邀制' : 'Private / Invite-Only'} ]</span>
+                            </span>
+                          )}
+                          {session.status === 'CANCELLED' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-950/90 border border-red-700/80 text-red-300 text-[10px] font-bold">
+                              {isZh ? '🚫 課程已取消' : 'Cancelled'}
+                            </span>
+                          )}
+                          {session.status === 'RESCHEDULED' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-950/90 border border-amber-600/80 text-amber-300 text-[10px] font-bold">
+                              {isZh ? '⏰ 課程已改期' : 'Rescheduled'}
+                            </span>
+                          )}
+                          {session.pinCode && isPrivate && (
                             <span className="inline-flex items-center space-x-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#161310] text-[#EAD8B1] border border-[#3E3328]">
                               <KeyRound className="w-3 h-3 text-[#C5A059]" />
                               <span>PIN: {session.pinCode}</span>
                             </span>
                           )}
                         </div>
-                      )}
 
-                      <div className="flex items-start justify-between mb-1">
-                        <div>
-                          <h4 className="font-serif text-base font-medium text-[#F5F2EB] group-hover:text-[#EAD8B1] transition-colors">
-                            {session.title}
-                          </h4>
-                          <p className="text-xs text-[#8C8274] mt-0.5 font-mono">
-                            {session.startTime.substring(11, 16)} - {session.endTime.substring(11, 16)} • {studio.name}
-                          </p>
+                        <div className="flex items-start justify-between mb-1">
+                          <div>
+                            <h4
+                              onClick={() => {
+                                setAdminClassModalMode('EDIT');
+                                setSelectedVacancySession(session);
+                              }}
+                              className="font-serif text-base font-medium text-[#F5F2EB] group-hover:text-[#EAD8B1] transition-colors cursor-pointer"
+                            >
+                              {session.title}
+                            </h4>
+                            <p className="text-xs text-[#8C8274] mt-0.5 font-mono">
+                              {session.startTime.substring(11, 16)} - {session.endTime.substring(11, 16)} • {studio.name}
+                            </p>
+                          </div>
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#2E2822] text-[#C5A059] border border-[#423930] shrink-0">
+                            {session.category}
+                          </span>
                         </div>
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#2E2822] text-[#C5A059] border border-[#423930] shrink-0">
-                          {session.category}
-                        </span>
-                      </div>
 
-                      <div className="text-xs text-[#A89F91] mb-3">
-                        Coach: <span className="text-[#E0D8CE] font-medium">{session.instructor}</span>
-                      </div>
+                        {/* Location & Address Tag */}
+                        <div className="text-[11px] text-[#A89F91] flex items-center space-x-1 mt-1 mb-2">
+                          <MapPin className="w-3 h-3 text-[#C5A059] shrink-0" />
+                          <span className="truncate">
+                            {session.locationType === 'CUSTOM'
+                              ? `📍 ${session.address || session.roomName}`
+                              : session.locationType === 'CLIENT_HOME'
+                              ? isZh ? '🏡 到府指導 (Client Home)' : '🏡 Client Home'
+                              : session.locationType === 'OUTDOOR'
+                              ? isZh ? '🌳 戶外/其他 (Outdoor)' : '🌳 Outdoor'
+                              : `🏢 ${session.roomName}`}
+                          </span>
+                        </div>
+
+                        <div className="text-xs text-[#A89F91] mb-3">
+                          Coach: <span className="text-[#E0D8CE] font-medium">{session.instructor}</span>
+                        </div>
 
                       {/* Private Session Invited Student Roster Status Pill */}
                       {isPrivate && (
@@ -988,10 +1063,24 @@ export const AdminPortal: React.FC = () => {
                           </div>
                         </div>
                       )}
+
+                      {/* Edit / Reschedule / Cancel Primary Action Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAdminClassModalMode('EDIT');
+                          setSelectedVacancySession(session);
+                        }}
+                        className="w-full mt-2 py-1.5 px-3 rounded-xl bg-[#28221B] hover:bg-[#382F24] border border-[#C5A059]/40 text-[#EAD8B1] text-[11px] font-semibold flex items-center justify-center space-x-1.5 transition-all"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-[#C5A059]" />
+                        <span>{isZh ? '⚙️ 編輯課程 / 改期 / 取消' : '⚙️ Edit / Reschedule / Cancel'}</span>
+                      </button>
                     </div>
                   </div>
                 );
-              })}
+              });
+            })()}
             </div>
           </div>
         )}
@@ -1909,6 +1998,32 @@ export const AdminPortal: React.FC = () => {
               </p>
 
               <form onSubmit={handleSavePolicies} className="space-y-6">
+                {/* Custom Studio Logo Upload */}
+                <div className="p-4 rounded-2xl bg-[#181614] border border-[#3A332B] flex items-center space-x-4">
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden bg-[#241F1A] border border-[#44382B] flex items-center justify-center shrink-0">
+                    {studio.logoUrl ? (
+                      <img src={studio.logoUrl} alt="Studio Logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <AuraLogoBadge size="md" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <label className="block text-xs font-semibold text-[#E0D8CE] mb-1">
+                      {isZh ? '工作室品牌 Logo / 個人教練頭像' : 'Studio Logo / Coach Avatar'}
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleStudioLogoUpload}
+                      className="text-[11px] text-[#A89F91] file:mr-2.5 file:py-1 file:px-2.5 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#C5A059] file:text-[#161412] hover:file:bg-[#D4AF37] cursor-pointer"
+                    />
+                    <p className="text-[10px] text-[#8C8274] mt-1">
+                      {isZh
+                        ? '上傳後將即時套用於學員預約頁頂部、課表標章與公開主頁'
+                        : 'Replaces default mark across your public booking page and header'}
+                    </p>
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-[#E0D8CE] mb-1">
                     {tAdmin('cancellationCutoff')}: <span className="text-[#C5A059] font-mono">{cancelCutoff} {tAdmin('hours')}</span>

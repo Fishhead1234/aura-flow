@@ -27,6 +27,10 @@ import {
   BodyJournalEntry,
   RetentionCareConfig,
   VacancyAlertLog,
+  ClassVisibility,
+  PrivateCapacityPreset,
+  InvitedStudentEntry,
+  LocationType,
 } from '../types/aura';
 import { DEFAULT_RETENTION_CARE_CONFIG } from '../services/retentionService';
 
@@ -734,6 +738,11 @@ interface AuraState {
   simulateStripePayment: boolean;
   setSimulateStripePayment: (simulate: boolean) => void;
   resetDatabaseToSeedState: () => void;
+  isDevSandboxVisible: boolean;
+  setDevSandboxVisible: (visible: boolean) => void;
+  isDevPinModalOpen: boolean;
+  setDevPinModalOpen: (open: boolean) => void;
+  resetAsNewCoach: () => void;
 
   // Locale & Settings
   locale: SupportedLocale;
@@ -875,7 +884,16 @@ interface AuraState {
   tickWaterfallTimer: () => void;
 
   updateStudioPolicies: (cancelWindowHrs: number, waitlistMins: number) => void;
+  updateStudioLogo: (logoUrl: string) => void;
   addSession: (session: Omit<ClassSession, 'id' | 'studioId' | 'bookedCount'>) => void;
+  editSession: (sessionId: string, updates: Partial<ClassSession>) => void;
+  rescheduleSession: (
+    sessionId: string,
+    newStartTime: string,
+    newEndTime: string,
+    notifyStudents?: boolean
+  ) => void;
+  cancelSession: (sessionId: string, reason?: string) => void;
   updateSessionCapacity: (sessionId: string, newCapacity: number) => void;
   updateSessionNotes: (
     sessionId: string,
@@ -892,6 +910,8 @@ interface AuraState {
   createStudioWithOnboarding: (data: {
     name: string;
     slug: string;
+    tagline?: string;
+    logoUrl?: string;
     currency: SupportedCurrency;
     cancelWindowHrs: number;
     waitlistMins: number;
@@ -902,6 +922,14 @@ interface AuraState {
       capacity: number;
       price: number;
       roomName: string;
+      visibility?: ClassVisibility;
+      privatePreset?: PrivateCapacityPreset;
+      pinCode?: string;
+      invitedStudents?: InvitedStudentEntry[];
+      locationType?: LocationType;
+      address?: string;
+      preClassNote?: string;
+      postClassHomework?: string;
     };
   }) => void;
 }
@@ -912,6 +940,8 @@ export const useAuraStore = create<AuraState>()(
   currentRoute: parseInitialRoute(),
   activePersona: 'maya_student',
   simulateStripePayment: true, // Default to auto-approving test transactions
+  isDevSandboxVisible: false,
+  isDevPinModalOpen: false,
 
   locale: (typeof window !== 'undefined' && (localStorage.getItem('aura_locale') as SupportedLocale)) || 'en',
   currency: (typeof window !== 'undefined' && (localStorage.getItem('aura_currency') as SupportedCurrency)) || 'USD',
@@ -1078,21 +1108,84 @@ export const useAuraStore = create<AuraState>()(
       });
       get().navigateTo({ path: 'explore' });
     } else if (persona === 'new_owner') {
-      set({
+      const freshStudio: Studio = {
+        id: 'studio-new-owner-fresh',
+        ownerId: PERSONA_NEW_OWNER.id,
+        slug: 'my-studio',
+        name: 'My Movement Studio',
+        coachName: 'New Coach',
+        tagline: 'Mindful Movement & Wellness Sanctuary',
+        currency: 'TWD',
+        stripeAccountId: `acct_new_${Date.now()}`,
+        stripeAccountName: 'New Coach Payouts',
+        cancelWindowHrs: 12,
+        waitlistMins: 30,
+        roomsCount: 1,
+        monthlySubscriptionPrice: 29.0,
+        platformTakeRate: 0.0,
+        logoMark: '✨',
+        createdAt: new Date().toISOString(),
+        isPro: false,
+        isLive: false,
+        communication: DEFAULT_COMMUNICATION,
+        paymentMethods: DEFAULT_PAYMENTS,
+      };
+      set((state) => ({
         activePersona: 'new_owner',
         currentUser: PERSONA_NEW_OWNER,
-        studio: {
-          ...INITIAL_STUDIOS[0],
-          isPro: false,
-          isLive: false,
-        },
+        studio: freshStudio,
+        studios: [freshStudio, ...state.studios.filter((s) => s.id !== freshStudio.id)],
+        sessions: state.sessions.filter((s) => s.studioId !== freshStudio.id),
+        bookings: state.bookings.filter((b) => b.studioId !== freshStudio.id),
+        waitlist: state.waitlist.filter((w) => w.studioId !== freshStudio.id),
+        conversations: state.conversations.filter((c) => c.studioId !== freshStudio.id),
         isWelcomeModalOpen: false,
-      });
+      }));
       get().navigateTo({ path: 'onboarding' });
     }
   },
 
+  resetAsNewCoach: () => {
+    const freshStudio: Studio = {
+      id: 'studio-new-coach-clean',
+      ownerId: PERSONA_NEW_OWNER.id,
+      slug: 'fresh-studio',
+      name: 'New Coach Studio',
+      coachName: 'New Coach',
+      tagline: 'Boutique Movement & Personal Training',
+      currency: 'TWD',
+      stripeAccountId: `acct_fresh_${Date.now()}`,
+      stripeAccountName: 'New Coach Direct Payouts',
+      cancelWindowHrs: 12,
+      waitlistMins: 30,
+      roomsCount: 1,
+      monthlySubscriptionPrice: 29.0,
+      platformTakeRate: 0.0,
+      logoMark: '✨',
+      createdAt: new Date().toISOString(),
+      isPro: true,
+      isLive: true,
+      communication: DEFAULT_COMMUNICATION,
+      paymentMethods: DEFAULT_PAYMENTS,
+    };
+    set((state) => ({
+      activePersona: 'new_owner',
+      currentUser: PERSONA_NEW_OWNER,
+      studio: freshStudio,
+      studios: [freshStudio, ...state.studios.filter((s) => s.id !== freshStudio.id)],
+      sessions: state.sessions.filter((s) => s.studioId !== freshStudio.id),
+      bookings: state.bookings.filter((b) => b.studioId !== freshStudio.id),
+      waitlist: state.waitlist.filter((w) => w.studioId !== freshStudio.id),
+      conversations: state.conversations.filter((c) => c.studioId !== freshStudio.id),
+      isWelcomeModalOpen: false,
+    }));
+    get().navigateTo({ path: 'admin' });
+    get().syncToCloud();
+  },
+
   setSimulateStripePayment: (simulateStripePayment) => set({ simulateStripePayment }),
+  setDevSandboxVisible: (visible) => set({ isDevSandboxVisible: visible }),
+  setDevPinModalOpen: (open) => set({ isDevPinModalOpen: open }),
 
   resetDatabaseToSeedState: () => {
     set({
@@ -1984,6 +2077,125 @@ export const useAuraStore = create<AuraState>()(
     get().syncToCloud();
   },
 
+  updateStudioLogo: (logoUrl: string) => {
+    set((state) => ({
+      studio: { ...state.studio, logoUrl },
+      studios: state.studios.map((s) => (s.id === state.studio.id ? { ...s, logoUrl } : s)),
+    }));
+    get().syncToCloud();
+  },
+
+  editSession: (sessionId, updates) => {
+    set((state) => ({
+      sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, ...updates } : s)),
+      selectedSessionForBooking:
+        state.selectedSessionForBooking?.id === sessionId
+          ? { ...state.selectedSessionForBooking, ...updates }
+          : state.selectedSessionForBooking,
+    }));
+    get().syncToCloud();
+  },
+
+  rescheduleSession: (sessionId, newStartTime, newEndTime, notifyStudents = true) => {
+    const { sessions, broadcastToRoster, locale } = get();
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return;
+
+    const originalStartTime = session.startTime;
+    const isZh = locale === 'zh-TW' || locale === 'zh-CN';
+
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId
+          ? {
+              ...s,
+              originalStartTime: s.originalStartTime || originalStartTime,
+              startTime: newStartTime,
+              endTime: newEndTime,
+              status: 'RESCHEDULED',
+              rescheduledAt: new Date().toISOString(),
+            }
+          : s
+      ),
+    }));
+
+    if (notifyStudents) {
+      const timeStr = `${newStartTime.substring(11, 16)} - ${newEndTime.substring(11, 16)}`;
+      const dateStr = newStartTime.substring(0, 10);
+      const msg = isZh
+        ? `【重要改期通知】您預約/收藏的課程「${session.title}」時間已調整為 ${dateStr} ${timeStr}。若時間不便，您可於截止前隨時免費取消並退回點數。`
+        : `[Important Reschedule Alert] The session "${session.title}" has been rescheduled to ${dateStr} ${timeStr}. If this does not suit your schedule, you may cancel for a full refund before the cutoff.`;
+      broadcastToRoster(sessionId, msg, ['IN_APP', 'LINE_OA']);
+    }
+
+    get().syncToCloud();
+  },
+
+  cancelSession: (sessionId, reason) => {
+    const { sessions, bookings, broadcastToRoster, locale, userPass } = get();
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return;
+
+    const isZh = locale === 'zh-TW' || locale === 'zh-CN';
+    const cancelReasonText =
+      reason?.trim() || (isZh ? '教練行程異動 / 場地保養' : 'Instructor schedule adjustment');
+
+    // Refund credits to all booked students
+    let totalCreditsRefunded = 0;
+    const newLedgerEntries: CreditLedgerEntry[] = [];
+
+    const updatedBookings = bookings.map((b) => {
+      if (b.sessionId === sessionId && b.status !== 'CANCELLED') {
+        if (b.creditsDeducted > 0) {
+          totalCreditsRefunded += b.creditsDeducted;
+          newLedgerEntries.push({
+            id: `led-refund-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            userId: b.clientEmail || 'usr-maya-student',
+            studioId: session.studioId,
+            passId: userPass.id,
+            type: 'CANCELLATION_REFUND',
+            delta: b.creditsDeducted,
+            balanceAfter: userPass.creditsLeft + totalCreditsRefunded,
+            referenceId: session.id,
+            note: `Refund for cancelled session: ${session.title}`,
+            createdAt: new Date().toISOString(),
+          });
+        }
+        return { ...b, status: 'CANCELLED' as const };
+      }
+      return b;
+    });
+
+    const updatedPass =
+      totalCreditsRefunded > 0
+        ? { ...userPass, creditsLeft: userPass.creditsLeft + totalCreditsRefunded }
+        : userPass;
+
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === sessionId
+          ? {
+              ...s,
+              status: 'CANCELLED',
+              cancellationReason: cancelReasonText,
+              cancelledAt: new Date().toISOString(),
+            }
+          : s
+      ),
+      bookings: updatedBookings,
+      userPass: updatedPass,
+      creditLedger: [...newLedgerEntries, ...state.creditLedger],
+    }));
+
+    // Alert attendees
+    const alertMsg = isZh
+      ? `【課程取消通知】非常抱歉通知您，原定於 ${session.startTime.substring(0, 10)} 的「${session.title}」因「${cancelReasonText}」已取消。系統已自動將您的課包堂數/點數全額退回至您的帳戶！`
+      : `[Class Cancellation Alert] We regret to inform you that "${session.title}" on ${session.startTime.substring(0, 10)} was cancelled due to "${cancelReasonText}". Your class pass/credits have been automatically refunded in full!`;
+    broadcastToRoster(sessionId, alertMsg, ['IN_APP', 'LINE_OA']);
+
+    get().syncToCloud();
+  },
+
   updateSessionCapacity: (sessionId, newCapacity) => {
     set((state) => ({
       sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, capacity: newCapacity } : s)),
@@ -2104,7 +2316,8 @@ export const useAuraStore = create<AuraState>()(
       ownerId: get().currentUser.id,
       slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
       name: data.name,
-      tagline: 'Boutique Movement & Reformer Studio',
+      coachName: data.firstClass.instructor,
+      tagline: data.tagline || 'Boutique Movement & Reformer Studio',
       currency: data.currency,
       stripeAccountId: `acct_${Date.now()}`,
       stripeAccountName: `${data.name} Payouts`,
@@ -2114,6 +2327,7 @@ export const useAuraStore = create<AuraState>()(
       monthlySubscriptionPrice: 29.0,
       platformTakeRate: 0.0,
       logoMark: '✨',
+      logoUrl: data.logoUrl,
       createdAt: new Date().toISOString(),
       announcementBanner: '🎉 教室最新公告：新學員首堂體驗現折 NT$ 200 • 歡迎線上預約！',
       discoverable: true,
@@ -2124,13 +2338,20 @@ export const useAuraStore = create<AuraState>()(
       paymentMethods: DEFAULT_PAYMENTS,
     };
 
+    const isPrivate = data.firstClass.visibility === 'PRIVATE';
+    const generatedToken = isPrivate
+      ? `vip-${Math.random().toString(36).substring(2, 7)}-${Date.now().toString(36).slice(-4)}`
+      : undefined;
+
     const firstClassSession: ClassSession = {
       id: `sess-${Date.now()}`,
       studioId: newStudioId,
       title: data.firstClass.title,
       category: data.firstClass.category,
       instructor: data.firstClass.instructor,
-      instructorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+      instructorAvatar:
+        data.logoUrl ||
+        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
       startTime: '2026-11-03T09:00:00.000Z',
       endTime: '2026-11-03T09:50:00.000Z',
       durationMins: 50,
@@ -2139,6 +2360,16 @@ export const useAuraStore = create<AuraState>()(
       price: data.firstClass.price,
       roomName: data.firstClass.roomName || 'Studio Room 1',
       level: 'All Levels',
+      visibility: data.firstClass.visibility || 'PUBLIC',
+      privatePreset: data.firstClass.privatePreset,
+      pinCode: data.firstClass.pinCode,
+      inviteToken: generatedToken,
+      invitedStudents: data.firstClass.invitedStudents,
+      locationType: data.firstClass.locationType || 'STUDIO',
+      address: data.firstClass.address,
+      preClassNote: data.firstClass.preClassNote,
+      postClassHomework: data.firstClass.postClassHomework,
+      status: 'ACTIVE',
     };
 
     set((state) => ({

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { getTranslation } from '../i18n/auraI18n';
 import { SupportedLocale, SupportedCurrency, CURRENCY_CONFIGS } from '../types/aura';
@@ -31,7 +31,26 @@ export const Navbar: React.FC = () => {
     userPass,
     isMobileDrawerOpen,
     setMobileDrawerOpen,
+    setDevPinModalOpen,
   } = useAuraStore();
+
+  const tapTimesRef = useRef<number[]>([]);
+
+  const handleLogoTap = () => {
+    const now = Date.now();
+    tapTimesRef.current = [...tapTimesRef.current.filter((t) => now - t < 4000), now];
+    if (tapTimesRef.current.length >= 9) {
+      tapTimesRef.current = [];
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate([40, 40, 40]);
+        } catch (_) {}
+      }
+      setDevPinModalOpen(true);
+      return;
+    }
+    navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' });
+  };
 
   const { canInstall, isPromptAvailable, isInstalled, triggerInstall } = usePwaInstall();
 
@@ -74,10 +93,10 @@ export const Navbar: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           {/* Brand & Studio Logo (Clean on both mobile & desktop) */}
           <div
-            className="flex items-center space-x-2.5 cursor-pointer shrink-0"
-            onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
+            className="flex items-center space-x-2.5 cursor-pointer shrink-0 select-none"
+            onClick={handleLogoTap}
           >
-            <AuraLeafBadge size="md" />
+            <AuraLeafBadge size="md" customLogo={studio.logoUrl} />
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-serif text-lg sm:text-xl font-semibold tracking-wide text-aura-charcoal">

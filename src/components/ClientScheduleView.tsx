@@ -79,7 +79,7 @@ export const ClientScheduleView: React.FC = () => {
           </button>
 
           <div className="flex flex-col items-center">
-            <AuraLeafBadge size="sm" className="mb-1" />
+            <AuraLeafBadge size="sm" className="mb-1" customLogo={studio.logoUrl} />
             <h1 className="font-serif text-2xl font-normal tracking-wide text-aura-charcoal">
               {studio.name}
             </h1>
@@ -250,8 +250,16 @@ export const ClientScheduleView: React.FC = () => {
                   </div>
 
                   {/* Status Badge */}
-                  <div>
-                    {isFull ? (
+                  <div className="flex flex-col items-end gap-1">
+                    {session.status === 'CANCELLED' ? (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">
+                        {locale === 'zh-TW' ? '已取消' : 'Cancelled'}
+                      </span>
+                    ) : session.status === 'RESCHEDULED' ? (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                        {locale === 'zh-TW' ? '已改期' : 'Rescheduled'}
+                      </span>
+                    ) : isFull ? (
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-medium bg-[#383533] text-white">
                         {tCommon('classFull')}
                       </span>
@@ -267,13 +275,21 @@ export const ClientScheduleView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Tags & Room info */}
-                <div className="flex items-center space-x-2 text-xs text-stone-600 mb-4">
+                {/* Tags & Location info */}
+                <div className="flex flex-wrap items-center gap-1.5 text-xs text-stone-600 mb-4">
                   <span className="px-2.5 py-0.5 rounded-full bg-stone-100 font-medium">
                     {session.category}
                   </span>
                   <span>•</span>
-                  <span>{session.roomName}</span>
+                  <span>
+                    {session.locationType === 'CUSTOM'
+                      ? `📍 ${session.address || session.roomName}`
+                      : session.locationType === 'CLIENT_HOME'
+                      ? locale === 'zh-TW' ? '🏡 到府指導' : '🏡 Client Home'
+                      : session.locationType === 'OUTDOOR'
+                      ? locale === 'zh-TW' ? '🌳 戶外/其他' : '🌳 Outdoor'
+                      : `🏢 ${session.roomName}`}
+                  </span>
                   <span>•</span>
                   <span className="font-semibold text-stone-800">
                     {formatCurrency(session.price, currency, locale)}

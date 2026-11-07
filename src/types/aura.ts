@@ -150,6 +150,7 @@ export interface Studio {
   paymentMethods?: StudioPaymentConfig;
   weeklyTip?: CoachWeeklyTip;
   retentionCare?: RetentionCareConfig;
+  logoUrl?: string;
 }
 
 export type ClassCategory = 
@@ -163,6 +164,10 @@ export type ClassCategory =
   | (string & {});
 
 export type ClassVisibility = 'PUBLIC' | 'PRIVATE';
+
+export type LocationType = 'STUDIO' | 'CUSTOM' | 'CLIENT_HOME' | 'OUTDOOR';
+
+export type SessionStatus = 'ACTIVE' | 'RESCHEDULED' | 'CANCELLED';
 
 export type PrivateCapacityPreset = '1_ON_1' | '1_ON_2' | 'SMALL_GROUP';
 
@@ -191,6 +196,13 @@ export interface ClassSession {
   price: number; // Drop-in pricing in baseline currency
   roomName: string;
   level: 'All Levels' | 'Beginner' | 'Intermediate' | 'Advanced';
+  locationType?: LocationType;
+  address?: string;
+  status?: SessionStatus;
+  cancellationReason?: string;
+  rescheduledAt?: string;
+  cancelledAt?: string;
+  originalStartTime?: string;
   // Private / Invite-Only Session Fields
   visibility?: ClassVisibility;
   privatePreset?: PrivateCapacityPreset;

@@ -22,6 +22,8 @@ export const DevSandboxToolbar: React.FC = () => {
     setSimulateStripePayment,
     resetDatabaseToSeedState,
     resetToCleanGuestState,
+    resetAsNewCoach,
+    setDevSandboxVisible,
     currentRoute,
     currentUser,
   } = useAuraStore();
@@ -107,23 +109,34 @@ export const DevSandboxToolbar: React.FC = () => {
     <div className="fixed bottom-3 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
       {!isExpanded ? (
         /* Collapsed Floating Pill */
-        <button
-          onClick={() => setIsExpanded(true)}
-          className="pointer-events-auto flex items-center space-x-2.5 px-4 py-2.5 rounded-full bg-[#181614]/95 text-amber-300 border border-amber-500/40 shadow-xl backdrop-blur-md hover:bg-black transition-all hover:scale-105 active:scale-95 text-xs font-medium"
-        >
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-          </span>
-          <Wrench className="w-3.5 h-3.5 text-amber-400" />
-          <span className="font-semibold text-white">
-            {isZh ? '開發測試沙盒 (Dev Sandbox)' : 'Dev Sandbox Mode'}
-          </span>
-          <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-[#2A241E] text-[#E0D8CE] border border-[#3E342A] text-[10px]">
-            {currentPersonaConfig.label.split(' (')[0]}
-          </span>
-          <ChevronUp className="w-3.5 h-3.5 text-amber-400" />
-        </button>
+        <div className="pointer-events-auto flex items-center space-x-1.5">
+          <button
+            onClick={() => setIsExpanded(true)}
+            className="flex items-center space-x-2.5 px-4 py-2.5 rounded-full bg-[#181614]/95 text-amber-300 border border-amber-500/40 shadow-xl backdrop-blur-md hover:bg-black transition-all hover:scale-105 active:scale-95 text-xs font-medium"
+          >
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+            </span>
+            <Wrench className="w-3.5 h-3.5 text-amber-400" />
+            <span className="font-semibold text-white">
+              {isZh ? '開發測試沙盒 (Dev Sandbox)' : 'Dev Sandbox Mode'}
+            </span>
+            <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-[#2A241E] text-[#E0D8CE] border border-[#3E342A] text-[10px]">
+              {currentPersonaConfig.label.split(' (')[0]}
+            </span>
+            <ChevronUp className="w-3.5 h-3.5 text-amber-400" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDevSandboxVisible(false)}
+            title={isZh ? '隱藏並鎖定開發者工具' : 'Lock & Hide Dev Tools'}
+            className="px-3 py-2.5 rounded-full bg-[#181614]/95 hover:bg-red-950 text-stone-400 hover:text-red-300 border border-stone-700/60 shadow-xl backdrop-blur-md text-xs font-medium transition-all"
+          >
+            {isZh ? '✕ 隱藏' : '✕ Hide'}
+          </button>
+        </div>
       ) : (
         /* Expanded Floating Sandbox Card */
         <div className="pointer-events-auto bg-[#1C1815] text-[#F5F2EB] border border-[#3E372F] shadow-2xl rounded-3xl p-5 max-w-xl w-full backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-200">
@@ -145,26 +158,54 @@ export const DevSandboxToolbar: React.FC = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => setIsExpanded(false)}
-              className="px-2.5 py-1 rounded-full bg-[#2A241E] hover:bg-[#383028] text-xs text-[#A89F91] transition-colors"
-            >
-              {isZh ? '收合 ▾' : 'Minimize ▾'}
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDevSandboxVisible(false);
+                  setIsExpanded(false);
+                }}
+                className="px-2.5 py-1 rounded-full bg-red-950/70 hover:bg-red-900 border border-red-700/60 text-xs text-red-200 transition-colors"
+              >
+                {isZh ? '✕ 隱藏開發工具 (Lock & Hide)' : '✕ Lock & Hide'}
+              </button>
+              <button
+                onClick={() => setIsExpanded(false)}
+                className="px-2.5 py-1 rounded-full bg-[#2A241E] hover:bg-[#383028] text-xs text-[#A89F91] transition-colors"
+              >
+                {isZh ? '收合 ▾' : 'Minimize ▾'}
+              </button>
+            </div>
           </div>
 
-          {/* 1. Primary Reset Action: Red Clean State Button */}
-          <div className="mb-4">
+          {/* 1. Primary Reset Actions: Clean Guest & Reset as New Coach */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
             <button
               type="button"
               onClick={handleCleanReset}
-              className="w-full py-2.5 px-4 rounded-2xl bg-red-950/90 hover:bg-red-900 text-red-200 border border-red-700/80 text-xs font-semibold flex items-center justify-center space-x-2 shadow-md transition-all active:scale-[0.99]"
+              className="py-2.5 px-3 rounded-2xl bg-red-950/90 hover:bg-red-900 text-red-200 border border-red-700/80 text-xs font-semibold flex items-center justify-center space-x-2 shadow-md transition-all active:scale-[0.99]"
             >
               <RefreshCw className="w-3.5 h-3.5 text-red-300" />
               <span>
                 {isZh
-                  ? '🔄 重設為全新訪客 (Reset to Clean State)'
-                  : '🔄 Reset to Clean State (重設為全新訪客)'}
+                  ? '🔄 重設為全新訪客 (Clean State)'
+                  : '🔄 Reset to Clean State'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                resetAsNewCoach();
+                setIsExpanded(false);
+              }}
+              className="py-2.5 px-3 rounded-2xl bg-amber-950/80 hover:bg-amber-900 text-amber-200 border border-amber-600/70 text-xs font-semibold flex items-center justify-center space-x-2 shadow-md transition-all active:scale-[0.99]"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span>
+                {isZh
+                  ? '🔄 重設為全新教練 (Clean Coach)'
+                  : '🔄 Reset as New Coach'}
               </span>
             </button>
           </div>

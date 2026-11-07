@@ -291,7 +291,13 @@ export const VIPBookingPage: React.FC<VIPBookingPageProps> = ({ inviteToken }) =
                 <div className="flex items-center space-x-2 text-[#A89F91]">
                   <MapPin className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
                   <span className="truncate">
-                    {targetStudio.city || targetStudio.name} • {session.roomName}
+                    {session.locationType === 'CUSTOM'
+                      ? `📍 ${session.address || session.roomName}`
+                      : session.locationType === 'CLIENT_HOME'
+                      ? isZh ? '🏡 到府指導 (Client Home)' : '🏡 Client Home'
+                      : session.locationType === 'OUTDOOR'
+                      ? isZh ? '🌳 戶外/其他' : '🌳 Outdoor'
+                      : `${targetStudio.city || targetStudio.name} • ${session.roomName}`}
                   </span>
                 </div>
               </div>

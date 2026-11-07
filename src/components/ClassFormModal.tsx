@@ -6,6 +6,7 @@ import {
   ClassVisibility,
   PrivateCapacityPreset,
   InvitedStudentEntry,
+  LocationType,
   CURRENCY_CONFIGS,
 } from '../types/aura';
 import { Globe, Lock, Users, KeyRound, UserPlus, Check, ChevronDown, ClipboardList } from 'lucide-react';
@@ -118,6 +119,8 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose 
     studio.coachName || (studio.name ? `${studio.name.split(' ')[0]} Coach` : 'Elena Rostova')
   );
   const [roomName, setRoomName] = useState('Reformer Studio A');
+  const [locationType, setLocationType] = useState<LocationType>('STUDIO');
+  const [address, setAddress] = useState('');
   const [visibility, setVisibility] = useState<ClassVisibility>('PUBLIC');
   const [privatePreset, setPrivatePreset] = useState<PrivateCapacityPreset>('1_ON_1');
   const [capacity, setCapacity] = useState<number>(8);
@@ -221,6 +224,8 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose 
       capacity,
       price,
       roomName: roomName.trim(),
+      locationType,
+      address: address.trim(),
       level: 'All Levels',
       visibility,
       privatePreset: visibility === 'PRIVATE' ? privatePreset : undefined,
@@ -602,6 +607,49 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose 
                 required
                 value={roomName}
                 onChange={(e) => setRoomName(e.target.value)}
+                placeholder="e.g. Studio A"
+                className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-xs focus:outline-none focus:border-[#C5A059]"
+              />
+            </div>
+          </div>
+
+          {/* Dynamic Location Type Selector */}
+          <div>
+            <label className="block text-[#A89F91] mb-1.5 font-medium">
+              {isZh ? '場地地點類型 (Location Type)' : 'Location Type'}
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-2">
+              {[
+                { id: 'STUDIO' as LocationType, labelZh: '🏢 合作工作室', labelEn: '🏢 Studio' },
+                { id: 'CUSTOM' as LocationType, labelZh: '📍 自訂地址', labelEn: '📍 Custom' },
+                { id: 'CLIENT_HOME' as LocationType, labelZh: '🏡 到府指導', labelEn: '🏡 Home' },
+                { id: 'OUTDOOR' as LocationType, labelZh: '🌳 戶外/其他', labelEn: '🌳 Outdoor' },
+              ].map((loc) => (
+                <button
+                  key={loc.id}
+                  type="button"
+                  onClick={() => setLocationType(loc.id)}
+                  className={`py-1.5 px-2 rounded-xl border text-[11px] font-semibold text-center transition-all ${
+                    locationType === loc.id
+                      ? 'bg-[#C5A059] text-[#161412] border-[#C5A059]'
+                      : 'bg-[#181614] text-[#A89F91] border-[#3A332B] hover:text-white'
+                  }`}
+                >
+                  {isZh ? loc.labelZh : loc.labelEn}
+                </button>
+              ))}
+            </div>
+
+            <div>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder={
+                  isZh
+                    ? '詳細地址（如：台北市大安區信義路四段88號3樓）'
+                    : 'Street Address & Room (e.g. 88 Xinyi Rd Sec 4, 3F)'
+                }
                 className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-xs focus:outline-none focus:border-[#C5A059]"
               />
             </div>

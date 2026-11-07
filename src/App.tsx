@@ -13,6 +13,7 @@ import { StudentOnboardingModal } from './components/StudentOnboardingModal';
 import { PaywallModal } from './components/PaywallModal';
 import { VIPBookingPage } from './components/VIPBookingPage';
 import { QRScannerModal } from './components/QRScannerModal';
+import { DevPinModal } from './components/DevPinModal';
 
 export const App: React.FC = () => {
   const {
@@ -23,6 +24,7 @@ export const App: React.FC = () => {
     currentUser,
     setWelcomeModalOpen,
     resetToCleanGuestState,
+    isDevSandboxVisible,
   } = useAuraStore();
 
   // First-Run & Clean-State Detection (`auraflow_has_launched` and `?reset=true`)
@@ -139,8 +141,11 @@ export const App: React.FC = () => {
       {/* Waitlist Modal (Standard Queue vs VIP Pre-Authorization) */}
       <WaitlistModal />
 
-      {/* Developer Sandbox Toolbar (Floating at Bottom) */}
-      <DevSandboxToolbar />
+      {/* Dev Pin Modal for Secret 9-Tap Logo Unlock */}
+      <DevPinModal />
+
+      {/* Developer Sandbox Toolbar (Mounted only when unlocked via Dev PIN) */}
+      {isDevSandboxVisible && <DevSandboxToolbar />}
     </div>
   );
 };

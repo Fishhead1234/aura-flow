@@ -9,12 +9,13 @@ const LOGO_MARK_SRC = '/logo-mark.png';
 interface AuraLogoProps {
   className?: string;
   size?: number;
+  customLogo?: string;
 }
 
-export const AuraLogoMark: React.FC<AuraLogoProps> = ({ className = 'w-5 h-5', size }) => (
+export const AuraLogoMark: React.FC<AuraLogoProps> = ({ className = 'w-5 h-5', size, customLogo }) => (
   <img
-    src={LOGO_MARK_SRC}
-    alt="Aura Flow"
+    src={customLogo || LOGO_MARK_SRC}
+    alt="Logo"
     width={size}
     height={size}
     draggable={false}
@@ -25,7 +26,8 @@ export const AuraLogoMark: React.FC<AuraLogoProps> = ({ className = 'w-5 h-5', s
 export const AuraLogoBadge: React.FC<{
   size?: 'sm' | 'md' | 'lg';
   className?: string;
-}> = ({ size = 'md', className = '' }) => {
+  customLogo?: string;
+}> = ({ size = 'md', className = '', customLogo }) => {
   const sizeMap = {
     sm: 'w-7 h-7',
     md: 'w-9 h-9',
@@ -36,7 +38,7 @@ export const AuraLogoBadge: React.FC<{
     <div
       className={`rounded-full overflow-hidden bg-[#1F1E1C] ring-1 ring-[#C9A27A]/40 shadow-xs shrink-0 ${sizeMap[size]} ${className}`}
     >
-      <AuraLogoMark className="w-full h-full" />
+      <AuraLogoMark customLogo={customLogo} className="w-full h-full object-cover" />
     </div>
   );
 };

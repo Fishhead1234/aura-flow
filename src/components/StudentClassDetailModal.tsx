@@ -237,7 +237,13 @@ export const StudentClassDetailModal: React.FC<StudentClassDetailModalProps> = (
               <div className="text-[11px] text-stone-500 flex items-center space-x-1 mt-0.5">
                 <MapPin className="w-3 h-3 text-aura-clay" />
                 <span>
-                  {studio.name} • {session.roomName}
+                  {session.locationType === 'CUSTOM'
+                    ? `📍 ${session.address || session.roomName}`
+                    : session.locationType === 'CLIENT_HOME'
+                    ? isZh ? '🏡 到府指導 (Client Home)' : '🏡 Client Home'
+                    : session.locationType === 'OUTDOOR'
+                    ? isZh ? '🌳 戶外/其他' : '🌳 Outdoor'
+                    : `${studio.name} • ${session.roomName}`}
                 </span>
               </div>
             </div>
