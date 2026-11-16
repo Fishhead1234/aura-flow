@@ -1,13 +1,25 @@
-const CACHE_NAME = 'aura-flow-pwa-v4';
+const CACHE_NAME = 'aura-flow-pwa-v5';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/manifest.json?v=3',
   '/favicon.ico',
+  '/favicon.ico?v=3',
   '/favicon.png',
+  '/favicon.png?v=3',
   '/logo-mark.png',
   '/icon-192.png',
-  '/icon-512.png'
+  '/icon-192.png?v=3',
+  '/icon-maskable-192.png',
+  '/icon-maskable-192.png?v=3',
+  '/icon-512.png',
+  '/icon-512.png?v=3',
+  '/icon-maskable-512.png',
+  '/icon-maskable-512.png?v=3',
+  '/icon-app-512.png',
+  '/apple-touch-icon.png',
+  '/apple-touch-icon.png?v=3'
 ];
 
 self.addEventListener('install', (event) => {
