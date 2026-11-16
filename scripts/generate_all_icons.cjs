@@ -217,3 +217,4 @@ if (fs.existsSync(ANDROID_RES)) {
 // Cleanup temp
 try { fs.unlinkSync(TEMP_1024); } catch (e) {}
 console.log('All icons generated successfully!');
+

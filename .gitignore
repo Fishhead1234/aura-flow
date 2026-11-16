@@ -6,4 +6,6 @@ dist
 *.db-journal
 android/app/build
 android/.gradle
+*.apk
+*.aab
 
