@@ -15,6 +15,7 @@ import {
   Download,
   Smartphone,
   Compass,
+  Settings,
 } from 'lucide-react';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { AuraLeafBadge } from './AuraLeafLogo';
@@ -32,6 +33,7 @@ export const Navbar: React.FC = () => {
     isMobileDrawerOpen,
     setMobileDrawerOpen,
     setDevPinModalOpen,
+    setActiveAdminTab,
   } = useAuraStore();
 
   const tapTimesRef = useRef<number[]>([]);
@@ -96,18 +98,16 @@ export const Navbar: React.FC = () => {
             className="flex items-center space-x-2.5 cursor-pointer shrink-0 select-none"
             onClick={handleLogoTap}
           >
-            <AuraLeafBadge size="md" customLogo={studio.logoUrl} />
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-serif text-lg sm:text-xl font-semibold tracking-wide text-aura-charcoal">
-                  {studio.name || 'Sol Sanctuary'}
+            <AuraLeafBadge size="md" />
+            <div className="flex items-center space-x-2">
+              <span className="font-serif text-lg sm:text-xl font-semibold tracking-wide text-aura-charcoal whitespace-nowrap">
+                Aura Flow
+              </span>
+              {isAdminRoute && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300 whitespace-nowrap">
+                  Admin Portal
                 </span>
-                {isAdminRoute && (
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300">
-                    Admin Portal
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
@@ -199,8 +199,18 @@ export const Navbar: React.FC = () => {
             )}
           </div>
 
-          {/* MOBILE BAR (< 768px): Subtle Install Button + Hamburger Menu */}
+          {/* MOBILE BAR (< 768px): Settings (in Admin) + Install Button + Hamburger Menu */}
           <div className="flex md:hidden items-center space-x-2">
+            {isAdminRoute && (
+              <button
+                type="button"
+                onClick={() => setActiveAdminTab('policies')}
+                aria-label="Studio Settings"
+                className="w-10 h-10 rounded-full bg-stone-200/70 border border-stone-300/80 flex items-center justify-center text-aura-charcoal hover:bg-stone-300 transition-colors shadow-2xs"
+              >
+                <Settings className="w-5 h-5 stroke-[1.75]" />
+              </button>
+            )}
             {canInstall && (
               <button
                 onClick={triggerInstall}

@@ -255,8 +255,8 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ session, onC
             <QrCode className="w-4 h-4" />
             <span>
               {isZh
-                ? '[ 📷 產生課程 QR Code (256×256 PNG) ]'
-                : '[ 📷 Generate VIP Session QR Code ]'}
+                ? '📷 產生課程 QR Code (256×256 PNG)'
+                : '📷 Generate VIP Session QR Code'}
             </span>
           </button>
 

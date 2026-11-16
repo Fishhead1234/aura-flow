@@ -4,6 +4,7 @@
   "switchView": "切换学员预约 / 馆长后台",
   "clientView": "学员预约界面",
   "adminView": "馆长管理后台",
+  "viewPublicPage": "查看公开预约页 →",
   "currency": "币种",
   "language": "语言",
   "cancel": "取消",

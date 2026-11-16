@@ -625,36 +625,115 @@ export const OnboardingWizard: React.FC = () => {
                 required
                 value={className}
                 onChange={(e) => setClassName(e.target.value)}
-                placeholder="e.g. Morning Reformer Sculpt"
+                placeholder="e.g. Flight Class"
                 className="w-full px-4 py-2 rounded-2xl bg-stone-50 border border-stone-300 text-stone-900 focus:outline-none focus:ring-2 focus:ring-aura-clay"
               />
             </div>
 
-            {/* Manual Category Entry + Quick Pick Tags */}
-            <div>
-              <label className="block text-stone-700 font-semibold mb-1">
-                {isZh
-                  ? '課程分類 (可直接手動輸入任意分類或點選下方標籤)'
-                  : 'Category (Type any custom category or select)'}
-              </label>
+            {/* Category Quick Select & Instructor Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-stone-700 font-semibold mb-1">
+                  {isZh ? '課程分類 (Category)' : 'Category'}
+                </label>
+                <select
+                  value={
+                    [
+                      'Barre',
+                      'Reformer',
+                      'Flow',
+                      'Sound Bath',
+                      'Yin Yoga',
+                      'Mat Pilates',
+                      'Flight Class',
+                      '1-on-1 Private',
+                    ].includes(category)
+                      ? category
+                      : 'CUSTOM'
+                  }
+                  onChange={(e) => {
+                    if (e.target.value !== 'CUSTOM') {
+                      setCategory(e.target.value);
+                    }
+                  }}
+                  className="w-full px-3.5 py-2 rounded-2xl bg-stone-50 border border-stone-300 text-stone-900 focus:outline-none focus:ring-2 focus:ring-aura-clay text-xs"
+                >
+                  <option value="Barre">Barre</option>
+                  <option value="Reformer">Reformer</option>
+                  <option value="Flow">Flow Yoga</option>
+                  <option value="Sound Bath">Sound Bath</option>
+                  <option value="Yin Yoga">Yin Yoga</option>
+                  <option value="Mat Pilates">Mat Pilates</option>
+                  <option value="Flight Class">Flight Class</option>
+                  <option value="1-on-1 Private">1-on-1 Private (私教)</option>
+                  <option value="CUSTOM">{isZh ? '✍️ 手動輸入自訂分類...' : '✍️ Custom Category...'}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-stone-700 font-semibold mb-1">
+                  {isZh ? '授課師資 (Instructor)' : 'Instructor'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={instructor}
+                  onChange={(e) => setInstructor(e.target.value)}
+                  placeholder="e.g. Jordan B. / Lena S."
+                  className="w-full px-3.5 py-2 rounded-2xl bg-stone-50 border border-stone-300 text-stone-900 focus:outline-none focus:ring-2 focus:ring-aura-clay text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Dedicated Manual Category Entry Section */}
+            <div className="p-3 rounded-2xl bg-stone-100/70 border border-stone-200 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-semibold text-stone-800 flex items-center space-x-1">
+                  <span>✍️</span>
+                  <span>
+                    {isZh
+                      ? '手動輸入自訂分類 (Custom Category Type)'
+                      : 'Custom Category Type (Manual Entry)'}
+                  </span>
+                </label>
+                <span className="text-[10px] text-stone-500 font-medium">
+                  {isZh ? `當前：${category || '未設定'}` : `Active: ${category || 'None'}`}
+                </span>
+              </div>
               <input
                 type="text"
                 required
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                placeholder={isZh ? '例如：空中瑜珈、Flight、器械皮拉提、1對1私教...' : 'Type category...'}
-                className="w-full px-4 py-2 rounded-2xl bg-stone-50 border border-stone-300 text-stone-900 focus:outline-none focus:ring-2 focus:ring-aura-clay"
+                placeholder={
+                  isZh
+                    ? '請直接輸入任意分類名稱 (如：Flight Class、空中環、嬋柔、壺鈴體能...)'
+                    : 'Type any custom category (e.g. Flight Class, Aerial Silk, Kettlebell...)'
+                }
+                className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-stone-900 text-xs focus:outline-none focus:ring-2 focus:ring-aura-clay"
               />
-              <div className="mt-1.5 flex flex-wrap items-center gap-1">
-                {SUGGESTED_CATEGORIES.slice(0, 8).map((tag) => (
+              <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                <span className="text-[10px] text-stone-400 mr-0.5">
+                  {isZh ? '快捷選擇：' : 'Presets:'}
+                </span>
+                {[
+                  'Flight Class',
+                  'Barre',
+                  'Reformer',
+                  '空中瑜珈',
+                  '音療頌缽',
+                  '1對1私教',
+                  '墊上皮拉提',
+                  '重訓體能',
+                ].map((tag) => (
                   <button
                     key={tag}
                     type="button"
                     onClick={() => setCategory(tag)}
                     className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${
                       category === tag
-                        ? 'bg-aura-clay text-white font-semibold border-aura-clay'
-                        : 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200'
+                        ? 'bg-aura-clay text-white font-semibold border-aura-clay shadow-2xs'
+                        : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-200'
                     }`}
                   >
                     {tag}
@@ -716,7 +795,7 @@ export const OnboardingWizard: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-stone-700 font-semibold mb-1">
-                  {isZh ? '人數上限 (Capacity Cap)' : 'Capacity Cap'}
+                  {isZh ? '人數上限 (無上限限制)' : 'Capacity Cap (Hard Limit)'}
                 </label>
                 <input
                   type="number"
@@ -732,7 +811,7 @@ export const OnboardingWizard: React.FC = () => {
 
               <div>
                 <label className="block text-stone-700 font-semibold mb-1">
-                  {isZh ? `體驗單價 (${currency} - 無限制)` : `Price (${currency})`}
+                  {isZh ? `體驗單價 (${currency}) • 無金額上限` : `Drop-In Price (${currency}) • No Cap`}
                 </label>
                 <input
                   type="number"
@@ -814,8 +893,8 @@ export const OnboardingWizard: React.FC = () => {
                 <CheckCircle2 className="w-4 h-4" />
                 <span>
                   {isZh
-                    ? '免費完成建立並進入後台 (免綁卡)'
-                    : 'Complete Free Setup & Enter Studio Admin'}
+                    ? '啟動工作室並進入管理後台 (Launch Studio & Enter Admin)'
+                    : 'Launch Studio & Enter Admin'}
                 </span>
               </button>
             </div>

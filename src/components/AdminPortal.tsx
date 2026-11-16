@@ -484,19 +484,35 @@ export const AdminPortal: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#1C1917] text-[#E0D8CE] pb-24 selection:bg-[#C5A059]/30">
-      {/* Top Admin Navigation matching Screenshot 3 */}
+      {/* Top Admin Navigation / Studio Context & Tabs Bar */}
       <header className="sticky top-0 z-30 bg-[#1C1917]/95 backdrop-blur-md border-b border-[#3A332B] px-4 py-3">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          {/* Left Brand */}
-          <div className="flex items-center space-x-2.5">
-            <AuraLogoBadge size="sm" className="w-8 h-8" />
-            <span className="font-serif text-xl tracking-wider text-[#C5A059] font-medium">
-              Aura Flow
-            </span>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Studio Context (Custom Logo + Studio Name) */}
+          <div className="flex items-center justify-between shrink-0">
+            <div className="flex items-center space-x-2.5">
+              <AuraLogoBadge size="sm" customLogo={studio.logoUrl} className="w-8 h-8 rounded-full" />
+              <div>
+                <span className="font-serif text-lg tracking-wide text-[#F5F2EB] font-medium block leading-tight">
+                  {studio.name || 'Sol Sanctuary'}
+                </span>
+                <span className="text-[10px] text-[#A89F91] font-mono">
+                  /studio/{studio.slug || 'studio'}
+                </span>
+              </div>
+            </div>
+
+            {/* Mobile View Public Page Link */}
+            <button
+              onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
+              className="md:hidden inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-[#2A2520] border border-[#3D352E] text-[10px] text-[#C5A059] hover:bg-[#383028] transition-colors"
+            >
+              <span>{locale === 'zh-TW' ? '預覽頁' : 'Public'}</span>
+              <ExternalLink className="w-3 h-3" />
+            </button>
           </div>
 
-          {/* Center Tabs with Badges */}
-          <div className="flex items-center space-x-1 sm:space-x-1.5 bg-[#282420] p-1 rounded-full border border-[#3A342E] overflow-x-auto no-scrollbar max-w-[70vw] sm:max-w-none">
+          {/* Navigation Tabs with Badges - full width on mobile */}
+          <div className="flex items-center space-x-1 sm:space-x-1.5 bg-[#282420] p-1 rounded-full border border-[#3A342E] overflow-x-auto no-scrollbar w-full md:w-auto">
             <button
               onClick={() => setActiveAdminTab('schedule')}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 ${
@@ -564,27 +580,32 @@ export const AdminPortal: React.FC = () => {
             </button>
           </div>
 
-          {/* Right Status */}
-          <div className="flex items-center space-x-2.5 text-xs text-[#A89F91]">
+          {/* Desktop Right Status */}
+          <div className="hidden md:flex items-center space-x-2.5 text-xs text-[#A89F91]">
             <button
               type="button"
               onClick={() => syncFromCloud()}
               title={lastCloudSyncAt ? `Last synced: ${new Date(lastCloudSyncAt).toLocaleTimeString()}` : 'Click to sync with Supabase Cloud'}
-              className="hidden md:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/70 text-[10px] text-emerald-300 hover:bg-emerald-900/60 transition-colors"
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/70 text-[10px] text-emerald-300 hover:bg-emerald-900/60 transition-colors"
             >
               <span className={`w-1.5 h-1.5 rounded-full ${cloudConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
               <span>{cloudConnected ? (locale === 'zh-TW' ? '雲端即時同步中' : 'Cloud Live') : (locale === 'zh-TW' ? '連線雲端...' : 'Connecting...')}</span>
             </button>
             <button
               onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
-              className="hidden sm:inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-[#2A2520] border border-[#3D352E] text-[11px] text-[#C5A059] hover:bg-[#383028] transition-colors"
+              className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-[#2A2520] border border-[#3D352E] text-[11px] text-[#C5A059] hover:bg-[#383028] transition-colors"
             >
               <span>{tCommon('publicPage')}</span>
               <ExternalLink className="w-3 h-3" />
             </button>
-            <div className="w-7 h-7 rounded-full bg-[#2A2520] border border-[#3D352E] flex items-center justify-center text-[#C5A059]">
+            <button
+              type="button"
+              onClick={() => setActiveAdminTab('policies')}
+              className="w-7 h-7 rounded-full bg-[#2A2520] border border-[#3D352E] flex items-center justify-center text-[#C5A059] hover:bg-[#383028] transition-colors"
+              title="Studio Policies & Settings"
+            >
               <Settings className="w-3.5 h-3.5" />
-            </div>
+            </button>
           </div>
         </div>
       </header>
@@ -645,7 +666,7 @@ export const AdminPortal: React.FC = () => {
             >
               <QrCode className="w-3.5 h-3.5 text-[#C5A059]" />
               <span>
-                {locale === 'zh-TW' ? '[ 📷 產生課程 QR Code ]' : '[ 📷 Generate Studio QR ]'}
+                {locale === 'zh-TW' ? '📷 產生課程 QR Code' : '📷 Generate Studio QR'}
               </span>
             </button>
 
@@ -684,40 +705,65 @@ export const AdminPortal: React.FC = () => {
           </div>
         </div>
 
-        {/* Top Payout & 0% Fee Banner matching Screenshot 3 */}
-        <div className="mb-8 rounded-3xl bg-linear-to-r from-[#24201C] via-[#2A241E] to-[#1E1B18] p-6 border border-[#3A332B] shadow-xl relative overflow-hidden">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div>
-              <div className="flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider text-[#C5A059] mb-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{tAdmin('stripeDirectPayouts')}</span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-serif text-[#F5F2EB] tracking-tight">
-                {formatCurrency(stripeOverview.pendingPayouts, currency, locale)}
-              </h2>
-              <p className="text-xs text-[#8C8274] mt-1">
-                {tAdmin('nextPayoutDate')}: {formatDateLocalized('2026-11-06', locale)} • {tAdmin('directPayoutAccount')}: {stripeOverview.connectedAccountName}
-              </p>
-            </div>
+        {/* Top Payout & 0% Fee Banner */}
+        {(() => {
+          const studioBookings = bookings.filter((b) => b.studioId === studio.id && b.status !== 'CANCELLED');
+          const calculatedPendingPayouts = studioBookings.reduce((sum, b) => sum + (Number(b.amountPaid) || 0), 0);
+          const hasBookings = studioBookings.length > 0 && calculatedPendingPayouts > 0;
+          const isStripeConnected = Boolean(
+            studio.stripeAccountId ||
+            studio.paymentMethods?.stripe?.connected ||
+            studio.paymentMethods?.stripe?.enabled
+          );
+          const isZh = locale === 'zh-TW' || locale === 'zh-CN';
+          const nextDate = new Date();
+          nextDate.setDate(nextDate.getDate() + 7);
+          const formattedNextDate = formatDateLocalized(nextDate.toISOString().split('T')[0], locale);
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="px-4 py-2.5 rounded-2xl bg-[#1A1714] border border-[#3A332B]">
-                <div className="text-[11px] text-[#8C8274]">{tAdmin('platformTakeRate')}</div>
-                <div className="text-base font-semibold text-emerald-400">
-                  {tAdmin('zeroCommissionBadge')}
+          return (
+            <div className="mb-8 rounded-3xl bg-linear-to-r from-[#24201C] via-[#2A241E] to-[#1E1B18] p-6 border border-[#3A332B] shadow-xl relative overflow-hidden">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                <div>
+                  <div className="flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider text-[#C5A059] mb-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>{tAdmin('stripeDirectPayouts')}</span>
+                  </div>
+                  <h2 className="text-3xl sm:text-4xl font-serif text-[#F5F2EB] tracking-tight">
+                    {formatCurrency(hasBookings ? calculatedPendingPayouts : 0, currency, locale)}
+                  </h2>
+                  <p className="text-xs text-[#8C8274] mt-1">
+                    {hasBookings ? (
+                      <>
+                        {tAdmin('nextPayoutDate')}: {formattedNextDate} • {tAdmin('directPayoutAccount')}: {studio.name || stripeOverview.connectedAccountName}
+                      </>
+                    ) : (
+                      <>
+                        {isZh ? '尚無待撥款項' : 'No pending payouts'} • {tAdmin('directPayoutAccount')}: {isStripeConnected ? (studio.name || stripeOverview.connectedAccountName) : (isZh ? '尚未設定收款帳戶' : 'Not Connected')}
+                      </>
+                    )}
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="px-4 py-2.5 rounded-2xl bg-[#1A1714] border border-[#3A332B]">
+                    <div className="text-[11px] text-[#8C8274]">{tAdmin('platformTakeRate')}</div>
+                    <div className="text-base font-semibold text-emerald-400">
+                      {tAdmin('zeroCommissionBadge')}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
+                    className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-md active:scale-95"
+                  >
+                    <span>{tCommon('viewPublicPage') || (isZh ? '查看公開預約頁 →' : 'View Public Page →')}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
-
-              <button
-                onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
-                className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-md active:scale-95"
-              >
-                <span>{tCommon('viewPublicPage')}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
             </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* SUB-TAB 1: SCHEDULE BUILDER */}
         {activeAdminTab === 'schedule' && (
@@ -985,7 +1031,7 @@ export const AdminPortal: React.FC = () => {
                             >
                               <QrCode className="w-3.5 h-3.5" />
                               <span>
-                                {isZh ? '[ 📷 產生課程 QR Code ]' : '[ 📷 Generate QR ]'}
+                                {isZh ? '📷 產生課程 QR Code' : '📷 Generate QR'}
                               </span>
                             </button>
 
@@ -1048,7 +1094,7 @@ export const AdminPortal: React.FC = () => {
                             >
                               <QrCode className="w-3.5 h-3.5 shrink-0" />
                               <span className="truncate">
-                                {isZh ? '[ 📷 產生課程 QR Code ]' : '[ 📷 Class QR ]'}
+                                {isZh ? '📷 產生課程 QR Code' : '📷 Class QR'}
                               </span>
                             </button>
 
@@ -1982,8 +2028,8 @@ export const AdminPortal: React.FC = () => {
                 <QrCode className="w-4 h-4" />
                 <span>
                   {locale === 'zh-TW'
-                    ? '[ 📷 產生課程 QR Code ]'
-                    : '[ 📷 Generate Studio QR Code ]'}
+                    ? '📷 產生課程 QR Code'
+                    : '📷 Generate Studio QR Code'}
                 </span>
               </button>
             </div>

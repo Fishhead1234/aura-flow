@@ -727,6 +727,22 @@ const INITIAL_STRIPE: StripeConnectOverview = {
   ],
 };
 
+const createFreshStripeOverview = (
+  connectedAccountName: string,
+  currency: SupportedCurrency = 'TWD'
+): StripeConnectOverview => ({
+  connectedAccountName,
+  stripeAccountId: `acct_fresh_${Date.now()}`,
+  grossVolume: 0,
+  platformFeeDeduction: 0,
+  stripeCardProcessingFee: 0,
+  netBalance: 0,
+  pendingPayouts: 0,
+  nextPayoutDate: '',
+  currency,
+  payoutHistory: [],
+});
+
 interface AuraState {
   // Navigation & Route
   currentRoute: AppRoute;
@@ -1177,6 +1193,7 @@ export const useAuraStore = create<AuraState>()(
       bookings: state.bookings.filter((b) => b.studioId !== freshStudio.id),
       waitlist: state.waitlist.filter((w) => w.studioId !== freshStudio.id),
       conversations: state.conversations.filter((c) => c.studioId !== freshStudio.id),
+      stripeOverview: createFreshStripeOverview(freshStudio.name, 'TWD'),
       isWelcomeModalOpen: false,
     }));
     get().navigateTo({ path: 'admin' });
@@ -2373,11 +2390,13 @@ export const useAuraStore = create<AuraState>()(
     };
 
     set((state) => ({
-      studios: [...state.studios, newStudio],
+      studios: [...state.studios.filter((s) => s.id !== newStudioId), newStudio],
       studio: newStudio,
       activeStudioId: newStudioId,
       currency: data.currency,
-      sessions: [firstClassSession, ...state.sessions],
+      sessions: [firstClassSession, ...state.sessions.filter((s) => s.studioId !== newStudioId)],
+      bookings: state.bookings.filter((b) => b.studioId !== newStudioId),
+      stripeOverview: createFreshStripeOverview(newStudio.name, data.currency),
       currentRoute: { path: 'admin' },
       activePersona: 'elena_owner',
     }));

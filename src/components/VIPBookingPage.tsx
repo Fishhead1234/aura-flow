@@ -190,7 +190,7 @@ export const VIPBookingPage: React.FC<VIPBookingPageProps> = ({ inviteToken }) =
               className="text-[11px] font-semibold text-[#C5A059] hover:text-[#EAD8B1] px-2.5 py-1 rounded-full bg-[#1C1917] border border-[#C5A059]/60 flex items-center space-x-1 transition-colors"
             >
               <QrCode className="w-3 h-3" />
-              <span>{isZh ? '[ 📷 產生課程 QR Code ]' : '[ 📷 Generate VIP QR ]'}</span>
+              <span>{isZh ? '📷 產生課程 QR Code' : '📷 Generate VIP QR'}</span>
             </button>
 
             <span className="text-[11px] font-mono text-[#C5A059]/90 px-2.5 py-0.5 rounded-full bg-[#241E18] border border-[#3E3328]">

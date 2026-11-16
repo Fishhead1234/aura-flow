@@ -4,6 +4,7 @@
   "switchView": "受講者予約 / スタジオ管理 切替",
   "clientView": "受講者予約画面",
   "adminView": "スタジオ管理者画面",
+  "viewPublicPage": "公開予約ページを表示 →",
   "currency": "通貨",
   "language": "言語",
   "cancel": "キャンセル",
