@@ -2,8 +2,18 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import './index.css';
+import { Capacitor } from '@capacitor/core';
 
-if ('serviceWorker' in navigator) {
+// In native iOS/Android Capacitor apps, disable Service Workers to avoid WKWebView fetch hijacking
+if (Capacitor.isNativePlatform()) {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const registration of registrations) {
+        registration.unregister().catch(() => {});
+      }
+    });
+  }
+} else if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   });

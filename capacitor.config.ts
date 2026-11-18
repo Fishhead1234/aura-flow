@@ -4,17 +4,17 @@ const config: CapacitorConfig = {
   appId: 'app.auraflow.client',
   appName: 'Aura Flow',
   webDir: 'dist',
+  backgroundColor: '#F7F4EE',
   server: {
     androidScheme: 'https',
+    iosScheme: 'capacitor',
   },
   plugins: {
     StatusBar: {
-      overlaysWebView: false,
+      overlaysWebView: true,
       style: 'DARK',
-      backgroundColor: '#1c1917',
     },
   },
 };
 
 export default config;
-
