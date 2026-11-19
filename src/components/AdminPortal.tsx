@@ -698,7 +698,7 @@ export const AdminPortal: React.FC = () => {
                 <span>
                   {locale === 'zh-TW'
                     ? '發布課表開始接單 (Publish & Go Live)'
-                    : 'Publish & Go Live (14-Day Free Trial)'}
+                    : 'Publish & Go Live (30-Day Free Trial)'}
                 </span>
               </button>
             )}

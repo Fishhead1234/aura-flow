@@ -68,8 +68,8 @@ export const PaywallModal: React.FC = () => {
           <Crown className="w-3.5 h-3.5" />
           <span>
             {isZh
-              ? 'RevenueCat Pro 認證 • 14 天免費全功能試用'
-              : 'RevenueCat Pro • 14-Day Free Trial'}
+              ? 'RevenueCat Pro 認證 • 30 天全功能免費試用'
+              : 'RevenueCat Pro • 30-Day Free Trial'}
           </span>
         </div>
 
@@ -155,7 +155,7 @@ export const PaywallModal: React.FC = () => {
                 {isZh ? '月度彈性方案' : 'Monthly Pro'}
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 font-semibold">
-                {isZh ? '首 14 天免費' : '14 Days Free'}
+                {isZh ? '首 30 天免費' : '30 Days Free'}
               </span>
             </div>
             <div className="font-serif text-lg font-bold text-[#F5F2EB]">{monthlyDisplay}</div>
@@ -183,7 +183,7 @@ export const PaywallModal: React.FC = () => {
             </div>
             <div className="font-serif text-lg font-bold text-[#F5F2EB]">{annualDisplay}</div>
             <div className="text-[10px] text-[#8C8274] mt-0.5">
-              {isZh ? '含首 14 天免費試用 + 優先客服' : 'Includes 14-day free trial + priority support'}
+              {isZh ? '含首 30 天免費試用 + 優先客服' : 'Includes 30-day free trial + priority support'}
             </div>
           </button>
         </div>
@@ -200,10 +200,10 @@ export const PaywallModal: React.FC = () => {
             {isProcessing
               ? isZh
                 ? '正在透過 RevenueCat 開通試用...'
-                : 'Activating 14-Day Free Trial...'
+                : 'Activating 30-Day Free Trial...'
               : isZh
-              ? '免費展開 14 天試用並發布課表 (NT$ 0 今日扣款)'
-              : 'Start 14-Day Free Trial & Publish Schedule ($0 Today)'}
+              ? '免費展開 30 天試用並發布課表 (NT$ 0 今日扣款)'
+              : 'Start 30-Day Free Trial & Publish Schedule ($0 Today)'}
           </span>
         </button>
 

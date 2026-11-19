@@ -80,7 +80,7 @@ export const WelcomeModal: React.FC = () => {
             <Calendar className="w-4 h-4 text-[#C5A059] shrink-0" />
             <span>
               {isZh
-                ? '教練免費建立專屬課表與規則，發布接單再享 14 天免費試用'
+                ? '教練免費建立專屬課表與規則，發布接單再享 30 天全功能免費試用'
                 : 'Coaches build schedules & rules 100% free — pay only when going live'}
             </span>
           </div>

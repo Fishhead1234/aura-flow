@@ -132,7 +132,7 @@ export const App: React.FC = () => {
       {/* 2-Way Live Camera & Gallery QR Code Scanner Modal */}
       <QRScannerModal />
 
-      {/* Value-First RevenueCat 14-Day Free Trial Paywall Modal */}
+      {/* Value-First RevenueCat 30-Day Free Trial Paywall Modal */}
       <PaywallModal />
 
       {/* Booking Checkout Bottom Sheet Drawer (Public Client Flow) */}
