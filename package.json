@@ -1,12 +1,13 @@
 {
   "name": "aura-flow",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite --port 3001",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:android": "npm run build && npx cap copy android && cd android && ./gradlew assembleDebug && cp app/build/outputs/apk/debug/*.apk ../"
   },
   "dependencies": {
     "@capacitor/android": "^7.0.0",
