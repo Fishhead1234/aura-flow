@@ -46,7 +46,11 @@ import {
   MapPin,
   Edit3,
   Calendar,
+  Cloud,
+  HardDrive,
+  Flame,
 } from 'lucide-react';
+import { calculateEarlyBirdTier } from '../services/backupTransferService';
 import { ClassCategory, CURRENCY_CONFIGS, ClassPack, ClassSession, AdminTabType } from '../types/aura';
 import { AuraLogoBadge } from './AuraLeafLogo';
 import { useSubscription } from '../hooks/useSubscription';
@@ -105,6 +109,7 @@ export const AdminPortal: React.FC = () => {
     cloudConnected,
     lastCloudSyncAt,
     syncFromCloud,
+    openTransferModal,
   } = useAuraStore();
 
   const isZh = locale === 'zh-TW' || locale === 'zh-CN';
@@ -704,6 +709,45 @@ export const AdminPortal: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Early-Bird Decaying Promotion Bar (If in trial) */}
+        {(() => {
+          const earlyBird = calculateEarlyBirdTier(studio, currency);
+          if (earlyBird.tier === 0) return null;
+
+          return (
+            <div
+              onClick={() => openPaywall('PUBLISH_SCHEDULE')}
+              className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-[#332014] via-[#28180E] to-[#1D140F] border border-[#C5A059]/60 shadow-lg cursor-pointer hover:border-[#C5A059] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shrink-0">
+                  <Flame className="w-5 h-5 fill-amber-400" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-bold text-amber-300">
+                      {isZh ? earlyBird.badgeZh : earlyBird.badgeEn}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/30">
+                      {isZh ? '提早轉正享 50% 優惠' : '50% Off Early Conversion'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#EAE4DC] font-medium mt-0.5">
+                    {isZh ? earlyBird.headlineZh : earlyBird.headlineEn} •{' '}
+                    {isZh
+                      ? `年繳更可現折 NT$ ${earlyBird.annualCreditAmount}`
+                      : `Save $${earlyBird.annualCreditAmount} on Annual`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 text-xs font-bold text-[#C5A059] group-hover:translate-x-1 transition-transform shrink-0">
+                <span>{isZh ? '立即開通鎖定優惠' : 'Claim Offer'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Top Payout & 0% Fee Banner */}
         {(() => {
@@ -2032,6 +2076,83 @@ export const AdminPortal: React.FC = () => {
                     : '📷 Generate Studio QR Code'}
                 </span>
               </button>
+            </div>
+
+            {/* Part 0.5: Cloud Backup & WhatsApp/LINE Style Cross-Device Transfer Card */}
+            <div className="bg-[#1C1917] rounded-2xl p-6 border border-[#C5A059]/60 shadow-lg space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#C5A059]/15 border border-[#C5A059]/40 flex items-center justify-center text-[#C5A059] shrink-0">
+                    <Cloud className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-base font-semibold text-[#F5F2EB] flex items-center space-x-2">
+                      <span>{isZh ? '☁️ 雲端備份金庫與無縫換機' : 'Cloud Backup Vault & Device Transfer'}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 font-sans font-semibold">
+                        {isZh ? '多雲備份' : 'Multi-Cloud'}
+                      </span>
+                    </h3>
+                    <p className="text-xs text-[#A89F91] mt-0.5">
+                      {isZh
+                        ? '如同 LINE / WhatsApp 換機體驗，支援跨 iOS、Android 轉移碼，以及 Apple iCloud、Google Drive、Dropbox 匯出備份。'
+                        : 'WhatsApp/LINE-style device transfer code + export to Apple iCloud, Google Drive, and Dropbox.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                {/* Button 1: Transfer Code / QR */}
+                <button
+                  type="button"
+                  onClick={() => openTransferModal('TRANSFER')}
+                  className="p-3.5 rounded-xl bg-[#24201C] hover:bg-[#2C2722] border border-[#3A332B] hover:border-[#C5A059] text-left transition-all group"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-[#F5F2EB] flex items-center space-x-1.5">
+                      <Smartphone className="w-4 h-4 text-[#C5A059]" />
+                      <span>{isZh ? '📲 手機換機轉移碼' : 'Transfer Code'}</span>
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#8C8274]">
+                    {isZh ? '產生 6 碼或 QR Code，換新機 1 秒掃描即搬家' : 'One-time 6-digit code or QR code'}
+                  </p>
+                </button>
+
+                {/* Button 2: 4 Clouds Export */}
+                <button
+                  type="button"
+                  onClick={() => openTransferModal('BACKUP')}
+                  className="p-3.5 rounded-xl bg-[#24201C] hover:bg-[#2C2722] border border-[#3A332B] hover:border-[#C5A059] text-left transition-all group"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-[#F5F2EB] flex items-center space-x-1.5">
+                      <Cloud className="w-4 h-4 text-[#C5A059]" />
+                      <span>{isZh ? '☁️ 四大雲端匯出備份' : 'Cloud Backup'}</span>
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#8C8274]">
+                    {isZh ? 'iCloud Drive、Google Drive、Dropbox 與本機快照' : 'iCloud, Google Drive, Dropbox & local file'}
+                  </p>
+                </button>
+
+                {/* Button 3: Restore */}
+                <button
+                  type="button"
+                  onClick={() => openTransferModal('RESTORE')}
+                  className="p-3.5 rounded-xl bg-[#24201C] hover:bg-[#2C2722] border border-[#3A332B] hover:border-[#C5A059] text-left transition-all group"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-[#F5F2EB] flex items-center space-x-1.5">
+                      <QrCode className="w-4 h-4 text-[#C5A059]" />
+                      <span>{isZh ? '📥 輸入代碼或還原' : 'Restore Data'}</span>
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#8C8274]">
+                    {isZh ? '在新裝置輸入代碼或上傳 .aurabackup 檔案' : 'Enter code or upload backup archive'}
+                  </p>
+                </button>
+              </div>
             </div>
 
             {/* Part 1: Automated Waitlist & Cancellation Policies */}

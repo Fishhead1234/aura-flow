@@ -805,6 +805,11 @@ interface AuraState {
   favoriteStudioSlugs: string[];
   isPaywallModalOpen: boolean;
   paywallTriggerReason: 'PUBLISH_SCHEDULE' | 'SHARE_LINK' | 'DISCOVERY_FEED' | null;
+  isTransferModalOpen: boolean;
+  transferModalTab: 'TRANSFER' | 'RESTORE' | 'BACKUP';
+  openTransferModal: (tab?: 'TRANSFER' | 'RESTORE' | 'BACKUP') => void;
+  closeTransferModal: () => void;
+  restoreFromSnapshot: (snapshot: import('../services/auraCloudSync').AuraCloudSnapshot) => void;
 
   // Waterfall Timer
   activeWaterfallSessionId: string | null;
@@ -1000,6 +1005,8 @@ export const useAuraStore = create<AuraState>()(
   favoriteStudioSlugs: ['sol-sanctuary'],
   isPaywallModalOpen: false,
   paywallTriggerReason: null,
+  isTransferModalOpen: false,
+  transferModalTab: 'TRANSFER',
 
   activeWaterfallSessionId: null,
   activeWaterfallSecondsRemaining: 1800,
@@ -1274,6 +1281,36 @@ export const useAuraStore = create<AuraState>()(
     set({ isPaywallModalOpen: true, paywallTriggerReason: reason }),
   closePaywallModal: () =>
     set({ isPaywallModalOpen: false, paywallTriggerReason: null }),
+
+  openTransferModal: (tab = 'TRANSFER') =>
+    set({ isTransferModalOpen: true, transferModalTab: tab }),
+  closeTransferModal: () =>
+    set({ isTransferModalOpen: false }),
+
+  restoreFromSnapshot: (snapshot) => {
+    set({
+      studios: snapshot.studios || (snapshot.studio ? [snapshot.studio] : get().studios),
+      studio: snapshot.studio || get().studio,
+      activeStudioId: snapshot.activeStudioId || snapshot.studio?.id || get().activeStudioId,
+      sessions: snapshot.sessions || get().sessions,
+      classPacks: snapshot.classPacks || get().classPacks,
+      bookings: snapshot.bookings || get().bookings,
+      waitlist: snapshot.waitlist || get().waitlist,
+      creditLedger: snapshot.creditLedger || get().creditLedger,
+      stripeOverview: snapshot.stripeOverview || get().stripeOverview,
+      conversations: snapshot.conversations || get().conversations,
+      messages: snapshot.messages || get().messages,
+      broadcastHistory: snapshot.broadcastHistory || get().broadcastHistory,
+      isTransferModalOpen: false,
+      isWelcomeModalOpen: false,
+      activePersona: 'elena_owner',
+      currentRoute: { path: 'admin' },
+    });
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/admin');
+    }
+    get().syncToCloud();
+  },
 
   activateProSubscription: () => {
     const { studio, studios } = get();

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { AuraLogoBadge } from './AuraLeafLogo';
-import { Sparkles, ArrowRight, ShieldCheck, Calendar, Compass, Globe } from 'lucide-react';
+import { Sparkles, ArrowRight, ShieldCheck, Calendar, Compass, Globe, Smartphone } from 'lucide-react';
 import { SupportedLocale } from '../types/aura';
 
 export const WelcomeModal: React.FC = () => {
@@ -12,6 +12,7 @@ export const WelcomeModal: React.FC = () => {
     switchPersona,
     locale,
     setLocale,
+    openTransferModal,
   } = useAuraStore();
 
   if (!isWelcomeModalOpen) return null;
@@ -126,6 +127,25 @@ export const WelcomeModal: React.FC = () => {
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-[#C5A059] shrink-0" />
+          </button>
+        </div>
+
+        {/* Cross-Device Transfer & Backup Restore */}
+        <div className="mt-4 pt-3.5 border-t border-[#312A23] text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setWelcomeModalOpen(false);
+              openTransferModal('RESTORE');
+            }}
+            className="text-xs text-[#A89F91] hover:text-[#C5A059] flex items-center justify-center space-x-1.5 mx-auto transition-colors group"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-[#C5A059]" />
+            <span className="underline underline-offset-4 decoration-[#C5A059]/40 group-hover:decoration-[#C5A059]">
+              {isZh
+                ? '已有工作室？從舊裝置換機轉移或雲端備份還原'
+                : 'Already have a studio? Restore from old device or cloud'}
+            </span>
           </button>
         </div>
       </div>

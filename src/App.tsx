@@ -14,6 +14,7 @@ import { PaywallModal } from './components/PaywallModal';
 import { VIPBookingPage } from './components/VIPBookingPage';
 import { QRScannerModal } from './components/QRScannerModal';
 import { DevPinModal } from './components/DevPinModal';
+import { StudioTransferModal } from './components/StudioTransferModal';
 
 export const App: React.FC = () => {
   const {
@@ -140,6 +141,9 @@ export const App: React.FC = () => {
 
       {/* Waitlist Modal (Standard Queue vs VIP Pre-Authorization) */}
       <WaitlistModal />
+
+      {/* Studio Device Transfer & Cloud Backup Vault Modal */}
+      <StudioTransferModal />
 
       {/* Dev Pin Modal for Secret 9-Tap Logo Unlock */}
       <DevPinModal />
