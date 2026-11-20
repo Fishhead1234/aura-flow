@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import { useAuraStore } from '../store/auraStore';
 import { backupTransferService } from '../services/backupTransferService';
+import { modalTopClearance } from '../utils/safeArea';
 import {
   Smartphone,
   Cloud,
@@ -204,7 +205,10 @@ export const StudioTransferModal: React.FC = () => {
   if (!isTransferModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+      style={{ paddingTop: modalTopClearance }}
+    >
       <div className="relative w-full max-w-xl rounded-3xl bg-[#1C1917] text-[#F5F2EB] border border-[#C5A059]/40 shadow-2xl overflow-hidden p-6 sm:p-8 max-h-[94vh] overflow-y-auto no-scrollbar">
         {/* Close Button */}
         <button

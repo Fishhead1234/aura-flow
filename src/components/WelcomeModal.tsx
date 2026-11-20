@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { AuraLogoBadge } from './AuraLeafLogo';
+import { modalTopClearance } from '../utils/safeArea';
 import { Sparkles, ArrowRight, ShieldCheck, Calendar, Compass, Globe, Smartphone } from 'lucide-react';
 import { SupportedLocale } from '../types/aura';
 
@@ -33,7 +34,10 @@ export const WelcomeModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+      style={{ paddingTop: modalTopClearance }}
+    >
       <div className="relative w-full max-w-md rounded-3xl bg-[#1C1917] text-[#F5F2EB] border border-[#3A332B] shadow-2xl overflow-hidden p-6 sm:p-8">
         {/* Language Toggle Pill in Top Right */}
         <div className="flex items-center justify-between mb-6">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { ClassSession } from '../types/aura';
 import { formatCurrency, formatTimeRange } from '../i18n/auraI18n';
+import { modalTopClearance } from '../utils/safeArea';
 import {
   ClipboardList,
   Sparkles,
@@ -201,7 +202,10 @@ export const StudentClassDetailModal: React.FC<StudentClassDetailModalProps> = (
   const spotsLeft = Math.max(0, session.capacity - session.bookedCount);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      style={{ paddingTop: modalTopClearance }}
+    >
       <div className="bg-[#F7F4EE] rounded-3xl p-6 border border-stone-200 w-full max-w-md text-stone-900 shadow-2xl space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-stone-200/80 pb-3">

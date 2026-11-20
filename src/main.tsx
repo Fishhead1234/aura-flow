@@ -3,6 +3,12 @@ import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import './index.css';
 import { Capacitor } from '@capacitor/core';
+import { checkIsStandaloneAndroid } from './utils/safeArea';
+
+// Apply standalone-android class to root if on Android Standalone / TWA / Capacitor Native
+if (checkIsStandaloneAndroid()) {
+  document.documentElement.classList.add('standalone-android');
+}
 
 // In native iOS/Android Capacitor apps, disable Service Workers to avoid WKWebView fetch hijacking
 if (Capacitor.isNativePlatform()) {

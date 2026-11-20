@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { AuraLeafBadge } from './AuraLeafLogo';
+import { isStandaloneAndroid, safeAreaTop, safeAreaBottom, modalTopClearance } from '../utils/safeArea';
 
 export const Navbar: React.FC = () => {
   const {
@@ -91,7 +92,12 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-aura-bg/95 border-b border-aura-clay/20 transition-all">
+      <header
+        className="sticky top-0 z-40 backdrop-blur-md bg-aura-bg/95 border-b border-aura-clay/20 transition-all"
+        style={{
+          paddingTop: isStandaloneAndroid ? 'max(env(safe-area-inset-top, 0px), 38px)' : 'env(safe-area-inset-top, 0px)',
+        }}
+      >
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           {/* Brand & Studio Logo (Clean on both mobile & desktop) */}
           <div
@@ -242,7 +248,13 @@ export const Navbar: React.FC = () => {
           />
 
           {/* Slide-over panel */}
-          <div className="relative w-full max-w-xs sm:max-w-sm h-full bg-[#F7F4EE] shadow-2xl p-6 flex flex-col justify-between overflow-y-auto no-scrollbar z-10 animate-slide-in-right">
+          <div
+            className="relative w-full max-w-xs sm:max-w-sm h-full bg-[#F7F4EE] shadow-2xl p-6 flex flex-col justify-between overflow-y-auto no-scrollbar z-10 animate-slide-in-right"
+            style={{
+              paddingTop: isStandaloneAndroid ? 'calc(max(env(safe-area-inset-top, 0px), 38px) + 12px)' : undefined,
+              paddingBottom: isStandaloneAndroid ? 'max(env(safe-area-inset-bottom, 0px), 20px)' : undefined,
+            }}
+          >
             <div>
               {/* Header with Title and Close Button */}
               <div className="flex items-center justify-between pb-4 border-b border-stone-300">

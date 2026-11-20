@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { ClassSession } from '../types/aura';
 import { formatCurrency } from '../i18n/auraI18n';
+import { modalTopClearance } from '../utils/safeArea';
 import {
   Link2,
   MessageCircle,
@@ -88,7 +89,10 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ session, onC
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      style={{ paddingTop: modalTopClearance }}
+    >
       <div className="bg-[#1E1A16] rounded-3xl p-6 border border-[#C5A059]/60 w-full max-w-lg text-[#F5F2EB] shadow-2xl">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-[#3A332B] pb-4 mb-4">

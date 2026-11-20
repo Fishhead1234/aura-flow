@@ -17,6 +17,7 @@ import {
 import { PaymentMethodType } from '../types/aura';
 import { SessionCareCard } from './StudentClassDetailModal';
 import confetti from 'canvas-confetti';
+import { isStandaloneAndroid, safeAreaBottom } from '../utils/safeArea';
 
 export const BookingDrawer: React.FC = () => {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -190,7 +191,12 @@ export const BookingDrawer: React.FC = () => {
       onClose={handleClose}
       className="backdrop:bg-black/50 backdrop:backdrop-blur-xs p-0 m-0 w-full max-w-md mx-auto my-auto fixed inset-x-0 bottom-0 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 rounded-t-3xl sm:rounded-3xl bg-[#F7F4EE] shadow-2xl border border-stone-200/80 overflow-hidden"
     >
-      <div className="p-6 text-stone-900 max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div
+        className="p-6 text-stone-900 max-h-[90vh] overflow-y-auto no-scrollbar"
+        style={{
+          paddingBottom: isStandaloneAndroid ? 'max(env(safe-area-inset-bottom, 0px), 24px)' : undefined,
+        }}
+      >
         {/* Drawer Header matching Screenshot 2 */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-serif text-2xl font-medium tracking-tight text-stone-900">

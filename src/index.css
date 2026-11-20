@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --modal-top-clearance: calc(env(safe-area-inset-top, 0px) + 12px);
+}
+
+.standalone-android {
+  --safe-area-inset-top: max(env(safe-area-inset-top, 0px), 38px);
+  --safe-area-inset-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+  --modal-top-clearance: calc(max(env(safe-area-inset-top, 0px), 38px) + 12px);
+}
+
+/* Guaranteed safe-area clearance for modals & overlays in standalone Android */
+.standalone-android .fixed.inset-0.z-50 {
+  padding-top: var(--modal-top-clearance) !important;
+}
+
 @layer base {
   html,
   body {

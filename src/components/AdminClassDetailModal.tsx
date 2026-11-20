@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuraStore } from '../store/auraStore';
+import { modalTopClearance } from '../utils/safeArea';
 import { ClassSession, LocationType } from '../types/aura';
 import {
   Zap,
@@ -245,7 +246,10 @@ export const AdminClassDetailModal: React.FC<AdminClassDetailModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+      <div
+        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+        style={{ paddingTop: modalTopClearance }}
+      >
         <div className="bg-[#221E1A] rounded-3xl p-6 border border-[#C5A059]/60 w-full max-w-xl text-[#F5F2EB] shadow-2xl max-h-[92vh] overflow-y-auto">
           {/* Header & Tabs */}
           <div className="border-b border-[#3A332B] pb-4 mb-4">

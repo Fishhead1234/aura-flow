@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuraStore } from '../store/auraStore';
+import { modalTopClearance } from '../utils/safeArea';
 import { getTranslation } from '../i18n/auraI18n';
 import {
   ClassCategory,
@@ -239,7 +240,10 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      style={{ paddingTop: modalTopClearance }}
+    >
       <div className="bg-[#221E1A] rounded-3xl p-6 border border-[#3A332B] w-full max-w-xl text-[#F5F2EB] shadow-2xl my-8 max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4 border-b border-[#3A332B] pb-3">
           <div>

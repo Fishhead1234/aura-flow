@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { getTranslation } from '../i18n/auraI18n';
+import { isStandaloneAndroid, safeAreaBottom } from '../utils/safeArea';
 import { X, ShieldCheck, Zap, Bell, CheckCircle2 } from 'lucide-react';
 import { WaitlistMode } from '../types/aura';
 
@@ -62,7 +63,12 @@ export const WaitlistModal: React.FC = () => {
       onClose={closeWaitlistModal}
       className="backdrop:bg-black/50 backdrop:backdrop-blur-xs p-0 m-0 w-full max-w-md mx-auto my-auto fixed inset-x-0 bottom-0 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 rounded-t-3xl sm:rounded-3xl bg-[#F7F4EE] shadow-2xl border border-stone-200/80 overflow-hidden"
     >
-      <div className="p-6 text-stone-900 max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div
+        className="p-6 text-stone-900 max-h-[90vh] overflow-y-auto no-scrollbar"
+        style={{
+          paddingBottom: isStandaloneAndroid ? 'max(env(safe-area-inset-bottom, 0px), 24px)' : undefined,
+        }}
+      >
         <div className="flex items-center justify-between mb-4">
           <div>
             <span className="text-[11px] font-semibold text-aura-clay uppercase tracking-wider">

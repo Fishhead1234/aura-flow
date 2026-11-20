@@ -3,6 +3,7 @@ import { useAuraStore } from '../store/auraStore';
 import { useSubscription } from '../hooks/useSubscription';
 import { AuraLogoBadge } from './AuraLeafLogo';
 import { calculateEarlyBirdTier } from '../services/backupTransferService';
+import { modalTopClearance } from '../utils/safeArea';
 import {
   Check,
   Sparkles,
@@ -58,7 +59,10 @@ export const PaywallModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+      style={{ paddingTop: modalTopClearance }}
+    >
       <div className="relative w-full max-w-lg rounded-3xl bg-[#1C1917] text-[#F5F2EB] border border-[#C5A059]/50 shadow-2xl overflow-hidden p-6 sm:p-8 max-h-[92vh] overflow-y-auto no-scrollbar">
         {/* Close Button */}
         <button

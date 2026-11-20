@@ -3,6 +3,7 @@ import { useAuraStore } from '../store/auraStore';
 import { getTranslation } from '../i18n/auraI18n';
 import { X, Send, Sparkles, MessageCircle, ShieldCheck } from 'lucide-react';
 import { AuraLeafBadge } from './AuraLeafLogo';
+import { modalTopClearance } from '../utils/safeArea';
 
 export const StudentChatModal: React.FC = () => {
   const {
@@ -68,7 +69,10 @@ export const StudentChatModal: React.FC = () => {
       ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+    <div
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+      style={{ paddingTop: modalTopClearance }}
+    >
       <div className="bg-[#FAF7F2] rounded-3xl w-full max-w-lg border border-stone-300 shadow-2xl flex flex-col h-[600px] max-h-[92vh] overflow-hidden text-stone-900 animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="px-5 py-4 bg-white border-b border-stone-200 flex items-center justify-between">

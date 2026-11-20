@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuraStore } from '../store/auraStore';
 import { Lock, ShieldCheck, X, Sparkles } from 'lucide-react';
+import { modalTopClearance } from '../utils/safeArea';
 
 export const DevPinModal: React.FC = () => {
   const { isDevPinModalOpen, setDevPinModalOpen, setDevSandboxVisible, locale } = useAuraStore();
@@ -39,7 +40,10 @@ export const DevPinModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150">
+    <div
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150"
+      style={{ paddingTop: modalTopClearance }}
+    >
       <div className="bg-[#1C1815] text-[#F5F2EB] border border-amber-500/40 shadow-2xl rounded-3xl p-6 max-w-sm w-full relative">
         <button
           type="button"
