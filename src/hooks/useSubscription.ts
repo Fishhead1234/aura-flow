@@ -16,10 +16,8 @@ export function useSubscription() {
     activateProSubscription,
   } = useAuraStore();
 
-  // Elena Rostova (existing Pro studio owner) is Pro by default unless overridden
-  const isPro = Boolean(
-    studio.isPro ?? (activePersona === 'elena_owner')
-  );
+  // Studio Pro entitlement status
+  const isPro = Boolean(studio.isPro);
 
   return {
     isPro,

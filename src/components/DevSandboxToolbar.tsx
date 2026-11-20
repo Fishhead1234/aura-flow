@@ -53,13 +53,13 @@ export const DevSandboxToolbar: React.FC = () => {
     },
     {
       id: 'new_owner',
-      labelZh: '🧘 新教練 (Unonboarded Instructor)',
-      labelEn: '🧘 Unonboarded Instructor',
+      labelZh: '🧘 新教練 (New Coach)',
+      labelEn: '🧘 New Coach',
     },
     {
       id: 'elena_owner',
-      labelZh: '👑 現有教練 (Elena Rostova - Pro)',
-      labelEn: '👑 Elena Rostova - Pro',
+      labelZh: '👑 教練後台 (Coach Admin)',
+      labelEn: '👑 Coach Admin',
     },
   ];
 
@@ -71,34 +71,34 @@ export const DevSandboxToolbar: React.FC = () => {
   }[] = [
     {
       id: 'elena_owner',
-      label: isZh ? '👑 現有教練 (Elena Rostova - Pro)' : 'Elena Rostova - Studio Owner (Pro)',
+      label: isZh ? '👑 教練管理後台 (Coach Admin)' : 'Coach Admin - Studio Management',
       roleDesc: isZh
-        ? '進入 /admin 完整管理後台（含課表、撥款與 LINE 訊息收件匣）'
-        : 'Navigates to /admin to test schedule management & Stripe payouts',
+        ? '進入 /admin 教室管理後台（課表、撥款與設定）'
+        : 'Navigates to /admin to manage studio schedule, payouts & settings',
       targetRoute: '/admin',
     },
     {
       id: 'maya_student',
-      label: isZh ? '🎫 既有學員 Maya Lin (剩餘 2 堂課包點數)' : 'Maya Lin - Enrolled Student (2 Passes)',
+      label: isZh ? '👤 探索學員 (Student Explorer)' : 'Student Explorer',
       roleDesc: isZh
-        ? '進入 /studio/sol-sanctuary 測試一鍵點數扣抵預約'
-        : 'Navigates to /studio/sol-sanctuary to test 1-click pass booking',
-      targetRoute: '/studio/sol-sanctuary',
+        ? '進入工作室公開頁面查看課表與預約'
+        : 'Navigates to studio public booking page',
+      targetRoute: '/studio/my-studio',
     },
     {
       id: 'new_student',
-      label: isZh ? '👤 新學員 (New Student - 0 預約紀錄)' : 'New Student (0 Passes / Clean Feed)',
+      label: isZh ? '👤 新學員 (New Student - 0 預約紀錄)' : 'New Student (0 Bookings)',
       roleDesc: isZh
-        ? '進入公開探索與課表頁，測試 Apple Pay / LINE Pay / 轉帳結帳'
-        : 'Displays public explore & booking feed with zero prior bookings',
+        ? '進入探索頁，測試公開課表預約'
+        : 'Displays public explore feed with zero bookings',
       targetRoute: '/explore',
     },
     {
       id: 'new_owner',
-      label: isZh ? '🧘 新教練 (Unonboarded Instructor)' : 'Unonboarded Instructor (Step 1 Wizard)',
+      label: isZh ? '🧘 新教練開通 (New Coach Onboarding)' : 'New Coach Onboarding',
       roleDesc: isZh
-        ? '重設教練狀態並啟動步驟 1 免費開通精靈與發布前 Paywall'
-        : 'Resets instructor state and launches Step 1 of Onboarding Wizard',
+        ? '重設教練狀態並啟動開通精靈'
+        : 'Resets coach state and launches Onboarding Wizard',
       targetRoute: '/onboarding',
     },
   ];
@@ -296,7 +296,7 @@ export const DevSandboxToolbar: React.FC = () => {
               className="flex items-center justify-center space-x-2 p-3 rounded-2xl bg-[#26211C] border border-[#3E342A] hover:border-amber-400/50 hover:bg-[#302A24] text-xs font-semibold text-amber-200 transition-all shadow-xs"
             >
               <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-              <span>{isZh ? '還原預設示範資料庫' : 'Restore Demo Seed Data'}</span>
+              <span>{isZh ? '重設為空白初始狀態' : 'Reset to Empty State'}</span>
             </button>
           </div>
 
@@ -304,8 +304,8 @@ export const DevSandboxToolbar: React.FC = () => {
           {resetToast && (
             <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-600/50 text-emerald-300 text-xs text-center font-medium animate-in fade-in">
               {isZh
-                ? '✓ 已還原預設示範課表（5 堂課、Elena 教練與 Maya 學員點數）！'
-                : '✓ Database restored to seed state!'}
+                ? '✓ 已重設為乾淨空白狀態（0 堂課、0 預約、0 示範資料）！'
+                : '✓ Database reset to clean state (0 sessions, 0 bookings)!'}
             </div>
           )}
 

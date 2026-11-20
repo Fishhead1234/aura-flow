@@ -52,7 +52,7 @@ export const Navbar: React.FC = () => {
       setDevPinModalOpen(true);
       return;
     }
-    navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' });
+    navigateTo({ path: 'public_studio', slug: studio.slug || 'my-studio' });
   };
 
   const { canInstall, isPromptAvailable, isInstalled, triggerInstall } = usePwaInstall();
@@ -184,7 +184,7 @@ export const Navbar: React.FC = () => {
             {/* Context-aware Route Link */}
             {isAdminRoute ? (
               <button
-                onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
+                onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'my-studio' })}
                 className="flex items-center space-x-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-aura-clay text-white shadow-xs hover:bg-[#A25A44] transition-all"
               >
                 <span>{t('viewPublicBookingPage')}</span>
@@ -261,7 +261,7 @@ export const Navbar: React.FC = () => {
                 <div className="flex items-center space-x-2.5">
                   <AuraLeafBadge size="sm" />
                   <span className="font-serif text-lg font-semibold text-aura-charcoal">
-                    {studio.name || 'Sol Sanctuary'}
+                    {studio.name || '我的專屬工作室'}
                   </span>
                 </div>
                 <button
@@ -405,7 +405,7 @@ export const Navbar: React.FC = () => {
                 {isAdminRoute ? (
                   <button
                     onClick={() => {
-                      navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' });
+                      navigateTo({ path: 'public_studio', slug: studio.slug || 'my-studio' });
                     }}
                     className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-aura-clay text-white font-medium text-xs shadow-md hover:bg-[#A25A44] transition-all"
                   >

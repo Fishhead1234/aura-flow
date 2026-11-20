@@ -41,8 +41,8 @@ export const BookingDrawer: React.FC = () => {
   const [copiedBank, setCopiedBank] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
 
-  const [clientName, setClientName] = useState(currentUser.name || 'Maya Lin');
-  const [clientEmail, setClientEmail] = useState(currentUser.email || 'maya@example.com');
+  const [clientName, setClientName] = useState(currentUser.name || '預約學員');
+  const [clientEmail, setClientEmail] = useState(currentUser.email || '');
   const [remittanceLast5, setRemittanceLast5] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
@@ -568,7 +568,7 @@ export const BookingDrawer: React.FC = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-stone-500">{tBooking('bankAccountNameLabel')}:</span>
-                          <span className="font-medium">{payments?.bankTransfer.accountName || '日光彼拉提斯工作室 (Elena Rostova)'}</span>
+                          <span className="font-medium">{payments?.bankTransfer.accountName || studio.name || '工作室指定帳戶'}</span>
                         </div>
                       </div>
 

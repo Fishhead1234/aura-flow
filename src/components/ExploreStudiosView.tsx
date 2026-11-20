@@ -119,8 +119,18 @@ export const ExploreStudiosView: React.FC = () => {
         </div>
 
         {/* Studio Directory Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {filteredStudios.map((st) => {
+        {filteredStudios.length === 0 ? (
+          <div className="text-center py-12 px-4 rounded-3xl bg-white border border-stone-200/80 shadow-xs">
+            <h4 className="text-sm font-semibold text-stone-800">
+              {isZh ? '尚無公開探索之工作室' : 'No studios found'}
+            </h4>
+            <p className="text-xs text-stone-500 mt-1 max-w-xs mx-auto">
+              {isZh ? '請調整搜尋條件，或直接由教練提供的專屬連結預約。' : 'Try adjusting your search filters or book via a coach direct link.'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {filteredStudios.map((st) => {
             const publicSessions = sessions.filter((s) => s.visibility !== 'PRIVATE');
             const studioSessions = publicSessions.filter((s) => s.studioId === st.id);
             const previewSessions = studioSessions.length > 0 ? studioSessions.slice(0, 2) : publicSessions.slice(0, 2);
@@ -210,6 +220,7 @@ export const ExploreStudiosView: React.FC = () => {
             );
           })}
         </div>
+        )}
 
         {/* Instructor Acquisition Banner at Bottom */}
         <div className="mt-10 p-6 rounded-3xl bg-[#1C1917] text-[#F5F2EB] border border-[#3A332B] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">

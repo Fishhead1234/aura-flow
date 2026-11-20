@@ -102,9 +102,9 @@ export const OnboardingWizard: React.FC = () => {
   const isZh = locale === 'zh-TW' || locale === 'zh-CN';
 
   // STEP 1 STATE
-  const [studioName, setStudioName] = useState('Sol Sanctuary');
-  const [studioSlug, setStudioSlug] = useState('sol-sanctuary');
-  const [tagline, setTagline] = useState('Mindful Reformer & Dynamic Movement Sanctuary');
+  const [studioName, setStudioName] = useState('');
+  const [studioSlug, setStudioSlug] = useState('');
+  const [tagline, setTagline] = useState('');
   const [logoUrl, setLogoUrl] = useState<string>('');
 
   // STEP 2 STATE
@@ -113,7 +113,7 @@ export const OnboardingWizard: React.FC = () => {
   const [waitlistMins, setWaitlistMins] = useState(30);
 
   // STEP 3 STATE
-  const [className, setClassName] = useState('Morning Reformer Sculpt');
+  const [className, setClassName] = useState('');
   const [category, setCategory] = useState<ClassCategory>('Reformer');
   const [visibility, setVisibility] = useState<ClassVisibility>('PUBLIC');
   const [privatePreset, setPrivatePreset] = useState<PrivateCapacityPreset>('1_ON_1');

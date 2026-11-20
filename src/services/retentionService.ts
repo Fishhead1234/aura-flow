@@ -22,41 +22,7 @@ export const DEFAULT_RETENTION_CARE_CONFIG: RetentionCareConfig = {
     '最近忙碌嗎？{{coachName}} 老師為您留了專屬伸展時光 🌿 距離上次「{{lastClass}}」已過了兩週，隨時回來教室放鬆肩頸、重新充電！',
 };
 
-export const SAMPLE_RETENTION_CANDIDATES: RetentionCandidate[] = [
-  {
-    studentId: 'usr-maya-student',
-    studentName: 'Maya Lin',
-    studentEmail: 'maya@example.com',
-    studentAvatar:
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-    triggerType: 'MILESTONE_5',
-    completedClassesCount: 5,
-    daysSinceLastBooking: 2,
-    lastSessionTitle: 'Dynamic Pilates',
-  },
-  {
-    studentId: 'usr-lucas-student',
-    studentName: 'Lucas Chen (陳立安)',
-    studentEmail: 'lucas.chen@example.com',
-    studentAvatar:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-    triggerType: 'MILESTONE_10',
-    completedClassesCount: 10,
-    daysSinceLastBooking: 4,
-    lastSessionTitle: 'Athletic Reformer Burn',
-  },
-  {
-    studentId: 'usr-sophia-student',
-    studentName: 'Sophia Wang',
-    studentEmail: 'sophia.w@example.com',
-    studentAvatar:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
-    triggerType: 'INACTIVE_14D',
-    completedClassesCount: 7,
-    daysSinceLastBooking: 16,
-    lastSessionTitle: 'Evening Sound Bath',
-  },
-];
+export const SAMPLE_RETENTION_CANDIDATES: RetentionCandidate[] = [];
 
 export function formatRetentionMessage(
   template: string,

@@ -43,3 +43,4 @@ export const safeAreaBottom = isStandaloneAndroid
 export const modalTopClearance = isStandaloneAndroid
   ? 'calc(max(env(safe-area-inset-top, 0px), 38px) + 12px)'
   : 'calc(env(safe-area-inset-top, 0px) + 12px)';
+

@@ -91,16 +91,16 @@ export const App: React.FC = () => {
       } else if (pathname === '/explore' || pathname.startsWith('/explore')) {
         navigateTo({ path: 'explore' });
       } else if (pathname.startsWith('/vip/')) {
-        const inviteToken = pathname.replace('/vip/', '').split('/')[0] || 'vip-elena-reformer-88';
+        const inviteToken = pathname.replace('/vip/', '').split('/')[0] || '';
         navigateTo({ path: 'vip_booking', inviteToken });
       } else if (pathname.startsWith('/studio/')) {
-        const slug = pathname.replace('/studio/', '').split('/')[0] || 'sol-sanctuary';
+        const slug = pathname.replace('/studio/', '').split('/')[0] || 'my-studio';
         navigateTo({ path: 'public_studio', slug });
       } else if (pathname.startsWith('/s/')) {
-        const slug = pathname.replace('/s/', '').split('/')[0] || 'sol-sanctuary';
+        const slug = pathname.replace('/s/', '').split('/')[0] || 'my-studio';
         navigateTo({ path: 'public_studio', slug });
       } else {
-        navigateTo({ path: 'public_studio', slug: 'sol-sanctuary' });
+        navigateTo({ path: 'admin' });
       }
     };
 

@@ -35,7 +35,7 @@ import {
 import { DEFAULT_RETENTION_CARE_CONFIG } from '../services/retentionService';
 
 function parseInitialRoute(): AppRoute {
-  if (typeof window === 'undefined') return { path: 'public_studio', slug: 'sol-sanctuary' };
+  if (typeof window === 'undefined') return { path: 'public_studio', slug: 'my-studio' };
   const pathname = window.location.pathname;
   if (pathname === '/admin' || pathname.startsWith('/admin')) {
     return { path: 'admin' };
@@ -47,222 +47,123 @@ function parseInitialRoute(): AppRoute {
     return { path: 'explore' };
   }
   if (pathname.startsWith('/vip/')) {
-    const inviteToken = pathname.replace('/vip/', '').split('/')[0] || 'vip-elena-reformer-88';
+    const inviteToken = pathname.replace('/vip/', '').split('/')[0] || '';
     return { path: 'vip_booking', inviteToken };
   }
   if (pathname.startsWith('/studio/')) {
-    const slug = pathname.replace('/studio/', '').split('/')[0] || 'sol-sanctuary';
+    const slug = pathname.replace('/studio/', '').split('/')[0] || 'my-studio';
     return { path: 'public_studio', slug };
   }
   if (pathname.startsWith('/s/')) {
-    const slug = pathname.replace('/s/', '').split('/')[0] || 'sol-sanctuary';
+    const slug = pathname.replace('/s/', '').split('/')[0] || 'my-studio';
     return { path: 'public_studio', slug };
   }
-  const boundSlug = localStorage.getItem('auraflow_bound_studio_slug');
+  const boundSlug = typeof window !== 'undefined' ? localStorage.getItem('auraflow_bound_studio_slug') : null;
   if (boundSlug) {
     return { path: 'public_studio', slug: boundSlug };
   }
-  return { path: 'public_studio', slug: 'sol-sanctuary' };
+  return { path: 'admin' };
 }
 
-// 1. Instructor Owner ("Elena Rostova", elena@example.com)
-const PERSONA_ELENA: DatabaseUser = {
-  id: 'usr-elena-owner',
-  email: 'elena@example.com',
+// Clean User Personas (Zero Mock Users)
+const PERSONA_OWNER: DatabaseUser = {
+  id: 'usr-owner-clean',
+  email: 'coach@example.com',
   role: 'OWNER',
-  name: 'Elena Rostova',
-  avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-  studioId: 'studio-sol-01',
-  createdAt: '2026-11-01T00:00:00.000Z',
+  name: '工作室教練 (Coach)',
+  studioId: 'studio-clean-01',
+  createdAt: new Date().toISOString(),
 };
 
-// 2. Existing Student ("Maya Lin", maya@example.com with 2 credits remaining)
-const PERSONA_MAYA: DatabaseUser = {
-  id: 'usr-maya-student',
-  email: 'maya@example.com',
+const PERSONA_STUDENT: DatabaseUser = {
+  id: 'usr-student-clean',
+  email: 'student@example.com',
   role: 'STUDENT',
-  name: 'Maya Lin',
-  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  createdAt: '2026-11-01T00:00:00.000Z',
+  name: '學員 (Student)',
+  createdAt: new Date().toISOString(),
 };
 
-// 3. New Student (0 Passes)
-const PERSONA_NEW_STUDENT: DatabaseUser = {
-  id: 'usr-new-student',
-  email: 'alex.guest@example.com',
-  role: 'STUDENT',
-  name: 'Alex Rivera (New Student)',
-  avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-  createdAt: '2026-11-02T00:00:00.000Z',
-};
-
-// 4. New Studio Owner (Starting onboarding)
-const PERSONA_NEW_OWNER: DatabaseUser = {
-  id: 'usr-new-owner',
-  email: 'founder@example.com',
-  role: 'OWNER',
-  name: 'Chloe Laurent (New Owner)',
-  avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-  createdAt: '2026-11-02T00:00:00.000Z',
-};
+const PERSONA_ELENA = PERSONA_OWNER;
+const PERSONA_NEW_OWNER = PERSONA_OWNER;
+const PERSONA_MAYA = PERSONA_STUDENT;
+const PERSONA_NEW_STUDENT = PERSONA_STUDENT;
 
 const DEFAULT_COMMUNICATION: StudioCommunicationSettings = {
-  lineOaEnabled: true,
-  lineChannelId: '@sol_sanctuary_tw',
-  lineChannelSecret: 'sec_884920a9fbc10293847',
-  lineAccessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.solsanctuary_token_sample',
-  instagramHandle: '@solsanctuary.movement',
-  supportEmail: 'hello@solsanctuary.studio',
+  lineOaEnabled: false,
+  lineChannelId: '',
+  lineChannelSecret: '',
+  lineAccessToken: '',
+  instagramHandle: '',
+  supportEmail: '',
 };
 
 const DEFAULT_PAYMENTS: StudioPaymentConfig = {
   stripe: {
-    enabled: true,
-    connected: true,
-    accountName: 'Sol Sanctuary Direct Payouts (acct_sol_sanctuary_8829)',
+    enabled: false,
+    connected: false,
+    accountName: '',
     supportedCards: ['Visa', 'Mastercard', 'JCB', 'Apple Pay', 'Google Pay'],
   },
   linePay: {
-    enabled: true,
-    channelId: 'linepay_merchant_99281',
-    channelSecret: 'sec_linepay_7721839',
-    qrCodeUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=300&auto=format&fit=crop&q=80',
+    enabled: false,
+    channelId: '',
+    channelSecret: '',
+    qrCodeUrl: '',
   },
   jkoPay: {
-    enabled: true,
-    merchantId: 'JKO_STORE_883019',
-    qrCodeUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=300&auto=format&fit=crop&q=80',
+    enabled: false,
+    merchantId: '',
+    qrCodeUrl: '',
   },
   bankTransfer: {
-    enabled: true,
-    bankName: '國泰世華商業銀行 (Cathay United Bank)',
-    bankCode: '013',
-    accountNumber: '013-50-6189201',
-    accountName: '日光彼拉提斯工作室 (Elena Rostova)',
+    enabled: false,
+    bankName: '',
+    bankCode: '',
+    accountNumber: '',
+    accountName: '',
   },
 };
 
 const DEFAULT_WEEKLY_TIP: CoachWeeklyTip = {
-  id: 'tip-sol-01',
-  studioId: 'studio-sol-01',
-  coachName: 'Elena Rostova',
-  coachAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-  title: '本週動作指引：器械核心骨盆中立位與課後胸椎延展',
-  content:
-    '練習 Reformer 腿部推蹬 (Footwork) 時，請專注將肋骨下緣輕柔收回、維持骨盆水平中立，避免下背拱起代償。課後建議搭配 3 分鐘貓牛式呼吸與胸椎旋轉伸展，能有效釋放整週久坐的肩頸緊繃！',
-  mediaUrl:
-    'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=700&auto=format&fit=crop&q=80',
+  id: 'tip-clean-01',
+  studioId: 'studio-clean-01',
+  coachName: '工作室教練',
+  coachAvatar: '',
+  title: '',
+  content: '',
+  mediaUrl: '',
   mediaType: 'IMAGE',
-  focusTag: '核心控制 & 課後伸展',
-  pinnedAt: '2026-11-02T08:00:00.000Z',
+  focusTag: '',
+  pinnedAt: '',
 };
 
-const INITIAL_BODY_JOURNAL: BodyJournalEntry[] = [
-  {
-    id: 'bj-01',
-    userId: 'usr-maya-student',
-    studioId: 'studio-sol-01',
-    sessionTitle: 'Dynamic Pilates',
-    instructorName: 'Elena Rostova',
-    feelingTag: '🌿 核心穩定有力',
-    note: '今天調整了呼吸節奏，百次拍擊 (Hundred) 時下腹更有力量，課後腰背非常輕鬆！',
-    energyLevel: 5,
-    createdAt: '2026-11-02T09:15:00.000Z',
-  },
-  {
-    id: 'bj-02',
-    userId: 'usr-maya-student',
-    studioId: 'studio-sol-01',
-    sessionTitle: 'Gentle Yin Yoga',
-    instructorName: 'Chloe M.',
-    feelingTag: '✨ 肩頸徹底釋放',
-    note: '深層髖關節伸展搭配頌缽尾韻，睡眠品質明顯提升。',
-    energyLevel: 4,
-    createdAt: '2026-10-29T19:30:00.000Z',
-  },
-];
+const INITIAL_BODY_JOURNAL: BodyJournalEntry[] = [];
 
-// Curated Boutique Studios for Public Marketplace Discovery
+// Clean single default studio (Zero Mock Data)
 const INITIAL_STUDIOS: Studio[] = [
   {
-    id: 'studio-sol-01',
-    ownerId: 'usr-elena-owner',
-    slug: 'sol-sanctuary',
-    name: 'Sol Sanctuary',
-    coachName: 'Elena Rostova',
-    studioCode: 'SOL88',
-    tagline: 'Mindful Reformer & Dynamic Movement Sanctuary',
-    currency: 'USD',
-    stripeAccountId: 'acct_sol_sanctuary_8829',
-    stripeAccountName: 'Sol Sanctuary Loon',
-    cancelWindowHrs: 12,
-    waitlistMins: 30,
-    roomsCount: 2,
-    monthlySubscriptionPrice: 29.0,
-    platformTakeRate: 0.0,
-    logoMark: '🌿',
-    createdAt: '2026-11-01T00:00:00.000Z',
-    announcementBanner: '🎉 教室最新公告：新學員首堂器械皮拉提體驗現折 NT$ 200 • 歡迎直接預約！',
-    discoverable: true,
-    city: 'Taipei • Da-an District (台北大安)',
-    isPro: true,
-    isLive: true,
-    communication: DEFAULT_COMMUNICATION,
-    paymentMethods: DEFAULT_PAYMENTS,
-    weeklyTip: DEFAULT_WEEKLY_TIP,
-    retentionCare: DEFAULT_RETENTION_CARE_CONFIG,
-  },
-  {
-    id: 'studio-core-pulse-02',
-    ownerId: 'usr-marcus-owner',
-    slug: 'core-pulse',
-    name: 'Core Pulse',
-    coachName: 'Marcus K.',
-    studioCode: 'CORE99',
-    tagline: 'Athletic Reformer, Functional Strength & Precision Mobility',
+    id: 'studio-clean-01',
+    ownerId: PERSONA_OWNER.id,
+    slug: 'my-studio',
+    name: '我的專屬工作室',
+    coachName: '工作室教練',
+    studioCode: 'AURA01',
+    tagline: '專屬動作空間與健康工作室',
     currency: 'TWD',
-    stripeAccountId: 'acct_core_pulse_tw_9102',
-    stripeAccountName: 'Core Pulse TW',
-    cancelWindowHrs: 24,
+    stripeAccountId: '',
+    stripeAccountName: '',
+    cancelWindowHrs: 12,
     waitlistMins: 30,
     roomsCount: 1,
     monthlySubscriptionPrice: 29.0,
     platformTakeRate: 0.0,
-    logoMark: '⚡',
-    createdAt: '2026-11-01T00:00:00.000Z',
-    announcementBanner: '✨ 本月主打：1對1 體態評估與運動表現核心訓練開放預約中',
+    logoMark: '✨',
+    createdAt: new Date().toISOString(),
+    announcementBanner: '',
     discoverable: true,
-    city: 'Taipei • Xinyi District (台北信義)',
-    isPro: true,
-    isLive: true,
-    communication: DEFAULT_COMMUNICATION,
-    paymentMethods: DEFAULT_PAYMENTS,
-    weeklyTip: DEFAULT_WEEKLY_TIP,
-    retentionCare: DEFAULT_RETENTION_CARE_CONFIG,
-  },
-  {
-    id: 'studio-kora-03',
-    ownerId: 'usr-kora-owner',
-    slug: 'kora-sound-yoga',
-    name: 'Kōra Sound & Yin Sanctuary',
-    coachName: 'Chloe M.',
-    studioCode: 'KORA77',
-    tagline: 'Himalayan Singing Bowls, Breathwork & Restorative Yin',
-    currency: 'TWD',
-    stripeAccountId: 'acct_kora_tw_3319',
-    stripeAccountName: 'Kora Sanctuary TW',
-    cancelWindowHrs: 12,
-    waitlistMins: 20,
-    roomsCount: 1,
-    monthlySubscriptionPrice: 29.0,
-    platformTakeRate: 0.0,
-    logoMark: '🧘',
-    createdAt: '2026-11-01T00:00:00.000Z',
-    announcementBanner: '🌙 週五晚間滿月頌缽音療專場 • 僅剩最後 2 席名額',
-    discoverable: true,
-    city: 'Taichung • West District (台中西區)',
-    isPro: true,
-    isLive: true,
+    city: 'Taipei',
+    isPro: false,
+    isLive: false,
     communication: DEFAULT_COMMUNICATION,
     paymentMethods: DEFAULT_PAYMENTS,
     weeklyTip: DEFAULT_WEEKLY_TIP,
@@ -270,461 +171,36 @@ const INITIAL_STUDIOS: Studio[] = [
   },
 ];
 
-const INITIAL_CONVERSATIONS: Conversation[] = [
-  {
-    id: 'conv-maya-01',
-    studioId: 'studio-sol-01',
-    studentId: 'usr-maya-student',
-    studentName: 'Maya Lin',
-    studentEmail: 'maya@example.com',
-    studentPhone: '+886 912-345-678',
-    studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-    sessionId: 'sess-01',
-    sessionTitle: 'Dynamic Pilates',
-    sessionTime: '08:00 - 08:50',
-    lastMessage: 'Maya 您好！這堂課適合所有程度學員，請自備水壺並穿著防滑襪，教室有提供更衣間與置物櫃。',
-    lastMessageTime: '10:42 AM',
-    unreadCount: 0,
-    channel: 'IN_APP',
-  },
-  {
-    id: 'conv-lucas-02',
-    studioId: 'studio-sol-01',
-    studentId: 'usr-lucas-student',
-    studentName: 'Lucas Chen (陳立安)',
-    studentEmail: 'lucas.chen@example.com',
-    studentPhone: '+886 928-888-123',
-    studentAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-    sessionId: 'sess-02',
-    sessionTitle: 'Athletic Reformer Burn',
-    sessionTime: '09:30 - 10:20',
-    lastMessage: '教練您好，已綁定 LINE 官方帳號，請問週六這場還有名額可以候補嗎？',
-    lastMessageTime: '09:15 AM',
-    unreadCount: 1,
-    channel: 'LINE_OA',
-  },
-  {
-    id: 'conv-sophia-03',
-    studioId: 'studio-sol-01',
-    studentId: 'usr-sophia-student',
-    studentName: 'Sophia Wang',
-    studentEmail: 'sophia.w@example.com',
-    studentPhone: '+886 933-777-999',
-    studentAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
-    sessionId: 'sess-05',
-    sessionTitle: 'Evening Sound Bath',
-    sessionTime: '18:00 - 19:00',
-    lastMessage: '請問音療頌缽課程需要自備瑜珈墊嗎？還是教室有專屬厚墊呢？',
-    lastMessageTime: '昨天',
-    unreadCount: 0,
-    channel: 'IN_APP',
-  },
-];
-
-const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
-  'conv-maya-01': [
-    {
-      id: 'msg-m1',
-      conversationId: 'conv-maya-01',
-      senderRole: 'STUDENT',
-      senderName: 'Maya Lin',
-      senderAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      content: 'Elena 教練您好！我剛預約了週三的 Dynamic Pilates，請問需要準備特別的裝備嗎？初學者跟得上嗎？',
-      channel: 'IN_APP',
-      createdAt: '2026-11-03T02:30:00.000Z',
-      isRead: true,
-    },
-    {
-      id: 'msg-m2',
-      conversationId: 'conv-maya-01',
-      senderRole: 'INSTRUCTOR',
-      senderName: 'Elena Rostova',
-      content: 'Maya 您好！這堂課適合所有程度學員，動作會由淺入深給予不同進階選項。請自備水壺並穿著防滑五趾襪，教室有提供更衣間與密碼置物櫃。期待課堂見！🌿',
-      channel: 'IN_APP',
-      createdAt: '2026-11-03T02:42:00.000Z',
-      isRead: true,
-    },
-  ],
-  'conv-lucas-02': [
-    {
-      id: 'msg-l1',
-      conversationId: 'conv-lucas-02',
-      senderRole: 'STUDENT',
-      senderName: 'Lucas Chen',
-      senderAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-      content: '教練您好，已綁定 LINE 官方帳號，請問週六這場還有名額可以候補嗎？',
-      channel: 'LINE_OA',
-      createdAt: '2026-11-03T01:15:00.000Z',
-      isRead: false,
-    },
-  ],
-  'conv-sophia-03': [
-    {
-      id: 'msg-s1',
-      conversationId: 'conv-sophia-03',
-      senderRole: 'STUDENT',
-      senderName: 'Sophia Wang',
-      senderAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
-      content: '請問音療頌缽課程需要自備瑜珈墊嗎？還是教室有專屬厚墊呢？',
-      channel: 'IN_APP',
-      createdAt: '2026-11-02T10:00:00.000Z',
-      isRead: true,
-    },
-    {
-      id: 'msg-s2',
-      conversationId: 'conv-sophia-03',
-      senderRole: 'INSTRUCTOR',
-      senderName: 'Elena Rostova',
-      content: 'Sophia 晚安！教室會為大家準備高磅數羊毛瑜珈墊與眼枕，您只要穿著舒適保暖衣物前來即可放鬆享受療癒時光。',
-      channel: 'IN_APP',
-      createdAt: '2026-11-02T10:15:00.000Z',
-      isRead: true,
-    },
-  ],
-};
-
-const INITIAL_BROADCASTS: RosterBroadcast[] = [
-  {
-    id: 'bc-1',
-    studioId: 'studio-sol-01',
-    sessionId: 'sess-01',
-    sessionTitle: 'Dynamic Pilates',
-    instructorName: 'Elena Rostova',
-    message: '【課前提醒】今日器械皮拉提請著防滑底五趾襪，教室備有置物櫃，建議提早 10 分鐘到場更衣暖身。',
-    channels: ['IN_APP', 'LINE_OA'],
-    recipientCount: 6,
-    sentAt: '2026-11-02T07:00:00.000Z',
-  },
-];
-
-// 5 Initial classes on the schedule with realistic spot capacities
-const INITIAL_SESSIONS: ClassSession[] = [
-  {
-    id: 'sess-01',
-    studioId: 'studio-sol-01',
-    title: 'Dynamic Pilates',
-    category: 'Reformer',
-    instructor: 'Elena Rostova',
-    instructorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    startTime: '2026-11-02T08:00:00.000Z',
-    endTime: '2026-11-02T08:50:00.000Z',
-    durationMins: 50,
-    capacity: 8,
-    bookedCount: 6, // 2 spots left
-    price: 28.0,
-    roomName: 'Reformer Studio A',
-    level: 'Intermediate',
-    preClassNote:
-      '請自備乾淨防滑五趾襪與溫水壺，建議提早 10 分鐘抵達暖身。今日將加強深層核心橫膈膜呼吸與骨盆穩定控制！',
-    postClassHomework:
-      '課後請補充 300ml 溫水，並於睡前進行 3 分鐘「貓牛式呼吸」與「鴿式臀部拉伸」，釋放下背與髖關節張力。',
-  },
-  {
-    id: 'sess-02',
-    studioId: 'studio-sol-01',
-    title: 'Vinyasa Flow',
-    category: 'Flow',
-    instructor: 'Marcus K.',
-    instructorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    startTime: '2026-11-02T09:15:00.000Z',
-    endTime: '2026-11-02T10:15:00.000Z',
-    durationMins: 60,
-    capacity: 20,
-    bookedCount: 15, // 5 spots left
-    price: 26.0,
-    roomName: 'Zen Bamboo Hall',
-    level: 'All Levels',
-    preClassNote:
-      '請穿著延展性佳的吸汗運動服裝，課前 1 小時避免過飽飲食。今日流動著重肩胛穩定與後彎開胸練習。',
-    postClassHomework:
-      '下課後建議進行 5 分鐘嬰兒式 (Child’s Pose) 與仰臥脊椎扭轉，並補充優質蛋白質幫助肌群修復。',
-  },
-  {
-    id: 'sess-03',
-    studioId: 'studio-sol-01',
-    title: 'Gentle Yin Yoga',
-    category: 'Yin Yoga',
-    instructor: 'Chloe M.',
-    instructorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    startTime: '2026-11-02T10:30:00.000Z',
-    endTime: '2026-11-02T11:30:00.000Z',
-    durationMins: 60,
-    capacity: 8,
-    bookedCount: 8, // Class Full • Waitlist Open
-    price: 28.0,
-    roomName: 'Warm Cedar Room',
-    level: 'Beginner',
-    preClassNote:
-      '教室已備妥高磅數瑜珈墊、抱枕與精油眼枕，請穿著寬鬆保暖的長袖外罩，讓身心準備進入深層陰瑜珈停留。',
-    postClassHomework:
-      '今晚請避免冰冷飲品，睡前可搭配 5 次 4-7-8 深呼吸，延續課堂筋膜釋放後的平靜睡眠品質。',
-  },
-  {
-    id: 'sess-04',
-    studioId: 'studio-sol-01',
-    title: 'Morning Reformer Sculpt',
-    category: 'Reformer',
-    instructor: 'Elena Rostova',
-    instructorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    startTime: '2026-11-03T08:30:00.000Z',
-    endTime: '2026-11-03T09:20:00.000Z',
-    durationMins: 50,
-    capacity: 8,
-    bookedCount: 7, // 1 spot left
-    price: 28.0,
-    roomName: 'Reformer Studio A',
-    level: 'All Levels',
-    preClassNote:
-      '請著防滑襪並攜帶毛巾，今日將使用 Reformer 搭配彈力圈 (Magic Circle) 強化大腿內側與臀中肌線條。',
-    postClassHomework:
-      '課後 30 分鐘內建議補充無糖豆漿或乳清蛋白，並針對臀腿進行滾筒放鬆各 90 秒。',
-  },
-  {
-    id: 'sess-05',
-    studioId: 'studio-sol-01',
-    title: 'Restorative Sound Bath',
-    category: 'Sound Bath',
-    instructor: 'Maya Lin',
-    instructorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    startTime: '2026-11-03T18:00:00.000Z',
-    endTime: '2026-11-03T19:15:00.000Z',
-    durationMins: 75,
-    capacity: 12,
-    bookedCount: 11, // 1 spot left
-    price: 35.0,
-    roomName: 'Sound Sanctuary',
-    level: 'All Levels',
-    visibility: 'PUBLIC',
-    preClassNote:
-      '頌缽音療期間體溫會微幅下降，請攜帶舒適薄毯或保暖襪，並於入場後將手機調至飛航靜音模式。',
-    postClassHomework:
-      '音療後請多飲用溫開水幫助代謝循環，今晚減少滑手機時間，讓大腦維持 Alpha 波放鬆狀態。',
-  },
-  {
-    id: 'sess-vip-01',
-    studioId: 'studio-sol-01',
-    title: '1-on-1 Bespoke Reformer Assessment',
-    category: '私人教練',
-    instructor: 'Elena Rostova',
-    instructorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    startTime: '2026-11-04T14:00:00.000Z',
-    endTime: '2026-11-04T15:00:00.000Z',
-    durationMins: 60,
-    capacity: 1,
-    bookedCount: 0,
-    price: 85.0,
-    roomName: 'VIP Private Suite',
-    level: 'All Levels',
-    visibility: 'PRIVATE',
-    privatePreset: '1_ON_1',
-    pinCode: '8829',
-    inviteToken: 'vip-elena-reformer-88',
-    preClassNote:
-      '專屬私教課前叮嚀：請穿著貼身運動服以便進行精準骨盆與脊柱體態評估，若有近期舊傷部位請於開場前告知教練。',
-    postClassHomework:
-      '私教課後專屬作業：每日早晚練習「靠牆天使 (Wall Angels)」10 次與「死蟲式 (Deadbug)」核心啟動 2 組。',
-    invitedStudents: [
-      {
-        id: 'usr-maya-student',
-        name: 'Maya Lin',
-        email: 'maya@example.com',
-        phone: '+886 912-345-678',
-        status: 'AWAITING',
-      },
-    ],
-  },
-];
-
-const INITIAL_PACKS: ClassPack[] = [
-  {
-    id: 'pack-5',
-    studioId: 'studio-sol-01',
-    name: '5-Class Pack',
-    credits: 5,
-    price: 115.0,
-    originalPrice: 140.0,
-    expiryDays: 90,
-    popularBadge: true,
-    description: 'Save $25 on your journey. Full access to Reformer & Flow sessions.',
-  },
-  {
-    id: 'pack-10',
-    studioId: 'studio-sol-01',
-    name: '10-Class Committed Pack',
-    credits: 10,
-    price: 210.0,
-    originalPrice: 280.0,
-    expiryDays: 120,
-    popularBadge: false,
-    description: 'Maximum transformation. Includes complimentary guest pass.',
-  },
-  {
-    id: 'pack-dropin',
-    studioId: 'studio-sol-01',
-    name: 'Single Drop-In Pass',
-    credits: 1,
-    price: 28.0,
-    expiryDays: 30,
-    popularBadge: false,
-    description: 'Flexible drop-in pass with no long-term commitment.',
-  },
-];
-
-// Maya Lin's active 5-pack pass with 2 credits remaining
+const INITIAL_CONVERSATIONS: Conversation[] = [];
+const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {};
+const INITIAL_BROADCASTS: RosterBroadcast[] = [];
+const INITIAL_SESSIONS: ClassSession[] = [];
+const INITIAL_PACKS: ClassPack[] = [];
 const INITIAL_MAYA_PASS: ClientPass = {
-  id: 'pass-maya-01',
-  userId: 'usr-maya-student',
-  studioId: 'studio-sol-01',
-  packId: 'pack-5',
-  packName: '5-Class Pack',
-  creditsTotal: 5,
-  creditsLeft: 2, // Exactly 2 credits left
-  expiresAt: '2026-12-31T23:59:59.000Z',
-  createdAt: '2026-10-15T10:00:00.000Z',
+  id: '',
+  userId: '',
+  studioId: 'studio-clean-01',
+  packId: '',
+  packName: '',
+  creditsTotal: 0,
+  creditsLeft: 0,
+  expiresAt: '',
+  createdAt: '',
 };
-
-const INITIAL_BOOKINGS: Booking[] = [
-  {
-    id: 'b-01',
-    studioId: 'studio-sol-01',
-    sessionId: 'sess-03',
-    sessionTitle: 'Gentle Yin Yoga',
-    sessionTime: '10:30 - 11:30 AM',
-    clientEmail: 'maya@example.com',
-    clientName: 'Maya Lin',
-    clientPhone: '+1 (555) 234-5678',
-    paymentMethod: 'PASS_CREDIT',
-    amountPaid: 0.0,
-    creditsDeducted: 1,
-    status: 'CONFIRMED',
-    createdAt: '2026-10-30T09:00:00.000Z',
-  },
-  {
-    id: 'b-02',
-    studioId: 'studio-sol-01',
-    sessionId: 'sess-03',
-    sessionTitle: 'Gentle Yin Yoga',
-    sessionTime: '10:30 - 11:30 AM',
-    clientEmail: 'lucas.m@example.com',
-    clientName: 'Lucas Miller',
-    clientPhone: '+1 (555) 345-6789',
-    paymentMethod: 'APPLE_PAY',
-    amountPaid: 28.0,
-    creditsDeducted: 0,
-    status: 'CONFIRMED',
-    createdAt: '2026-10-31T14:20:00.000Z',
-  },
-  {
-    id: 'b-03',
-    studioId: 'studio-sol-01',
-    sessionId: 'sess-01',
-    sessionTitle: 'Dynamic Pilates',
-    sessionTime: '08:00 - 08:50 AM',
-    clientEmail: 'maya@example.com',
-    clientName: 'Maya Lin',
-    clientPhone: '+1 (555) 887-2341',
-    paymentMethod: 'PASS_CREDIT',
-    amountPaid: 0.0,
-    creditsDeducted: 1,
-    status: 'CHECKED_IN',
-    createdAt: '2026-11-01T11:00:00.000Z',
-  },
-];
-
-const INITIAL_WAITLIST: WaitlistEntry[] = [
-  {
-    id: 'wl-01',
-    studioId: 'studio-sol-01',
-    sessionId: 'sess-03',
-    sessionTitle: 'Gentle Yin Yoga',
-    clientEmail: 'selina@example.com',
-    clientPhone: '+1 (555) 443-8991',
-    clientName: 'Selina Chen',
-    priorityOrder: 1,
-    mode: 'VIP_PREAUTH',
-    status: 'WAITING',
-    createdAt: '2026-11-01T15:00:00.000Z',
-  },
-  {
-    id: 'wl-02',
-    studioId: 'studio-sol-01',
-    sessionId: 'sess-03',
-    sessionTitle: 'Gentle Yin Yoga',
-    clientEmail: 'david.lin@example.com',
-    clientPhone: '+1 (555) 902-1144',
-    clientName: 'David Lin',
-    priorityOrder: 2,
-    mode: 'STANDARD',
-    status: 'WAITING',
-    createdAt: '2026-11-01T16:30:00.000Z',
-  },
-];
-
-const INITIAL_LEDGER: CreditLedgerEntry[] = [
-  {
-    id: 'led-01',
-    userId: 'usr-maya-student',
-    studioId: 'studio-sol-01',
-    passId: 'pass-maya-01',
-    type: 'PURCHASE',
-    delta: 5,
-    balanceAfter: 5,
-    referenceId: 'pack-5',
-    note: 'Purchased 5-Class Pack bundle',
-    createdAt: '2026-10-15T10:00:00.000Z',
-  },
-  {
-    id: 'led-02',
-    userId: 'usr-maya-student',
-    studioId: 'studio-sol-01',
-    passId: 'pass-maya-01',
-    type: 'BOOKING_DEBIT',
-    delta: -1,
-    balanceAfter: 4,
-    referenceId: 'sess-01',
-    note: 'Reserved Dynamic Pilates spot',
-    createdAt: '2026-10-20T12:00:00.000Z',
-  },
-  {
-    id: 'led-03',
-    userId: 'usr-maya-student',
-    studioId: 'studio-sol-01',
-    passId: 'pass-maya-01',
-    type: 'BOOKING_DEBIT',
-    delta: -1,
-    balanceAfter: 3,
-    referenceId: 'sess-02',
-    note: 'Reserved Vinyasa Flow spot',
-    createdAt: '2026-10-25T15:30:00.000Z',
-  },
-  {
-    id: 'led-04',
-    userId: 'usr-maya-student',
-    studioId: 'studio-sol-01',
-    passId: 'pass-maya-01',
-    type: 'BOOKING_DEBIT',
-    delta: -1,
-    balanceAfter: 2,
-    referenceId: 'sess-01',
-    note: 'Reserved Dynamic Pilates morning spot',
-    createdAt: '2026-11-01T11:00:00.000Z',
-  },
-];
-
+const INITIAL_BOOKINGS: Booking[] = [];
+const INITIAL_WAITLIST: WaitlistEntry[] = [];
+const INITIAL_LEDGER: CreditLedgerEntry[] = [];
 const INITIAL_STRIPE: StripeConnectOverview = {
-  connectedAccountName: 'Sol Sanctuary Loon',
-  stripeAccountId: 'acct_sol_sanctuary_8829',
-  grossVolume: 3593.0,
+  connectedAccountName: '',
+  stripeAccountId: '',
+  grossVolume: 0,
   platformFeeDeduction: 0.0,
-  stripeCardProcessingFee: 104.2,
-  netBalance: 3488.8,
-  pendingPayouts: 3593.0,
-  nextPayoutDate: '2026-12-29',
-  currency: 'USD',
-  payoutHistory: [
-    { id: 'po-1', amount: 2840.0, date: '2026-10-15', status: 'PAID', arrivalDate: '2026-10-17' },
-    { id: 'po-2', amount: 3120.0, date: '2026-10-30', status: 'PAID', arrivalDate: '2026-11-01' },
-  ],
+  stripeCardProcessingFee: 0,
+  netBalance: 0,
+  pendingPayouts: 0,
+  nextPayoutDate: '',
+  currency: 'TWD',
+  payoutHistory: [],
 };
 
 const createFreshStripeOverview = (
@@ -955,18 +431,30 @@ interface AuraState {
   }) => void;
 }
 
+if (typeof window !== 'undefined') {
+  const CLEAN_KEY = 'auraflow_empty_clean_v1';
+  if (localStorage.getItem(CLEAN_KEY) !== 'true') {
+    localStorage.removeItem('auraflow_has_launched');
+    localStorage.removeItem('auraflow_bound_studio_slug');
+    localStorage.removeItem('auraflow_is_pro');
+    localStorage.removeItem('aura-flow-db-v1');
+      localStorage.removeItem('aura-flow-clean-v2');
+    localStorage.setItem(CLEAN_KEY, 'true');
+  }
+}
+
 export const useAuraStore = create<AuraState>()(
   persist(
     (set, get) => ({
   currentRoute: parseInitialRoute(),
-  activePersona: 'maya_student',
+  activePersona: 'new_owner',
   simulateStripePayment: true, // Default to auto-approving test transactions
   isDevSandboxVisible: false,
   isDevPinModalOpen: false,
 
   locale: (typeof window !== 'undefined' && (localStorage.getItem('aura_locale') as SupportedLocale)) || 'en',
   currency: (typeof window !== 'undefined' && (localStorage.getItem('aura_currency') as SupportedCurrency)) || 'USD',
-  selectedDate: '2026-11-02',
+  selectedDate: new Date().toISOString().split('T')[0],
   activeCategory: 'All',
   activeAdminTab: 'schedule',
   isMobileDrawerOpen: false,
@@ -974,14 +462,14 @@ export const useAuraStore = create<AuraState>()(
   // Messaging & Communication Initial State
   conversations: INITIAL_CONVERSATIONS,
   messages: INITIAL_MESSAGES,
-  activeConversationId: 'conv-maya-01',
+  activeConversationId: null,
   broadcastHistory: INITIAL_BROADCASTS,
   isStudentChatOpen: false,
   studentChatSessionContext: null,
 
-  currentUser: PERSONA_MAYA,
+  currentUser: PERSONA_OWNER,
   studios: INITIAL_STUDIOS,
-  activeStudioId: 'studio-sol-01',
+  activeStudioId: 'studio-clean-01',
   studio: INITIAL_STUDIOS[0],
 
   sessions: INITIAL_SESSIONS,
@@ -1002,7 +490,7 @@ export const useAuraStore = create<AuraState>()(
   isStudentOnboardingOpen: false,
   isQrScannerOpen: false,
   boundStudioSlug: (typeof window !== 'undefined' && localStorage.getItem('auraflow_bound_studio_slug')) || null,
-  favoriteStudioSlugs: ['sol-sanctuary'],
+  favoriteStudioSlugs: [],
   isPaywallModalOpen: false,
   paywallTriggerReason: null,
   isTransferModalOpen: false,
@@ -1071,7 +559,7 @@ export const useAuraStore = create<AuraState>()(
   },
 
   navigateTo: (route) => {
-    let url = '/studio/sol-sanctuary';
+    let url = '/admin';
     if (route.path === 'admin') url = '/admin';
     else if (route.path === 'onboarding') url = '/onboarding';
     else if (route.path === 'explore') url = '/explore';
@@ -1095,73 +583,52 @@ export const useAuraStore = create<AuraState>()(
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraflow_has_launched', 'true');
     }
+    const cleanStudio = INITIAL_STUDIOS[0];
     if (persona === 'elena_owner') {
-      const proElenaStudio = { ...INITIAL_STUDIOS[0], isPro: true, isLive: true };
       set({
         activePersona: 'elena_owner',
-        currentUser: PERSONA_ELENA,
-        studio: proElenaStudio,
-        studios: get().studios.map((s) => (s.id === proElenaStudio.id ? proElenaStudio : s)),
+        currentUser: PERSONA_OWNER,
+        studio: cleanStudio,
+        studios: [cleanStudio],
         isWelcomeModalOpen: false,
       });
       get().navigateTo({ path: 'admin' });
     } else if (persona === 'maya_student') {
       set({
         activePersona: 'maya_student',
-        currentUser: PERSONA_MAYA,
+        currentUser: PERSONA_STUDENT,
         userPass: {
           ...INITIAL_MAYA_PASS,
-          creditsLeft: 2, // 2 Credits remaining
+          userId: PERSONA_STUDENT.id,
+          creditsLeft: 0,
         },
         isWelcomeModalOpen: false,
       });
-      get().navigateTo({ path: 'public_studio', slug: 'sol-sanctuary' });
+      get().navigateTo({ path: 'public_studio', slug: cleanStudio.slug });
     } else if (persona === 'new_student') {
       set({
         activePersona: 'new_student',
-        currentUser: PERSONA_NEW_STUDENT,
+        currentUser: PERSONA_STUDENT,
         bookings: [],
         userPass: {
           ...INITIAL_MAYA_PASS,
           id: 'pass-guest-0',
-          userId: PERSONA_NEW_STUDENT.id,
-          creditsLeft: 0, // 0 Credits to test Stripe/Apple Pay checkout!
+          userId: PERSONA_STUDENT.id,
+          creditsLeft: 0,
         },
         isWelcomeModalOpen: false,
       });
       get().navigateTo({ path: 'explore' });
     } else if (persona === 'new_owner') {
-      const freshStudio: Studio = {
-        id: 'studio-new-owner-fresh',
-        ownerId: PERSONA_NEW_OWNER.id,
-        slug: 'my-studio',
-        name: 'My Movement Studio',
-        coachName: 'New Coach',
-        tagline: 'Mindful Movement & Wellness Sanctuary',
-        currency: 'TWD',
-        stripeAccountId: `acct_new_${Date.now()}`,
-        stripeAccountName: 'New Coach Payouts',
-        cancelWindowHrs: 12,
-        waitlistMins: 30,
-        roomsCount: 1,
-        monthlySubscriptionPrice: 29.0,
-        platformTakeRate: 0.0,
-        logoMark: '✨',
-        createdAt: new Date().toISOString(),
-        isPro: false,
-        isLive: false,
-        communication: DEFAULT_COMMUNICATION,
-        paymentMethods: DEFAULT_PAYMENTS,
-      };
-      set((state) => ({
+      set(() => ({
         activePersona: 'new_owner',
-        currentUser: PERSONA_NEW_OWNER,
-        studio: freshStudio,
-        studios: [freshStudio, ...state.studios.filter((s) => s.id !== freshStudio.id)],
-        sessions: state.sessions.filter((s) => s.studioId !== freshStudio.id),
-        bookings: state.bookings.filter((b) => b.studioId !== freshStudio.id),
-        waitlist: state.waitlist.filter((w) => w.studioId !== freshStudio.id),
-        conversations: state.conversations.filter((c) => c.studioId !== freshStudio.id),
+        currentUser: PERSONA_OWNER,
+        studio: cleanStudio,
+        studios: [cleanStudio],
+        sessions: [],
+        bookings: [],
+        waitlist: [],
+        conversations: [],
         isWelcomeModalOpen: false,
       }));
       get().navigateTo({ path: 'onboarding' });
@@ -1169,38 +636,23 @@ export const useAuraStore = create<AuraState>()(
   },
 
   resetAsNewCoach: () => {
-    const freshStudio: Studio = {
-      id: 'studio-new-coach-clean',
-      ownerId: PERSONA_NEW_OWNER.id,
-      slug: 'fresh-studio',
-      name: 'New Coach Studio',
-      coachName: 'New Coach',
-      tagline: 'Boutique Movement & Personal Training',
-      currency: 'TWD',
-      stripeAccountId: `acct_fresh_${Date.now()}`,
-      stripeAccountName: 'New Coach Direct Payouts',
-      cancelWindowHrs: 12,
-      waitlistMins: 30,
-      roomsCount: 1,
-      monthlySubscriptionPrice: 29.0,
-      platformTakeRate: 0.0,
-      logoMark: '✨',
-      createdAt: new Date().toISOString(),
-      isPro: true,
-      isLive: true,
-      communication: DEFAULT_COMMUNICATION,
-      paymentMethods: DEFAULT_PAYMENTS,
-    };
-    set((state) => ({
+    const cleanStudio = INITIAL_STUDIOS[0];
+    set(() => ({
       activePersona: 'new_owner',
-      currentUser: PERSONA_NEW_OWNER,
-      studio: freshStudio,
-      studios: [freshStudio, ...state.studios.filter((s) => s.id !== freshStudio.id)],
-      sessions: state.sessions.filter((s) => s.studioId !== freshStudio.id),
-      bookings: state.bookings.filter((b) => b.studioId !== freshStudio.id),
-      waitlist: state.waitlist.filter((w) => w.studioId !== freshStudio.id),
-      conversations: state.conversations.filter((c) => c.studioId !== freshStudio.id),
-      stripeOverview: createFreshStripeOverview(freshStudio.name, 'TWD'),
+      currentUser: PERSONA_OWNER,
+      studio: cleanStudio,
+      studios: [cleanStudio],
+      activeStudioId: cleanStudio.id,
+      sessions: [],
+      classPacks: [],
+      bookings: [],
+      waitlist: [],
+      creditLedger: [],
+      conversations: [],
+      messages: {},
+      broadcastHistory: [],
+      bodyJournalEntries: [],
+      stripeOverview: INITIAL_STRIPE,
       isWelcomeModalOpen: false,
     }));
     get().navigateTo({ path: 'admin' });
@@ -1215,7 +667,7 @@ export const useAuraStore = create<AuraState>()(
     set({
       studios: INITIAL_STUDIOS,
       studio: INITIAL_STUDIOS[0],
-      activeStudioId: 'studio-sol-01',
+      activeStudioId: 'studio-clean-01',
       sessions: INITIAL_SESSIONS,
       classPacks: INITIAL_PACKS,
       userPass: INITIAL_MAYA_PASS,
@@ -1225,7 +677,7 @@ export const useAuraStore = create<AuraState>()(
       stripeOverview: INITIAL_STRIPE,
       conversations: INITIAL_CONVERSATIONS,
       messages: INITIAL_MESSAGES,
-      activeConversationId: 'conv-maya-01',
+      activeConversationId: null,
       broadcastHistory: INITIAL_BROADCASTS,
       isStudentChatOpen: false,
       studentChatSessionContext: null,
@@ -1343,13 +795,14 @@ export const useAuraStore = create<AuraState>()(
       localStorage.removeItem('auraflow_bound_studio_slug');
       localStorage.removeItem('auraflow_is_pro');
       localStorage.removeItem('aura-flow-db-v1');
+      localStorage.removeItem('aura-flow-clean-v2');
     }
     set({
       activePersona: 'new_student',
       currentUser: PERSONA_NEW_STUDENT,
       studios: INITIAL_STUDIOS,
       studio: INITIAL_STUDIOS[0],
-      activeStudioId: 'studio-sol-01',
+      activeStudioId: 'studio-clean-01',
       sessions: INITIAL_SESSIONS,
       classPacks: INITIAL_PACKS,
       bookings: [],
@@ -1401,7 +854,7 @@ export const useAuraStore = create<AuraState>()(
       id: `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       conversationId,
       senderRole,
-      senderName: senderRole === 'INSTRUCTOR' ? (studio.name || 'Elena Rostova') : currentUser.name,
+      senderName: senderRole === 'INSTRUCTOR' ? (studio.coachName || studio.name || '工作室教練') : currentUser.name,
       senderAvatar: senderRole === 'INSTRUCTOR' ? undefined : currentUser.avatarUrl,
       content,
       channel,
@@ -1672,7 +1125,7 @@ export const useAuraStore = create<AuraState>()(
       id: `msg-care-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       conversationId: convId,
       senderRole: 'INSTRUCTOR',
-      senderName: studio.coachName || 'Elena Rostova',
+      senderName: studio.coachName || '工作室教練',
       content: message,
       channel: studio.communication?.lineOaEnabled ? 'LINE_OA' : 'IN_APP',
       createdAt: new Date().toISOString(),
@@ -2445,7 +1898,7 @@ export const useAuraStore = create<AuraState>()(
   },
 }),
     {
-      name: 'aura-flow-db-v1',
+      name: 'aura-flow-clean-v2',
       partialize: (state) => ({
         locale: state.locale,
         currency: state.currency,

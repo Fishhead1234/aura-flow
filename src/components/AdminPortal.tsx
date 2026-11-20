@@ -110,6 +110,7 @@ export const AdminPortal: React.FC = () => {
     lastCloudSyncAt,
     syncFromCloud,
     openTransferModal,
+    userPass,
   } = useAuraStore();
 
   const isZh = locale === 'zh-TW' || locale === 'zh-CN';
@@ -117,10 +118,10 @@ export const AdminPortal: React.FC = () => {
   const [cancelCutoff, setCancelCutoff] = useState(studio.cancelWindowHrs);
   const [waitlistMins, setWaitlistMins] = useState(studio.waitlistMins);
   const [announcementBanner, setAnnouncementBanner] = useState(
-    studio.announcementBanner ?? '🎉 教室最新公告：新學員首堂體驗現折 NT$ 200 • 歡迎線上預約！'
+    studio.announcementBanner ?? ''
   );
   const [discoverable, setDiscoverable] = useState(studio.discoverable !== false);
-  const [studioCity, setStudioCity] = useState(studio.city ?? 'Taipei • Da-an District (台北大安)');
+  const [studioCity, setStudioCity] = useState(studio.city ?? '');
   const [copiedStudioLink, setCopiedStudioLink] = useState(false);
   const [policiesSavedToast, setPoliciesSavedToast] = useState(false);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
@@ -177,20 +178,20 @@ export const AdminPortal: React.FC = () => {
   const [jkoPayMerchantId, setJkoPayMerchantId] = useState(studio.paymentMethods?.jkoPay.merchantId ?? 'JKO_STORE_883019');
   const [jkoPayQrCodeUrl, setJkoPayQrCodeUrl] = useState(studio.paymentMethods?.jkoPay.qrCodeUrl ?? '');
 
-  const [bankEnabled, setBankEnabled] = useState(studio.paymentMethods?.bankTransfer.enabled ?? true);
-  const [bankName, setBankName] = useState(studio.paymentMethods?.bankTransfer.bankName ?? '國泰世華商業銀行 (Cathay United Bank)');
-  const [bankCode, setBankCode] = useState(studio.paymentMethods?.bankTransfer.bankCode ?? '013');
-  const [bankAccount, setBankAccount] = useState(studio.paymentMethods?.bankTransfer.accountNumber ?? '013-50-6189201');
-  const [bankAccountName, setBankAccountName] = useState(studio.paymentMethods?.bankTransfer.accountName ?? '日光彼拉提斯工作室 (Elena Rostova)');
+  const [bankEnabled, setBankEnabled] = useState(studio.paymentMethods?.bankTransfer.enabled ?? false);
+  const [bankName, setBankName] = useState(studio.paymentMethods?.bankTransfer.bankName ?? '');
+  const [bankCode, setBankCode] = useState(studio.paymentMethods?.bankTransfer.bankCode ?? '');
+  const [bankAccount, setBankAccount] = useState(studio.paymentMethods?.bankTransfer.accountNumber ?? '');
+  const [bankAccountName, setBankAccountName] = useState(studio.paymentMethods?.bankTransfer.accountName ?? '');
   const [paymentSavedToast, setPaymentSavedToast] = useState(false);
 
   // Communication settings state (LINE OA, IG, Email, Resend)
-  const [lineOaActive, setLineOaActive] = useState(studio.communication?.lineOaEnabled ?? true);
-  const [lineOaChannelId, setLineOaChannelId] = useState(studio.communication?.lineChannelId ?? '@sol_sanctuary_tw');
-  const [lineOaChannelSecret, setLineOaChannelSecret] = useState(studio.communication?.lineChannelSecret ?? 'sec_884920a9fbc10293847');
-  const [lineOaAccessToken, setLineOaAccessToken] = useState(studio.communication?.lineAccessToken ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.solsanctuary_token_sample');
-  const [igHandle, setIgHandle] = useState(studio.communication?.instagramHandle ?? '@solsanctuary.movement');
-  const [commEmail, setCommEmail] = useState(studio.communication?.supportEmail ?? 'hello@solsanctuary.studio');
+  const [lineOaActive, setLineOaActive] = useState(studio.communication?.lineOaEnabled ?? false);
+  const [lineOaChannelId, setLineOaChannelId] = useState(studio.communication?.lineChannelId ?? '');
+  const [lineOaChannelSecret, setLineOaChannelSecret] = useState(studio.communication?.lineChannelSecret ?? '');
+  const [lineOaAccessToken, setLineOaAccessToken] = useState(studio.communication?.lineAccessToken ?? '');
+  const [igHandle, setIgHandle] = useState(studio.communication?.instagramHandle ?? '');
+  const [commEmail, setCommEmail] = useState(studio.communication?.supportEmail ?? '');
   const [resendApiKey, setResendApiKey] = useState(studio.communication?.resendApiKey ?? '');
   const [commSavedToast, setCommSavedToast] = useState(false);
   const [webhookCopied, setWebhookCopied] = useState(false);
@@ -302,7 +303,7 @@ export const AdminPortal: React.FC = () => {
       title: studio.name,
       subtitle: studio.city || 'Boutique Movement Sanctuary',
       dateTimeText: isZh ? '專屬獨立預約課表' : 'Private Studio Schedule',
-      coachName: studio.coachName || 'Elena Rostova',
+      coachName: studio.coachName || '工作室教練',
       url: `${originUrl}/studio/${studio.slug}`,
       badgeText: isZh ? '工作室專屬預約 QR Code' : 'Studio Direct Booking QR',
       fileNamePrefix: `studio-${studio.slug}-qr`,
@@ -356,7 +357,7 @@ export const AdminPortal: React.FC = () => {
       stripe: {
         enabled: true,
         connected: true,
-        accountName: studio.paymentMethods?.stripe.accountName || 'acct_sol_sanctuary_8829',
+        accountName: studio.paymentMethods?.stripe.accountName || '',
         supportedCards: studio.paymentMethods?.stripe.supportedCards || ['Visa', 'Mastercard', 'JCB', 'Apple Pay', 'Google Pay'],
         secretKey: stripeSecretKey,
         publishableKey: stripePublishableKey,
@@ -419,12 +420,12 @@ export const AdminPortal: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: commEmail || 'hello@solsanctuary.studio',
-          clientName: 'Elena Rostova',
-          studioName: studio.name || 'Sol Sanctuary',
-          sessionTitle: 'Dynamic Reformer Pilates',
+          to: commEmail || studio.communication?.supportEmail || 'coach@example.com',
+          clientName: studio.coachName || '教練',
+          studioName: studio.name || '我的專屬工作室',
+          sessionTitle: '測試課程預約確認信',
           sessionTime: '09:00 - 09:50',
-          instructor: 'Elena Rostova',
+          instructor: studio.coachName || '工作室教練',
           roomName: 'Reformer Studio A',
           paymentMethod: 'STRIPE_CARD',
           amountPaid: `${currency} 800`,
@@ -498,7 +499,7 @@ export const AdminPortal: React.FC = () => {
               <AuraLogoBadge size="sm" customLogo={studio.logoUrl} className="w-8 h-8 rounded-full" />
               <div>
                 <span className="font-serif text-lg tracking-wide text-[#F5F2EB] font-medium block leading-tight">
-                  {studio.name || 'Sol Sanctuary'}
+                  {studio.name || '我的專屬工作室'}
                 </span>
                 <span className="text-[10px] text-[#A89F91] font-mono">
                   /studio/{studio.slug || 'studio'}
@@ -508,7 +509,7 @@ export const AdminPortal: React.FC = () => {
 
             {/* Mobile View Public Page Link */}
             <button
-              onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
+              onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'my-studio' })}
               className="md:hidden inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-[#2A2520] border border-[#3D352E] text-[10px] text-[#C5A059] hover:bg-[#383028] transition-colors"
             >
               <span>{locale === 'zh-TW' ? '預覽頁' : 'Public'}</span>
@@ -597,7 +598,7 @@ export const AdminPortal: React.FC = () => {
               <span>{cloudConnected ? (locale === 'zh-TW' ? '雲端即時同步中' : 'Cloud Live') : (locale === 'zh-TW' ? '連線雲端...' : 'Connecting...')}</span>
             </button>
             <button
-              onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
+              onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'my-studio' })}
               className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-[#2A2520] border border-[#3D352E] text-[11px] text-[#C5A059] hover:bg-[#383028] transition-colors"
             >
               <span>{tCommon('publicPage')}</span>
@@ -797,7 +798,7 @@ export const AdminPortal: React.FC = () => {
                   </div>
 
                   <button
-                    onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'sol-sanctuary' })}
+                    onClick={() => navigateTo({ path: 'public_studio', slug: studio.slug || 'my-studio' })}
                     className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-full bg-[#C5A059] text-[#161412] text-xs font-semibold hover:bg-[#D4AF37] transition-all shadow-md active:scale-95"
                   >
                     <span>{tCommon('viewPublicPage') || (isZh ? '查看公開預約頁 →' : 'View Public Page →')}</span>
@@ -1734,11 +1735,23 @@ export const AdminPortal: React.FC = () => {
                         <Ticket className="w-3.5 h-3.5" />
                         <span>{tAdmin('studentActivePasses')}</span>
                       </div>
-                      <div className="p-2.5 rounded-xl bg-[#181614] border border-[#352E26] text-xs">
-                        <div className="font-medium text-[#F5F2EB]">5 堂精選課包 (Sol Sanctuary)</div>
-                        <div className="text-[#C5A059] font-mono mt-1 font-bold">剩餘 2 堂額度</div>
-                        <div className="text-[10px] text-[#706658] mt-0.5">到期日：2027年01月30日</div>
-                      </div>
+                      {userPass && userPass.creditsLeft > 0 && userPass.userId === currentConv.studentId ? (
+                        <div className="p-2.5 rounded-xl bg-[#181614] border border-[#352E26] text-xs">
+                          <div className="font-medium text-[#F5F2EB]">{userPass.packName || (isZh ? '精選課包' : 'Class Pack')}</div>
+                          <div className="text-[#C5A059] font-mono mt-1 font-bold">
+                            {isZh ? `剩餘 ${userPass.creditsLeft} 堂額度` : `${userPass.creditsLeft} credits left`}
+                          </div>
+                          {userPass.expiresAt && (
+                            <div className="text-[10px] text-[#706658] mt-0.5">
+                              {isZh ? `到期日：${userPass.expiresAt.substring(0, 10)}` : `Expires: ${userPass.expiresAt.substring(0, 10)}`}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="p-2.5 rounded-xl bg-[#181614] border border-[#352E26] text-xs text-[#706658] italic text-center">
+                          {isZh ? '無有效課包點數' : 'No active pass credits'}
+                        </div>
+                      )}
                     </div>
 
                     {/* Upcoming Bookings */}
@@ -1747,13 +1760,21 @@ export const AdminPortal: React.FC = () => {
                         <Clock className="w-3.5 h-3.5 text-[#C5A059]" />
                         <span>{tAdmin('studentUpcomingClasses')}</span>
                       </div>
-                      <div className="p-2.5 rounded-xl bg-[#181614] border border-[#352E26] text-xs space-y-1">
-                        <div className="font-medium text-[#F5F2EB]">{currentConv.sessionTitle}</div>
-                        <div className="text-[11px] text-[#8C8274] font-mono">週三 08:00 - 08:50</div>
-                        <span className="inline-block text-[9px] px-2 py-0.2 rounded-full bg-emerald-950 text-emerald-400 font-medium">
-                          席位已確認
-                        </span>
-                      </div>
+                      {currentConv.sessionTitle ? (
+                        <div className="p-2.5 rounded-xl bg-[#181614] border border-[#352E26] text-xs space-y-1">
+                          <div className="font-medium text-[#F5F2EB]">{currentConv.sessionTitle}</div>
+                          {currentConv.sessionTime && (
+                            <div className="text-[11px] text-[#8C8274] font-mono">{currentConv.sessionTime}</div>
+                          )}
+                          <span className="inline-block text-[9px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 font-medium">
+                            {isZh ? '席位已確認' : 'Confirmed'}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="p-2.5 rounded-xl bg-[#181614] border border-[#352E26] text-xs text-[#706658] italic text-center">
+                          {isZh ? '尚無預約課程' : 'No upcoming classes'}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -2669,7 +2690,7 @@ export const AdminPortal: React.FC = () => {
                       inactiveDaysThreshold: 14,
                       gentleCheckInTemplate,
                     },
-                    studio.coachName || 'Elena',
+                    studio.coachName || '教練',
                     studio.name
                   ).map((item) => {
                     const isSent = retentionDispatchedId === item.candidate.studentId;

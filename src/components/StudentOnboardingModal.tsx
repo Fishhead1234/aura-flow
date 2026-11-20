@@ -32,30 +32,14 @@ export const StudentOnboardingModal: React.FC = () => {
 
   const isZh = locale === 'zh-TW' || locale === 'zh-CN';
 
-  // Quick suggestion chips of top studios as requested
-  const suggestionChips = [
-    {
-      slug: 'sol-sanctuary',
-      coachName: 'Elena Rostova',
-      studioName: 'Sol Sanctuary',
-      code: 'SOL88',
-      label: 'Elena Rostova - Sol Sanctuary',
-    },
-    {
-      slug: 'core-pulse',
-      coachName: 'Marcus K.',
-      studioName: 'Core Pulse',
-      code: 'CORE99',
-      label: 'Marcus - Core Pulse',
-    },
-    {
-      slug: 'kora-sound-yoga',
-      coachName: 'Chloe M.',
-      studioName: 'Kōra Sound & Yin Sanctuary',
-      code: 'KORA77',
-      label: 'Chloe - Kōra Sound & Yin',
-    },
-  ];
+  // Suggestion chips derived dynamically from studios
+  const suggestionChips = studios.map((s) => ({
+    slug: s.slug,
+    coachName: s.coachName,
+    studioName: s.name,
+    code: s.studioCode || s.slug.toUpperCase(),
+    label: `${s.coachName} - ${s.name}`,
+  }));
 
   // Filter studios based on search input (coach name, studio name, or code)
   const trimmed = query.trim().toLowerCase();
@@ -148,8 +132,8 @@ export const StudentOnboardingModal: React.FC = () => {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={
                 isZh
-                  ? '請輸入教練姓名、工作室名稱或專屬代碼 (例如 Elena / Sol Sanctuary)'
-                  : 'Enter coach name, studio name or code (e.g. Elena or Sol Sanctuary)'
+                  ? '請輸入教練姓名、工作室名稱或專屬代碼'
+                  : 'Enter coach name, studio name or code'
               }
               className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#181614] border border-[#3E352B] text-xs text-[#F5F2EB] placeholder:text-[#706658] focus:outline-none focus:border-[#C5A059]"
             />

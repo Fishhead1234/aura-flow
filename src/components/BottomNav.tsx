@@ -25,7 +25,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab = 'studio' }) =>
         onClick={() =>
           navigateTo({
             path: 'public_studio',
-            slug: boundStudioSlug || studio.slug || 'sol-sanctuary',
+            slug: boundStudioSlug || studio.slug || 'my-studio',
           })
         }
         className={`flex flex-col items-center space-y-0.5 text-[11px] font-medium transition-colors ${
@@ -58,3 +58,4 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab = 'studio' }) =>
     </nav>
   );
 };
+

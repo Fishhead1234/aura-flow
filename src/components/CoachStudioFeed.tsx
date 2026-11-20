@@ -32,26 +32,20 @@ export const CoachStudioFeed: React.FC<CoachStudioFeedProps> = ({
   const tip = studio.weeklyTip || {
     id: 'tip-default',
     studioId: studio.id,
-    coachName: studio.coachName || 'Elena Rostova',
-    coachAvatar:
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    title: isZh
-      ? '本週動作指引：器械核心骨盆中立位與課後胸椎延展'
-      : 'Weekly Form Tip: Neutral Pelvis on Reformer & Post-Class Thoracic Stretch',
-    content: isZh
-      ? '練習 Reformer 腿部推蹬 (Footwork) 時，請專注將肋骨下緣輕柔收回、維持骨盆水平中立，避免下背拱起代償。課後建議搭配 3 分鐘貓牛式呼吸與胸椎旋轉伸展，能有效釋放整週久坐的肩頸緊繃！'
-      : 'During Reformer Footwork, draw your lower ribs gently in and maintain a neutral pelvis without overarching your lumbar spine. Pair with 3 minutes of thoracic rotation stretches after class.',
-    mediaUrl:
-      'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=700&auto=format&fit=crop&q=80',
+    coachName: studio.coachName || '工作室教練',
+    coachAvatar: '',
+    title: '',
+    content: '',
+    mediaUrl: '',
     mediaType: 'IMAGE' as const,
-    focusTag: isZh ? '核心控制 & 課後伸展' : 'Core Form & Recovery',
-    pinnedAt: '2026-11-02T08:00:00.000Z',
+    focusTag: '',
+    pinnedAt: '',
   };
 
   const [isEditing, setIsEditing] = useState(false);
-  const [titleInput, setTitleInput] = useState(tip.title);
-  const [focusTagInput, setFocusTagInput] = useState(tip.focusTag);
-  const [contentInput, setContentInput] = useState(tip.content);
+  const [titleInput, setTitleInput] = useState(tip.title || '');
+  const [focusTagInput, setFocusTagInput] = useState(tip.focusTag || '');
+  const [contentInput, setContentInput] = useState(tip.content || '');
   const [mediaUrlInput, setMediaUrlInput] = useState(tip.mediaUrl || '');
   const [savedBookmark, setSavedBookmark] = useState(false);
   const [pinnedToast, setPinnedToast] = useState(false);
@@ -62,6 +56,10 @@ export const CoachStudioFeed: React.FC<CoachStudioFeedProps> = ({
     boundStudioSlug === studio.slug ||
     (favoriteStudioSlugs && favoriteStudioSlugs.includes(studio.slug));
 
+  if (!isCoachMode && !tip.title) {
+    return null;
+  }
+
   const handleSavePinnedTip = (e: React.FormEvent) => {
     e.preventDefault();
     if (!titleInput.trim() || !contentInput.trim()) return;
@@ -70,7 +68,7 @@ export const CoachStudioFeed: React.FC<CoachStudioFeedProps> = ({
       focusTag: focusTagInput.trim() || (isZh ? '課後提醒' : 'Form Tip'),
       content: contentInput.trim(),
       mediaUrl: mediaUrlInput.trim() || undefined,
-      coachName: studio.coachName || 'Elena Rostova',
+      coachName: studio.coachName || '工作室教練',
     });
     setIsEditing(false);
     setPinnedToast(true);

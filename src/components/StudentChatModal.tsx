@@ -91,7 +91,7 @@ export const StudentChatModal: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-stone-500">
-                {studio.name} • Elena Rostova
+                {studio.name} • {studio.coachName || '工作室教練'}
               </p>
             </div>
           </div>

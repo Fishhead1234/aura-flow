@@ -72,38 +72,7 @@ const CLASS_NOTES_PRESETS = [
   },
 ];
 
-const ROSTER_CANDIDATES = [
-  {
-    id: 'usr-maya-student',
-    name: 'Maya Lin',
-    email: 'maya@example.com',
-    phone: '+886 912-345-678',
-  },
-  {
-    id: 'usr-lucas-student',
-    name: 'Lucas Chen (陳立安)',
-    email: 'lucas.chen@example.com',
-    phone: '+886 928-888-123',
-  },
-  {
-    id: 'usr-sophia-student',
-    name: 'Sophia Wang',
-    email: 'sophia.w@example.com',
-    phone: '+886 933-777-999',
-  },
-  {
-    id: 'usr-selina-student',
-    name: 'Selina Chen',
-    email: 'selina@example.com',
-    phone: '+1 (555) 443-8991',
-  },
-  {
-    id: 'usr-david-student',
-    name: 'David Lin',
-    email: 'david.lin@example.com',
-    phone: '+1 (555) 902-1144',
-  },
-];
+const ROSTER_CANDIDATES: { id: string; name: string; email: string; phone?: string }[] = [];
 
 export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose }) => {
   const { locale, currency, studio, addSession } = useAuraStore();
@@ -117,9 +86,9 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<ClassCategory>('Reformer');
   const [instructor, setInstructor] = useState(
-    studio.coachName || (studio.name ? `${studio.name.split(' ')[0]} Coach` : 'Elena Rostova')
+    studio.coachName || '工作室教練'
   );
-  const [roomName, setRoomName] = useState('Reformer Studio A');
+  const [roomName, setRoomName] = useState('教室 A');
   const [locationType, setLocationType] = useState<LocationType>('STUDIO');
   const [address, setAddress] = useState('');
   const [visibility, setVisibility] = useState<ClassVisibility>('PUBLIC');
@@ -127,7 +96,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose 
   const [capacity, setCapacity] = useState<number>(8);
   const [price, setPrice] = useState<number>(currency === 'TWD' ? 800 : 28);
   const [pinCode, setPinCode] = useState('');
-  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>(['usr-maya-student']);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [customStudentName, setCustomStudentName] = useState('');
   const [customStudentEmail, setCustomStudentEmail] = useState('');
   const [customStudents, setCustomStudents] = useState<

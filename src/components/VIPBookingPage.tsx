@@ -53,10 +53,10 @@ export const VIPBookingPage: React.FC<VIPBookingPageProps> = ({ inviteToken }) =
 
   const defaultInvitedStudent = session?.invitedStudents?.[0];
   const [studentName, setStudentName] = useState(
-    defaultInvitedStudent?.name || currentUser.name || 'Maya Lin'
+    defaultInvitedStudent?.name || (currentUser.role === 'STUDENT' ? currentUser.name : '')
   );
   const [studentEmail, setStudentEmail] = useState(
-    defaultInvitedStudent?.email || currentUser.email || 'maya@example.com'
+    defaultInvitedStudent?.email || (currentUser.role === 'STUDENT' ? currentUser.email : '')
   );
   const [enteredPin, setEnteredPin] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);

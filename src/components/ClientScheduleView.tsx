@@ -159,11 +159,13 @@ export const ClientScheduleView: React.FC = () => {
             <div className="flex items-end justify-between pt-1">
               <div>
                 <div className="text-sm font-medium text-stone-100">
-                  {locale === 'zh-TW' ? '5 堂精選課包 • Sol Sanctuary' : '5-Class Pack • Sol Sanctuary'}
+                  {userPass.packName || (locale === 'zh-TW' ? '精選課包' : 'Class Pack')} • {studio.name}
                 </div>
-                <div className="text-[11px] text-stone-400 mt-0.5">
-                  {tBooking('passExpiresOn', { date: locale === 'zh-TW' ? '2027年01月30日' : 'Jan 30, 2027' })}
-                </div>
+                {userPass.expiresAt && (
+                  <div className="text-[11px] text-stone-400 mt-0.5">
+                    {tBooking('passExpiresOn', { date: userPass.expiresAt.substring(0, 10) })}
+                  </div>
+                )}
               </div>
 
               <button
@@ -229,8 +231,21 @@ export const ClientScheduleView: React.FC = () => {
         </div>
 
         {/* Active Class Cards matching Screenshot 1 */}
-        <div className="space-y-4">
-          {filteredSessions.map((session) => {
+        {filteredSessions.length === 0 ? (
+          <div className="text-center py-12 px-4 rounded-3xl bg-white border border-stone-200/80 shadow-xs">
+            <div className="w-12 h-12 mx-auto rounded-full bg-stone-100 flex items-center justify-center text-stone-400 mb-3">
+              <Calendar className="w-6 h-6" />
+            </div>
+            <h4 className="text-sm font-semibold text-stone-800">
+              {locale === 'zh-TW' ? '今日尚無排定課程' : 'No Sessions Scheduled Today'}
+            </h4>
+            <p className="text-xs text-stone-500 mt-1 max-w-xs mx-auto">
+              {locale === 'zh-TW' ? '教練尚未發布今日課表，請切換其他日期或聯繫教練。' : 'No classes scheduled for this date. Check another date or message the coach.'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredSessions.map((session) => {
             const spotsLeft = session.capacity - session.bookedCount;
             const isFull = spotsLeft <= 0;
 
@@ -353,32 +368,35 @@ export const ClientScheduleView: React.FC = () => {
             );
           })}
         </div>
+        )}
 
-        {/* 5-Class Pack Upsell Banner */}
-        <div className="mt-8 p-5 rounded-3xl bg-amber-50/70 border border-amber-200 text-stone-800">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center space-x-1.5 text-amber-800 mb-1">
-                <Sparkles className="w-4 h-4 text-amber-600" />
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  {tBooking('classPackUpsellTitle')}
-                </span>
+        {/* Class Pack Upsell Banner */}
+        {classPacks.length > 0 && (
+          <div className="mt-8 p-5 rounded-3xl bg-amber-50/70 border border-amber-200 text-stone-800">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center space-x-1.5 text-amber-800 mb-1">
+                  <Sparkles className="w-4 h-4 text-amber-600" />
+                  <span className="text-xs font-bold uppercase tracking-wider">
+                    {tBooking('classPackUpsellTitle')}
+                  </span>
+                </div>
+                <p className="text-xs text-stone-600 leading-relaxed mb-3">
+                  {tBooking('classPackUpsellSub')}
+                </p>
+                <button
+                  onClick={() => purchaseClassPack(classPacks[0].id)}
+                  className="inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold bg-aura-clay text-white hover:bg-[#A25A44] transition-all shadow-xs"
+                >
+                  {tBooking('buyPackCta', { price: formatCurrency(classPacks[0].price, currency, locale) })}
+                </button>
               </div>
-              <p className="text-xs text-stone-600 leading-relaxed mb-3">
-                {tBooking('classPackUpsellSub')}
-              </p>
-              <button
-                onClick={() => purchaseClassPack('pack-5')}
-                className="inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold bg-aura-clay text-white hover:bg-[#A25A44] transition-all shadow-xs"
-              >
-                {tBooking('buyPackCta', { price: formatCurrency(115, currency, locale) })}
-              </button>
-            </div>
-            <div className="ml-4 w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-800 font-serif text-lg font-bold">
-              5x
+              <div className="ml-4 w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-800 font-serif text-lg font-bold">
+                {classPacks[0].credits}x
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Studio Cancellation & Free Policy Footer */}
         <div className="mt-6 text-center text-xs text-stone-500">

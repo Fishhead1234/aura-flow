@@ -57,7 +57,7 @@ export const StudentDashboard: React.FC = () => {
     const matchedSession = sessions.find((s) => s.title === selectedSessionTitle);
     addBodyJournalEntry({
       sessionTitle: selectedSessionTitle,
-      instructorName: matchedSession?.instructor || studio.coachName || 'Elena Rostova',
+      instructorName: matchedSession?.instructor || studio.coachName || '工作室教練',
       feelingTag: selectedFeeling,
       note: noteInput.trim(),
       energyLevel: 5,
