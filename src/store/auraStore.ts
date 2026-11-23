@@ -68,18 +68,18 @@ function parseInitialRoute(): AppRoute {
 // Clean User Personas (Zero Mock Users)
 const PERSONA_OWNER: DatabaseUser = {
   id: 'usr-owner-clean',
-  email: 'coach@example.com',
+  email: '',
   role: 'OWNER',
-  name: '工作室教練 (Coach)',
-  studioId: 'studio-clean-01',
+  name: '',
+  studioId: '',
   createdAt: new Date().toISOString(),
 };
 
 const PERSONA_STUDENT: DatabaseUser = {
   id: 'usr-student-clean',
-  email: 'student@example.com',
+  email: '',
   role: 'STUDENT',
-  name: '學員 (Student)',
+  name: '',
   createdAt: new Date().toISOString(),
 };
 
@@ -125,9 +125,9 @@ const DEFAULT_PAYMENTS: StudioPaymentConfig = {
 };
 
 const DEFAULT_WEEKLY_TIP: CoachWeeklyTip = {
-  id: 'tip-clean-01',
-  studioId: 'studio-clean-01',
-  coachName: '工作室教練',
+  id: '',
+  studioId: '',
+  coachName: '',
   coachAvatar: '',
   title: '',
   content: '',
@@ -139,37 +139,38 @@ const DEFAULT_WEEKLY_TIP: CoachWeeklyTip = {
 
 const INITIAL_BODY_JOURNAL: BodyJournalEntry[] = [];
 
-// Clean single default studio (Zero Mock Data)
-const INITIAL_STUDIOS: Studio[] = [
-  {
-    id: 'studio-clean-01',
-    ownerId: PERSONA_OWNER.id,
-    slug: 'my-studio',
-    name: '我的專屬工作室',
-    coachName: '工作室教練',
-    studioCode: 'AURA01',
-    tagline: '專屬動作空間與健康工作室',
-    currency: 'TWD',
-    stripeAccountId: '',
-    stripeAccountName: '',
-    cancelWindowHrs: 12,
-    waitlistMins: 30,
-    roomsCount: 1,
-    monthlySubscriptionPrice: 29.0,
-    platformTakeRate: 0.0,
-    logoMark: '✨',
-    createdAt: new Date().toISOString(),
-    announcementBanner: '',
-    discoverable: true,
-    city: 'Taipei',
-    isPro: false,
-    isLive: false,
-    communication: DEFAULT_COMMUNICATION,
-    paymentMethods: DEFAULT_PAYMENTS,
-    weeklyTip: DEFAULT_WEEKLY_TIP,
-    retentionCare: DEFAULT_RETENTION_CARE_CONFIG,
-  },
-];
+// Empty studio placeholder when starting completely from scratch
+const EMPTY_STUDIO: Studio = {
+  id: '',
+  ownerId: PERSONA_OWNER.id,
+  slug: '',
+  name: '',
+  coachName: '',
+  studioCode: '',
+  tagline: '',
+  currency: 'TWD',
+  stripeAccountId: '',
+  stripeAccountName: '',
+  cancelWindowHrs: 12,
+  waitlistMins: 30,
+  roomsCount: 1,
+  monthlySubscriptionPrice: 29.0,
+  platformTakeRate: 0.0,
+  logoMark: '✨',
+  createdAt: new Date().toISOString(),
+  announcementBanner: '',
+  discoverable: true,
+  city: '',
+  isPro: false,
+  isLive: false,
+  communication: DEFAULT_COMMUNICATION,
+  paymentMethods: DEFAULT_PAYMENTS,
+  weeklyTip: DEFAULT_WEEKLY_TIP,
+  retentionCare: DEFAULT_RETENTION_CARE_CONFIG,
+};
+
+// Zero pre-seeded studios
+const INITIAL_STUDIOS: Studio[] = [];
 
 const INITIAL_CONVERSATIONS: Conversation[] = [];
 const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {};
@@ -432,13 +433,14 @@ interface AuraState {
 }
 
 if (typeof window !== 'undefined') {
-  const CLEAN_KEY = 'auraflow_empty_clean_v1';
+  const CLEAN_KEY = 'auraflow_scratch_clean_v3';
   if (localStorage.getItem(CLEAN_KEY) !== 'true') {
     localStorage.removeItem('auraflow_has_launched');
     localStorage.removeItem('auraflow_bound_studio_slug');
     localStorage.removeItem('auraflow_is_pro');
     localStorage.removeItem('aura-flow-db-v1');
-      localStorage.removeItem('aura-flow-clean-v2');
+    localStorage.removeItem('aura-flow-clean-v2');
+    localStorage.removeItem('aura-flow-scratch-v3');
     localStorage.setItem(CLEAN_KEY, 'true');
   }
 }
@@ -452,8 +454,8 @@ export const useAuraStore = create<AuraState>()(
   isDevSandboxVisible: false,
   isDevPinModalOpen: false,
 
-  locale: (typeof window !== 'undefined' && (localStorage.getItem('aura_locale') as SupportedLocale)) || 'en',
-  currency: (typeof window !== 'undefined' && (localStorage.getItem('aura_currency') as SupportedCurrency)) || 'USD',
+  locale: (typeof window !== 'undefined' && (localStorage.getItem('aura_locale') as SupportedLocale)) || 'zh-TW',
+  currency: (typeof window !== 'undefined' && (localStorage.getItem('aura_currency') as SupportedCurrency)) || 'TWD',
   selectedDate: new Date().toISOString().split('T')[0],
   activeCategory: 'All',
   activeAdminTab: 'schedule',
@@ -469,8 +471,8 @@ export const useAuraStore = create<AuraState>()(
 
   currentUser: PERSONA_OWNER,
   studios: INITIAL_STUDIOS,
-  activeStudioId: 'studio-clean-01',
-  studio: INITIAL_STUDIOS[0],
+  activeStudioId: '',
+  studio: EMPTY_STUDIO,
 
   sessions: INITIAL_SESSIONS,
   classPacks: INITIAL_PACKS,
@@ -583,13 +585,13 @@ export const useAuraStore = create<AuraState>()(
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraflow_has_launched', 'true');
     }
-    const cleanStudio = INITIAL_STUDIOS[0];
+    const existingStudio = get().studios[0] || EMPTY_STUDIO;
     if (persona === 'elena_owner') {
       set({
         activePersona: 'elena_owner',
         currentUser: PERSONA_OWNER,
-        studio: cleanStudio,
-        studios: [cleanStudio],
+        studio: existingStudio,
+        activeStudioId: existingStudio.id,
         isWelcomeModalOpen: false,
       });
       get().navigateTo({ path: 'admin' });
@@ -604,7 +606,9 @@ export const useAuraStore = create<AuraState>()(
         },
         isWelcomeModalOpen: false,
       });
-      get().navigateTo({ path: 'public_studio', slug: cleanStudio.slug });
+      get().navigateTo(
+        existingStudio.slug ? { path: 'public_studio', slug: existingStudio.slug } : { path: 'explore' }
+      );
     } else if (persona === 'new_student') {
       set({
         activePersona: 'new_student',
@@ -623,8 +627,9 @@ export const useAuraStore = create<AuraState>()(
       set(() => ({
         activePersona: 'new_owner',
         currentUser: PERSONA_OWNER,
-        studio: cleanStudio,
-        studios: [cleanStudio],
+        studio: EMPTY_STUDIO,
+        studios: [],
+        activeStudioId: '',
         sessions: [],
         bookings: [],
         waitlist: [],
@@ -636,13 +641,12 @@ export const useAuraStore = create<AuraState>()(
   },
 
   resetAsNewCoach: () => {
-    const cleanStudio = INITIAL_STUDIOS[0];
     set(() => ({
       activePersona: 'new_owner',
       currentUser: PERSONA_OWNER,
-      studio: cleanStudio,
-      studios: [cleanStudio],
-      activeStudioId: cleanStudio.id,
+      studio: EMPTY_STUDIO,
+      studios: [],
+      activeStudioId: '',
       sessions: [],
       classPacks: [],
       bookings: [],
@@ -655,7 +659,7 @@ export const useAuraStore = create<AuraState>()(
       stripeOverview: INITIAL_STRIPE,
       isWelcomeModalOpen: false,
     }));
-    get().navigateTo({ path: 'admin' });
+    get().navigateTo({ path: 'onboarding' });
     get().syncToCloud();
   },
 
@@ -665,20 +669,21 @@ export const useAuraStore = create<AuraState>()(
 
   resetDatabaseToSeedState: () => {
     set({
-      studios: INITIAL_STUDIOS,
-      studio: INITIAL_STUDIOS[0],
-      activeStudioId: 'studio-clean-01',
-      sessions: INITIAL_SESSIONS,
-      classPacks: INITIAL_PACKS,
+      studios: [],
+      studio: EMPTY_STUDIO,
+      activeStudioId: '',
+      sessions: [],
+      classPacks: [],
       userPass: INITIAL_MAYA_PASS,
-      bookings: INITIAL_BOOKINGS,
-      waitlist: INITIAL_WAITLIST,
-      creditLedger: INITIAL_LEDGER,
+      bookings: [],
+      waitlist: [],
+      creditLedger: [],
       stripeOverview: INITIAL_STRIPE,
-      conversations: INITIAL_CONVERSATIONS,
-      messages: INITIAL_MESSAGES,
+      conversations: [],
+      messages: {},
       activeConversationId: null,
-      broadcastHistory: INITIAL_BROADCASTS,
+      broadcastHistory: [],
+      bodyJournalEntries: [],
       isStudentChatOpen: false,
       studentChatSessionContext: null,
       activeWaterfallSessionId: null,
@@ -708,7 +713,7 @@ export const useAuraStore = create<AuraState>()(
   setQrScannerOpen: (isQrScannerOpen) => set({ isQrScannerOpen }),
 
   bindStudentToCoach: (slug) => {
-    const matched = get().studios.find((s) => s.slug === slug) || INITIAL_STUDIOS[0];
+    const matched = get().studios.find((s) => s.slug === slug) || EMPTY_STUDIO;
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraflow_has_launched', 'true');
       localStorage.setItem('auraflow_bound_studio_slug', matched.slug);
@@ -796,16 +801,24 @@ export const useAuraStore = create<AuraState>()(
       localStorage.removeItem('auraflow_is_pro');
       localStorage.removeItem('aura-flow-db-v1');
       localStorage.removeItem('aura-flow-clean-v2');
+      localStorage.removeItem('aura-flow-scratch-v3');
     }
     set({
       activePersona: 'new_student',
       currentUser: PERSONA_NEW_STUDENT,
-      studios: INITIAL_STUDIOS,
-      studio: INITIAL_STUDIOS[0],
-      activeStudioId: 'studio-clean-01',
-      sessions: INITIAL_SESSIONS,
-      classPacks: INITIAL_PACKS,
+      studios: [],
+      studio: EMPTY_STUDIO,
+      activeStudioId: '',
+      sessions: [],
+      classPacks: [],
       bookings: [],
+      waitlist: [],
+      creditLedger: [],
+      conversations: [],
+      messages: {},
+      broadcastHistory: [],
+      bodyJournalEntries: [],
+      stripeOverview: INITIAL_STRIPE,
       boundStudioSlug: null,
       favoriteStudioSlugs: [],
       userPass: {
@@ -1824,7 +1837,7 @@ export const useAuraStore = create<AuraState>()(
       slug: data.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
       name: data.name,
       coachName: data.firstClass.instructor,
-      tagline: data.tagline || 'Boutique Movement & Reformer Studio',
+      tagline: data.tagline || '',
       currency: data.currency,
       stripeAccountId: `acct_${Date.now()}`,
       stripeAccountName: `${data.name} Payouts`,
@@ -1836,9 +1849,9 @@ export const useAuraStore = create<AuraState>()(
       logoMark: '✨',
       logoUrl: data.logoUrl,
       createdAt: new Date().toISOString(),
-      announcementBanner: '🎉 教室最新公告：新學員首堂體驗現折 NT$ 200 • 歡迎線上預約！',
+      announcementBanner: '',
       discoverable: true,
-      city: 'Taipei • Taiwan (台北市)',
+      city: '',
       isPro: false,
       isLive: false,
       communication: DEFAULT_COMMUNICATION,
@@ -1849,6 +1862,7 @@ export const useAuraStore = create<AuraState>()(
     const generatedToken = isPrivate
       ? `vip-${Math.random().toString(36).substring(2, 7)}-${Date.now().toString(36).slice(-4)}`
       : undefined;
+    const todayDateStr = new Date().toISOString().split('T')[0];
 
     const firstClassSession: ClassSession = {
       id: `sess-${Date.now()}`,
@@ -1856,16 +1870,14 @@ export const useAuraStore = create<AuraState>()(
       title: data.firstClass.title,
       category: data.firstClass.category,
       instructor: data.firstClass.instructor,
-      instructorAvatar:
-        data.logoUrl ||
-        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-      startTime: '2026-11-03T09:00:00.000Z',
-      endTime: '2026-11-03T09:50:00.000Z',
+      instructorAvatar: data.logoUrl || '',
+      startTime: `${todayDateStr}T09:00:00.000Z`,
+      endTime: `${todayDateStr}T09:50:00.000Z`,
       durationMins: 50,
       capacity: data.firstClass.capacity,
       bookedCount: 0,
       price: data.firstClass.price,
-      roomName: data.firstClass.roomName || 'Studio Room 1',
+      roomName: data.firstClass.roomName || '',
       level: 'All Levels',
       visibility: data.firstClass.visibility || 'PUBLIC',
       privatePreset: data.firstClass.privatePreset,
@@ -1898,7 +1910,7 @@ export const useAuraStore = create<AuraState>()(
   },
 }),
     {
-      name: 'aura-flow-clean-v2',
+      name: 'aura-flow-scratch-v3',
       partialize: (state) => ({
         locale: state.locale,
         currency: state.currency,

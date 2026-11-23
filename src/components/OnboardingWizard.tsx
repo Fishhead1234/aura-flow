@@ -114,7 +114,7 @@ export const OnboardingWizard: React.FC = () => {
 
   // STEP 3 STATE
   const [className, setClassName] = useState('');
-  const [category, setCategory] = useState<ClassCategory>('Reformer');
+  const [category, setCategory] = useState<ClassCategory>('');
   const [visibility, setVisibility] = useState<ClassVisibility>('PUBLIC');
   const [privatePreset, setPrivatePreset] = useState<PrivateCapacityPreset>('1_ON_1');
   const [assignmentMode, setAssignmentMode] = useState<'UNASSIGNED' | 'MANUAL'>('UNASSIGNED');
@@ -124,17 +124,13 @@ export const OnboardingWizard: React.FC = () => {
 
   const [capacity, setCapacity] = useState<number | string>(8);
   const [price, setPrice] = useState<number | string>(800);
-  const [instructor, setInstructor] = useState('Jordan B.');
-  const [roomName, setRoomName] = useState('Reformer Studio A');
+  const [instructor, setInstructor] = useState('');
+  const [roomName, setRoomName] = useState('');
   const [locationType, setLocationType] = useState<LocationType>('STUDIO');
   const [address, setAddress] = useState('');
 
-  const [preClassNote, setPreClassNote] = useState(
-    isZh ? ONBOARDING_NOTE_PRESETS[0].preZh : ONBOARDING_NOTE_PRESETS[0].preEn
-  );
-  const [postClassHomework, setPostClassHomework] = useState(
-    isZh ? ONBOARDING_NOTE_PRESETS[0].postZh : ONBOARDING_NOTE_PRESETS[0].postEn
-  );
+  const [preClassNote, setPreClassNote] = useState('');
+  const [postClassHomework, setPostClassHomework] = useState('');
 
   const handleNameChange = (val: string) => {
     setStudioName(val);

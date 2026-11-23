@@ -38,7 +38,7 @@ const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11bHV2YmlpenF0aXRjdGdjZWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxODEwMDgsImV4cCI6MjEwODc1NzAwOH0.T9hAYAYtRgGIOq9d1H8F0OwVKoeYd-tWNL8vC2X8Ufo';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_pzmszFbzWinm5_pJ4SJKWg_joAgjGI3';
 
-const CLOUD_DOC_CODE = 'AURA-FLOW-CLOUD-EMPTY-V1';
+const CLOUD_DOC_CODE = 'AURA-FLOW-CLOUD-SCRATCH-V2';
 
 function buildHeaders(key: string, extra?: Record<string, string>): Record<string, string> {
   return {

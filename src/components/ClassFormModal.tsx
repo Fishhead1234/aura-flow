@@ -84,11 +84,9 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose 
     getTranslation(locale, 'admin', key, params);
 
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<ClassCategory>('Reformer');
-  const [instructor, setInstructor] = useState(
-    studio.coachName || '工作室教練'
-  );
-  const [roomName, setRoomName] = useState('教室 A');
+  const [category, setCategory] = useState<ClassCategory>('');
+  const [instructor, setInstructor] = useState(studio.coachName || '');
+  const [roomName, setRoomName] = useState('');
   const [locationType, setLocationType] = useState<LocationType>('STUDIO');
   const [address, setAddress] = useState('');
   const [visibility, setVisibility] = useState<ClassVisibility>('PUBLIC');
@@ -102,13 +100,9 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose 
   const [customStudents, setCustomStudents] = useState<
     { id: string; name: string; email: string; phone?: string }[]
   >([]);
-  const [activeNotePresetId, setActiveNotePresetId] = useState<string>('pilates_core');
-  const [preClassNote, setPreClassNote] = useState<string>(
-    isZh ? CLASS_NOTES_PRESETS[0].preZh : CLASS_NOTES_PRESETS[0].preEn
-  );
-  const [postClassHomework, setPostClassHomework] = useState<string>(
-    isZh ? CLASS_NOTES_PRESETS[0].postZh : CLASS_NOTES_PRESETS[0].postEn
-  );
+  const [activeNotePresetId, setActiveNotePresetId] = useState<string>('');
+  const [preClassNote, setPreClassNote] = useState<string>('');
+  const [postClassHomework, setPostClassHomework] = useState<string>('');
 
   if (!isOpen) return null;
 
