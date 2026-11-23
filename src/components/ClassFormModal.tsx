@@ -330,38 +330,58 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ isOpen, onClose 
             />
           </div>
 
-          {/* Flexible Class Category */}
+          {/* Unified Category Field (Text Input + Clickable Preset Pills) */}
           <div>
-            <label htmlFor="class-category-input" className="block text-[#A89F91] mb-1 font-medium">
-              {tAdmin('category')}
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="class-category-input" className="block text-[#A89F91] font-medium">
+                {isZh ? '分類類別 (Category)' : 'Category (分類類別)'}
+              </label>
+              {category && (
+                <button
+                  type="button"
+                  onClick={() => setCategory('')}
+                  className="text-[10px] text-[#8C8274] hover:text-[#F5F2EB] transition-colors"
+                >
+                  {isZh ? '清除' : 'Clear'}
+                </button>
+              )}
+            </div>
             <input
               id="class-category-input"
               name="category"
               type="text"
               required
+              enterKeyHint="next"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              placeholder={tAdmin('categoryCustomPlaceholder')}
-              className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-xs focus:outline-none focus:border-[#C5A059]"
+              placeholder={
+                isZh
+                  ? '輸入或選擇課程類別（如：器械皮拉提、1對1私教）'
+                  : 'Enter or select category (e.g. Reformer, 1-on-1 Private)'
+              }
+              className="w-full px-3 py-2 rounded-xl bg-[#181614] border border-[#3A332B] text-[#F5F2EB] text-sm sm:text-xs focus:outline-none focus-visible:border-[#C5A059] focus-visible:ring-1 focus-visible:ring-[#C5A059]"
             />
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="text-[10px] text-[#706658] mr-1">{tAdmin('suggestedTagsLabel')}</span>
+            <div
+              className="mt-2 flex flex-wrap items-center gap-1.5"
+              role="group"
+              aria-label={isZh ? '快捷課程分類' : 'Category presets'}
+            >
               {[
-                '私人教練',
-                '1對1皮拉提',
-                '雙人包班',
-                '企業包班',
-                '皮拉提',
-                '瑜珈',
-                '頌缽音療',
+                'Flight Class',
+                'Barre',
                 'Reformer',
+                '空中瑜珈',
+                '自由搏擊',
+                '1對1私教',
+                '墊上皮拉提',
+                '重訓體能',
               ].map((tag) => (
                 <button
                   key={tag}
                   type="button"
+                  aria-pressed={category === tag}
                   onClick={() => setCategory(tag)}
-                  className={`text-[10px] px-2.5 py-0.5 rounded-full border transition-colors ${
+                  className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#C5A059] ${
                     category === tag
                       ? 'bg-[#C5A059] text-[#161412] font-semibold border-[#C5A059]'
                       : 'bg-[#1E1B18] text-[#A89F91] border-[#3A332B] hover:text-[#F5F2EB]'

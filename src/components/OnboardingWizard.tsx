@@ -630,98 +630,47 @@ export const OnboardingWizard: React.FC = () => {
               />
             </div>
 
-            {/* Category Quick Select & Instructor Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-stone-700 font-semibold mb-1">
-                  {isZh ? '課程分類 (Category)' : 'Category'}
-                </label>
-                <select
-                  value={
-                    [
-                      'Barre',
-                      'Reformer',
-                      'Flow',
-                      'Sound Bath',
-                      'Yin Yoga',
-                      'Mat Pilates',
-                      'Flight Class',
-                      '1-on-1 Private',
-                    ].includes(category)
-                      ? category
-                      : 'CUSTOM'
-                  }
-                  onChange={(e) => {
-                    if (e.target.value !== 'CUSTOM') {
-                      setCategory(e.target.value);
-                    }
-                  }}
-                  className="w-full px-3.5 py-2 rounded-2xl bg-stone-50 border border-stone-300 text-stone-900 focus:outline-none focus:ring-2 focus:ring-aura-clay text-xs"
-                >
-                  <option value="Barre">Barre</option>
-                  <option value="Reformer">Reformer</option>
-                  <option value="Flow">Flow Yoga</option>
-                  <option value="Sound Bath">Sound Bath</option>
-                  <option value="Yin Yoga">Yin Yoga</option>
-                  <option value="Mat Pilates">Mat Pilates</option>
-                  <option value="Flight Class">Flight Class</option>
-                  <option value="1-on-1 Private">1-on-1 Private (私教)</option>
-                  <option value="CUSTOM">{isZh ? '✍️ 手動輸入自訂分類...' : '✍️ Custom Category...'}</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-stone-700 font-semibold mb-1">
-                  {isZh ? '授課師資 (Instructor)' : 'Instructor'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={instructor}
-                  onChange={(e) => setInstructor(e.target.value)}
-                  placeholder="e.g. Jordan B. / Lena S."
-                  className="w-full px-3.5 py-2 rounded-2xl bg-stone-50 border border-stone-300 text-stone-900 focus:outline-none focus:ring-2 focus:ring-aura-clay text-xs"
-                />
-              </div>
-            </div>
-
-            {/* Dedicated Manual Category Entry Section */}
-            <div className="p-3 rounded-2xl bg-stone-100/70 border border-stone-200 space-y-1.5">
+            {/* Unified Category Field (Text Input + Clickable Preset Pills) */}
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-semibold text-stone-800 flex items-center space-x-1">
-                  <span>✍️</span>
-                  <span>
-                    {isZh
-                      ? '手動輸入自訂分類 (Custom Category Type)'
-                      : 'Custom Category Type (Manual Entry)'}
-                  </span>
+                <label
+                  htmlFor="onboarding-category-input"
+                  className="block text-stone-700 font-semibold"
+                >
+                  {isZh ? '分類類別 (Category)' : 'Category (分類類別)'}
                 </label>
-                <span className="text-[10px] text-stone-500 font-medium">
-                  {isZh ? `當前：${category || '未設定'}` : `Active: ${category || 'None'}`}
-                </span>
+                {category && (
+                  <button
+                    type="button"
+                    onClick={() => setCategory('')}
+                    className="text-[10px] text-stone-400 hover:text-stone-700 transition-colors"
+                  >
+                    {isZh ? '清除' : 'Clear'}
+                  </button>
+                )}
               </div>
               <input
+                id="onboarding-category-input"
+                name="category"
                 type="text"
                 required
+                enterKeyHint="next"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder={
                   isZh
-                    ? '請直接輸入任意分類名稱 (如：Flight Class、空中環、嬋柔、壺鈴體能...)'
-                    : 'Type any custom category (e.g. Flight Class, Aerial Silk, Kettlebell...)'
+                    ? '輸入或選擇課程類別（如：器械皮拉提、1對1私教）'
+                    : 'Enter or select category (e.g. Reformer, 1-on-1 Private)'
                 }
-                className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-stone-900 text-xs focus:outline-none focus:ring-2 focus:ring-aura-clay"
+                className="w-full px-4 py-2.5 rounded-2xl bg-stone-50 border border-stone-300 text-stone-900 text-sm sm:text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-aura-clay"
               />
-              <div className="flex flex-wrap items-center gap-1 pt-0.5">
-                <span className="text-[10px] text-stone-400 mr-0.5">
-                  {isZh ? '快捷選擇：' : 'Presets:'}
-                </span>
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5" role="group" aria-label={isZh ? '快捷課程分類' : 'Category presets'}>
                 {[
                   'Flight Class',
                   'Barre',
                   'Reformer',
                   '空中瑜珈',
-                  '音療頌缽',
+                  '自由搏擊',
                   '1對1私教',
                   '墊上皮拉提',
                   '重訓體能',
@@ -729,17 +678,39 @@ export const OnboardingWizard: React.FC = () => {
                   <button
                     key={tag}
                     type="button"
+                    aria-pressed={category === tag}
                     onClick={() => setCategory(tag)}
-                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${
+                    className={`text-[11px] px-2.5 py-1 rounded-full border transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-aura-clay ${
                       category === tag
                         ? 'bg-aura-clay text-white font-semibold border-aura-clay shadow-2xs'
-                        : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-200'
+                        : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-100'
                     }`}
                   >
                     {tag}
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Instructor Input */}
+            <div>
+              <label
+                htmlFor="onboarding-instructor-input"
+                className="block text-stone-700 font-semibold mb-1"
+              >
+                {isZh ? '授課師資 (Instructor)' : 'Instructor'}
+              </label>
+              <input
+                id="onboarding-instructor-input"
+                name="instructor"
+                type="text"
+                required
+                enterKeyHint="next"
+                value={instructor}
+                onChange={(e) => setInstructor(e.target.value)}
+                placeholder="e.g. Jordan B. / Lena S."
+                className="w-full px-4 py-2 rounded-2xl bg-stone-50 border border-stone-300 text-stone-900 text-sm sm:text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-aura-clay"
+              />
             </div>
 
             {/* 3. DYNAMIC LOCATION & ADDRESS INPUT */}
